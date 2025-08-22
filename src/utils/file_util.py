@@ -44,6 +44,9 @@ def gen_data(
         case "CWA_RWRF":
             file_name = gen_path(target_time, use_Kth_hour_pred=use_Kth_hour_pred)
             return read_cwa_ncfile(file_name, data_compose, dtype)
+        case "RWRF_ERA5":
+            file_name = gen_path(target_time)
+            return read_cwa_ncfile(file_name, data_compose, dtype)
         case _:
             raise ValueError(f"Unknown data source: {DATA_SOURCE}")
 
@@ -89,7 +92,8 @@ def read_cwa_ncfile(
                 dataset[DataCompose(getattr(DataType, q), dc.level).combined_key].values
                 for q in components
             )  # (1, Z, H, W)
-            data *= 1000  # kg/kg -> g/kg
+            #data = dataset[dc.combined_key].value
+            #data *= 1000  # kg/kg -> g/kg
         else:
             data = dataset[dc.combined_key].values  # (1, Z, H, W) or (1, H, W)
 
@@ -187,9 +191,14 @@ def gen_path(
 
             return (
                 Path(DATA_PATH)
-                / f"RWRF_{target_time.strftime('%Y-%m')}"
-                / f"{target_time.strftime('%Y-%m-%d_%H')}"
+                #/ f"RWRF_{target_time.strftime('%Y-%m')}"
+                #/ f"{target_time.strftime('%Y-%m-%d_%H')}"
                 / f"wrfout_d01_{predict_dt.strftime('%Y-%m-%d_%H')}_interp"
+            )
+        case "RWRF_ERA5":
+            return (
+                Path(DATA_PATH)
+                / f"e5dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
             )
         case _:
             raise ValueError(f"Invalid data source: {data_source}")

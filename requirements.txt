@@ -7,7 +7,7 @@ mlflow
 cftime
 opencv-python
 # other
-torchvision
+# torchvision
 ipykernel
 geopandas
 pydantic

@@ -1,11 +1,20 @@
 from datetime import datetime
+import os
 
 import matplotlib as mpl
 import numpy as np
 
 # Constant
-DATA_SOURCE = "CWA_RWRF"
+#EXP_CODE = "MUIFA_m2507E99l10"
+#DATA_SOURCE = "CWA_RWRF"
+DATA_SOURCE = "RWRF_ERA5"
 VAR_SUFFIX = "WE01H0202500"
+
+EXP_CODE = os.environ.get("DLAMP_EXP_CODE", "")
+DATA_SOURCE = os.environ.get("DLAMP_DATA_SOURCE", "RWRF_ERA5")
+DATA_PATH = os.environ.get("DLAMP_DATA_PATH", "/wk2/yaochu/DLAMP_model/db/ncdb/Pool/")
+
+print(EXP_CODE, DATA_SOURCE, DATA_PATH)
 
 # Path
 BLACKLIST_PATH = "./assets/blacklist_rwrf_3h.txt"
@@ -14,9 +23,9 @@ LAND_SEA_MASK_PATH = "./assets/constant_masks/land_sea_mask_4km.npy"
 TOPOGRAPHY_MASK_PATH = "./assets/constant_masks/topography_mask_4km.npy"
 COUNTY_SHP_PATH = "./assets/town_shp/COUNTY_MOI_1090820.shp"
 STANDARDIZATION_PATH = "./assets/standardization/z_score_3h.json"
-DATA_PATH = "/work/dong1128/rwrf_data/"
+#DATA_PATH = "../DLAMP.data/ncdb/Pool/"
 FIGURE_PATH = "./gallery/"
-DATA_CONFIG_PATH = "./config/data/rwrf_202502.yaml"
+DATA_CONFIG_PATH = "./config/data/rwrf.yaml"
 
 # Radar color bar
 DBZ_LV = np.arange(0, 66, 1)

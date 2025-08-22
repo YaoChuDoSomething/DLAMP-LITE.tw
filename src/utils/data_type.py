@@ -24,7 +24,7 @@ class DataType(Enum):
     Qg = ("Graupel Mixing Ratio", "", "QGRAUP_p")
     Qc = ("Cloud Water Mixing Ratio", "", "QCLOUD_p")
     Qi = ("Ice Mixing Ratio", "", "QICE_p")
-    Qw = ("Water Mixing Ratio", "", "")
+    Qw = ("Water Mixing Ratio", "", "QWATER_p")
     RH = ("Relative Humidity", "", "rh")
     Td = ("Dew Point Temperature", "", "td")
     SLP = ("Sea Level Pressure", "", "slp")
@@ -37,6 +37,7 @@ class DataType(Enum):
     OLR = ("Outgoing Longwave Radiation", "", "OLR")
     Lat = ("Latitude", "LAT", "XLAT")
     Lon = ("Longitude", "LON", "XLONG")
+    MASK = ("Landmask", "", "LANDMASK")
     Radar = ("Radar Reflectivity", "MOS", "")
 
 
@@ -49,6 +50,7 @@ class Level(Enum):
         return obj
 
     # level_name = (description, code, nc_key)
+    Hpa50 = ("50 Hpa", "50", "50")
     Hpa100 = ("100 Hpa", "100", "100")
     Hpa150 = ("150 Hpa", "150", "150")
     Hpa200 = ("200 Hpa", "200", "200")

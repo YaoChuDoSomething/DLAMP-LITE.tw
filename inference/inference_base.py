@@ -130,7 +130,9 @@ class InferenceBase(metaclass=abc.ABCMeta):
             AssertionError: If batch size is not 1.
         """
         batch, level, width, height, channel = data.shape
-        assert batch == 1, f"Only 1 eval case at a time, but got {batch}"
+        if batch != 1:
+            raise ValueError(f"Only 1 eval case at a time, but got {batch}")
+        #assert batch == 1, f"Only 1 eval case at a time, but got {batch}"
         edge_x = edge_y = bdy_grid
 
         dataset: CustomDataset = self.data_manager._predict_dataset
@@ -143,11 +145,13 @@ class InferenceBase(metaclass=abc.ABCMeta):
             mask = np.zeros((width, height), dtype=bool)
             mask[:edge_x, :] = mask[-edge_x:, :] = True
             mask[:, :edge_y] = mask[:, -edge_y:] = True
-
+            
             if level == 1:
                 data[0, 0, mask, :] = gt_data[0, mask, :]
             else:
-                data[0, :, mask, :] = gt_data[:, mask, :].transpose(1, 0, 2)
+                data[0, :, mask, :] = gt_data[:, mask, :].transpose(1, 0, 2) # Chia-Tung
+                #data[0, :, mask, :] = gt_data[:, mask, :] # YaoChuWU
+
         elif method == "linear":
             # Linear interpolation for boundary pixels
             for i in range(bdy_grid):
@@ -160,7 +164,24 @@ class InferenceBase(metaclass=abc.ABCMeta):
                 if level == 1:
                     data[0, 0, mask, :] = mixed_gt_data[0, mask, :]
                 else:
-                    data[0, :, mask, :] = mixed_gt_data[:, mask, :].transpose(1, 0, 2)
+                    data[0, :, mask, :] = mixed_gt_data[:, mask, :].transpose(1, 0, 2) # Chia-Tung
+                    #data[0, :, mask, :] = mixed_gt_data[:, mask, :] # YaoChuWU
+        elif method == "linear_wu":
+            # To connect outer fields with linear combination
+            gt_mask = np.zeros((width, height)).astype(np.float32)
+            for i in range(bdy_grid):
+                submask = np.zeros((width, height)).astype(np.float32)
+                submask[:i+1, : ] = submask[-i-1:, :] = 1 / bdy_grid
+                submask[ :, :i+1] = submask[:, -i-1:] = 1 / bdy_grid
+                gt_mask += submask
+
+            pd_mask = 1 - gt_mask
+            for c in range(channel):
+                for l in range(level):
+                    if level == 1:
+                        data[0,0,:,:,c] = (data[0,0,:,:,c] * pd_mask) + (gt_data[0,:,:,c] * gt_mask)
+                    else:
+                        data[0,l,:,:,c] = (data[0,l,:,:,c] * pd_mask) + (gt_data[l,:,:,c] * gt_mask)
         else:
             raise ValueError(f"Unknown method: {method}")
         return data

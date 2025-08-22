@@ -31,6 +31,9 @@ profiler/
 profile_default/
 ipython_config.py
 
+# Output Datasets
+output/**nc
+
 # Figures
 *.png
 *.gif

@@ -283,6 +283,11 @@ class DatetimeManager:
                 # in every netCDF file. Thus, we only check the file existence here.
                 data_filename = gen_path(dt, use_Kth_hour_pred=use_Kth_hour_pred)
                 return True if data_filename.exists() else False
+            case "RWRF_ERA5":
+                # since CWA prepared the data for us, we believe all variables are consistent
+                # in every netCDF file. Thus, we only check the file existence here.
+                data_filename = gen_path(dt)
+                return True if data_filename.exists() else False
             case _:
                 log.error(f"Invalid data_source: {data_source}")
                 raise ValueError(f"Invalid data_source: {data_source}")
