@@ -98,8 +98,8 @@ class ForecastSaver:
 
         # Map from internal enum names to NetCDF variable keys
         key_map: Dict[str, str] = {
-            "umet10": "U10",
-            "vmet10": "V10",
+            "umet10": "umet10",
+            "vmet10": "vmet10",
             "t2m": "T2",
             "q2m": "Q2",
             "psfc": "PSFC",
@@ -136,7 +136,7 @@ class ForecastSaver:
             key = "QWATER_p" if var_name == "Qw" else var_type.nc_key
             data_vars[key] = (
                 ("Time", "pres_bottom_top", "south_north", "west_east"),
-                cube,
+                cube/1000 if var_name == "Qw" else cube,
             )
 
         dataset: xr.Dataset = xr.Dataset(data_vars, coords=coords)

@@ -1,5 +1,5 @@
 infer_type: "onnx"
-onnx_path: "./export/Pangu_model.onnx"
+onnx_path: "./export/Pangu_model_20250729.onnx"
 bdy_swap_method: 
   name: "linear"
   n_of_grid: 10

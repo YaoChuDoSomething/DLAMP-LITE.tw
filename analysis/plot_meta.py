@@ -14,12 +14,12 @@ from src.utils import Level
 ANALYSIS_PLOT_CONFIGS: List[Dict[str, Any]] = [
     {
         "title": "500hPa Wind & Height",
-        "unit": "m/s",
+        "unit": "m s-1",
         "level": Level.Hpa500,
         "plot_func_key": "wind_speed",
         "cmap": "Spectral_r",
         "vmin": 0,
-        "vmax": 80,
+        "vmax": 60,
     },
     {
         "title": "500hPa Vorticity & Height",
@@ -29,11 +29,10 @@ ANALYSIS_PLOT_CONFIGS: List[Dict[str, Any]] = [
         "cmap": "YlOrBr",
         "vmin": 0,
         "vmax": 200,
-        "clip_max": 200,
     },
     {
         "title": "850hPa Wind & Height",
-        "unit": "m/s",
+        "unit": "m s-1",
         "level": Level.Hpa850,
         "plot_func_key": "wind_speed",
         "cmap": "Spectral_r",
@@ -48,7 +47,6 @@ ANALYSIS_PLOT_CONFIGS: List[Dict[str, Any]] = [
         "cmap": "YlOrBr",
         "vmin": 0,
         "vmax": 200,
-        "clip_max": 200,
     },
     {
         "title": "925hPa Temp & 10m Wind",
@@ -61,10 +59,10 @@ ANALYSIS_PLOT_CONFIGS: List[Dict[str, Any]] = [
     },
     {
         "title": "925hPa Qw & 10m Wind",
-        "unit": "g/kg",
+        "unit": "g kg-1",
         "level": Level.Hpa925,
-        "plot_func_key": "total_water_mixing_ratio",
-        "cmap": "bone_r",
+        "plot_func_key": "hydrometeors_mixing_ratio",
+        "cmap": "GnBu_r",
         "vmin": 0,
         "vmax": 4,
     },

@@ -14,106 +14,108 @@ GLOBAL_ATTRIBUTES: Dict[str, Any] = {
     "MAP_PROJ_CHAR": "Lambert Conformal",
     "MMINLU": "MODIFIED_IGBP_MODIS_NOAH",
     "SIMULATION_INITIALIZATION_TYPE": "REAL-DATA CASE",
-    "GRIDTYPE": "C",
+    "GRIDTYPE": "A",
 }
 
 # Variable-specific attributes (units, description, etc.)
 VARIABLE_ATTRIBUTES: Dict[str, Any] = {
-    "Times": {"description": "model time"},
+    "Times": {
+        "description": "model time"
+    },
     "XLAT": {
-        "description": "LATITUDE, SOUTH IS NEGATIVE",
+        "description": "Latitude, South is Negative",
         "units": "degree_north",
-        "coordinates": "west_east south_north Time"
     },
     "XLONG": {
-        "description": "LONGITUDE, WEST IS NEGATIVE",
+        "description": "Longitude, West is Negative",
         "units": "degree_east",
-        "coordinates": "west_east south_north Time"
     },
-    "pres_levels": {"description": "Pressure Levels", "units": "hPa"},
+    "pres_levels": {
+        "description": "Constant Pressure Levels", 
+        "units": "hPa"
+    },
     "HGT": {
         "description": "Terrain Height",
         "units": "m",
-        "coordinates": "west_east south_north Time"
     },
     "LANDMASK": {
-        "description": "Land Sea mask (1=land and 0=sea)",
+        "description": "Land Sea Mask (1=Land and 0=Sea)",
         "units": "1",
-        "coordinates": "west_east south_north Time",
     },
     "z_p": {
         "description": "Geopotential Height",
         "units": "m",
-        "coordinates": "XLONG XLAT pres_levels",
     },
     "tk_p": {
-        "description": "Temperature",
+        "description": "Air Temperature",
         "units": "K",
-        "coordinates": "XLONG XLAT pres_levels",
     },
     "umet_p": {
-        "description": "U-component of wind",
+        "description": "U-component of Wind Rotated to Earth Coordinates",
         "units": "m s-1",
-        "coordinates": "XLONG XLAT pres_levels",
     },
     "vmet_p": {
-        "description": "V-component of wind",
+        "description": "V-component of Wind Rotated to Earth Coordinates",
         "units": "m s-1",
-        "coordinates": "XLONG XLAT pres_levels",
     },
     "wa_p": {
-        "description": "W-component of Wind on Mass Points",
+        "description": "Vertical Velocity",
         "units": "m s-1",
-        "coordinates": "XLONG XLAT pres_levels",
     },
     "QVAPOR_p": {
-        "description": "Water vapor mixing ratio",
+        "description": "Water Vapor Mixing Ratio",
         "units": "kg kg-1",
-        "coordinates": "XLONG XLAT pres_levels",
     },
     "QWATER_p": {
-        "description": "Total water mixing ratio (cloud+rain+ice+snow+graupel)",
+        "description": "Total Hydrometeors Mixing Ratio (cloud+rain+ice+snow+graupel)",
         "units": "kg kg-1",
-        "coordinates": "XLONG XLAT pres_levels",
     },
     "PSFC": {
-        "description": "SFC PRESSURE",
+        "description": "Surface Pressure",
         "units": "Pa",
-        "coordinates": "XLONG XLAT",
+    },
+    "SLP": {
+        "description": "Sea-Level Pressure",
+        "units": "hPa",
     },
     "SST": {
-        "description": "SEA SURFACE TEMPERATURE",
+        "description": "Sea Surface Temperature",
         "units": "K",
-        "coordinates": "XLONG XLAT",
+    },
+    "RAINNC": {
+        "description": "Accumulated Grid Scale Precipitation",
+        "units": "mm",
+    },
+    "PBLH": {
+        "description": "Planetary Boundary Layer Height",
+        "units": "m",
+    },
+    "pw": {
+        "description": "Precipitable Water",
+        "units": "kg m-2",
     },
     "SWDOWN": {
-        "description": "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE",
+        "description": "Downward Shortwave Radiation Flux at Ground Surface",
         "units": "W m-2",
-        "coordinates": "XLONG XLAT",
     },
     "OLR": {
-        "description": "TOA OUTGOING LONG WAVE",
+        "description": "Outgoing Longwave Radiation Flux at Top of Atmosphere(TOA)",
         "units": "W m-2",
-        "coordinates": "XLONG XLAT",
     },
     "T2": {
-        "description": "TEMP at 2 M",
+        "description": "Air Temperature at 2 Meters Height ",
         "units": "K",
-        "coordinates": "XLONG XLAT",
     },
     "Q2": {
-        "description": "Water vapor mixing ratio at 2 M",
+        "description": "Water Vapor Mixing Ratio at 2 Meters Height",
         "units": "kg kg-1",
-        "coordinates": "XLONG XLAT",
     },
     "umet10": {
-        "description": "U at 10 M",
+        "description": "U-component of Wind Rotated to Earth Coordinates at 10 Meters Height",
         "units": "m s-1",
-        "coordinates": "XLONG XLAT",
     },
     "vmet10": {
-        "description": "V at 10 M",
+        "description": "V-component of Wind Rotated to Earth Coordinates at 10 Meters Height",
         "units": "m s-1",
-        "coordinates": "XLONG XLAT",
     },
 }

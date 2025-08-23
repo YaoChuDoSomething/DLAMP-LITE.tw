@@ -3,6 +3,7 @@ import warnings
 from datetime import datetime, timedelta
 
 import numpy as np
+from scipy.ndimage import distance_transform_cdt
 from omegaconf import DictConfig
 from tqdm import trange
 
@@ -165,7 +166,17 @@ class InferenceBase(metaclass=abc.ABCMeta):
                     data[0, 0, mask, :] = mixed_gt_data[0, mask, :]
                 else:
                     data[0, :, mask, :] = mixed_gt_data[:, mask, :].transpose(1, 0, 2) # Chia-Tung
-                    #data[0, :, mask, :] = mixed_gt_data[:, mask, :] # YaoChuWU
+
+        elif method == "exp_decay":
+            min_dist = distance_transform_cdt(
+                np.ones((width, height), dtype=bool),
+                metric='chessboard'
+            )
+            alpha = np.exp(-min_dist / bdy_grid)
+            alpha = alpha[np.newaxis, :, :, np.newaxis]
+            pd_mask = 1 - alpha
+            data[0] = (data[0] * pd_mask) + (gt_data * alpha)
+
         elif method == "linear_wu":
             # To connect outer fields with linear combination
             gt_mask = np.zeros((width, height)).astype(np.float32)

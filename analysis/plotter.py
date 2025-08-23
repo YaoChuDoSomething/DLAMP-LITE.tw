@@ -59,7 +59,7 @@ class WeatherPlotter:
             "vorticity": self._plot_vorticity,
             "temperature": self._plot_temperature,
             "column_max_qw": self._plot_column_max_qw,
-            "total_water_mixing_ratio": self._plot_mixing_ratio,
+            "hydrometeors_mixing_ratio": self._plot_mixing_ratio,
         }
 
     def create_analysis_figure(self, forecast_step: int) -> Path:
@@ -84,7 +84,7 @@ class WeatherPlotter:
         )
         fig.suptitle(
             f"Initial: {start_time}Z {step_str} | Valid: {valid_time}Z",
-            fontsize=12, y=0.95
+            fontsize=8, y=0.95
         )
 
         # Iterate through the configuration from plot_meta.py
@@ -167,9 +167,6 @@ class WeatherPlotter:
         cmap: str = config["cmap"]
         vmin: float = config["vmin"]
         vmax: float = config["vmax"]
-        clip_max: float = config["clip_max"]
-        #fc_dx: float = self.manager.cfg.data.grid_spacing.forecast_m
-        #gt_dx: float = self.manager.cfg.data.grid_spacing.ground_truth_m
 
         # The 1e6 is a scaling factor for meteorological convention.
         u_fc, v_fc = self.manager._get_wind_components(step, level)
@@ -182,11 +179,11 @@ class WeatherPlotter:
         z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
 
         self._generic_grid_plot(
-            ax_fc, f"FC: {title}", np.clip(vort_fc, vmin, clip_max), z_fc, (u_fc, v_fc), "barbs", 
+            ax_fc, f"FC: {title}", np.clip(vort_fc, vmin, vmax), z_fc, (u_fc, v_fc), "barbs", 
             cmap, vmin, vmax, unit
         )
         self._generic_grid_plot(
-            ax_gt, f"GT: {title}", np.clip(vort_gt, vmin, clip_max), z_gt, (u_gt, v_gt), "barbs", 
+            ax_gt, f"GT: {title}", np.clip(vort_gt, vmin, vmax), z_gt, (u_gt, v_gt), "barbs", 
             cmap, vmin, vmax, unit
         )
 
@@ -204,20 +201,22 @@ class WeatherPlotter:
         t_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.T, level)
         u10_fc: np.ndarray
         v10_fc: np.ndarray
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
 
         time: datetime = self.manager.get_forecast_time(step)
         t_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.T, level)
         u10_gt: np.ndarray
         v10_gt: np.ndarray
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
 
         self._generic_grid_plot(
-            ax_fc, f"FC: {title}", t_fc, None, (u10_fc, v10_fc), "stream",
+            ax_fc, f"FC: {title}", t_fc, z_fc, (u10_fc, v10_fc), "stream",
             cmap, vmin, vmax, unit
         )
         self._generic_grid_plot(
-            ax_gt, f"GT: {title}", t_gt, None, (u10_gt, v10_gt), "stream",
+            ax_gt, f"GT: {title}", t_gt, z_fc, (u10_gt, v10_gt), "stream",
             cmap, vmin, vmax, unit
         )
 
@@ -232,13 +231,13 @@ class WeatherPlotter:
         vmin: float = config["vmin"]
         vmax: float = config["vmax"]
 
-        qw_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Qw, level) * 1000
+        qw_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Qw, level)
         u10_fc: np.ndarray
         v10_fc: np.ndarray
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
         
         time: datetime = self.manager.get_forecast_time(step)
-        qw_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Qw, level) * 1000
+        qw_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Qw, level)
         u10_gt: np.ndarray
         v10_gt: np.ndarray
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
@@ -342,8 +341,7 @@ class WeatherPlotter:
         cbar = plt.colorbar(
             pcm, ax=ax, orientation="horizontal", pad=0.06, shrink=0.95
         )
-        #cbar.set_label(unit, size=4)
-        
+        cbar.set_label(unit, size=4)
         cbar.ax.tick_params(labelsize=4, size=4, tickdir="in")
 
         if contour_data is not None:
@@ -353,19 +351,26 @@ class WeatherPlotter:
             u: np.ndarray
             v: np.ndarray
             u, v = wind_data
-            skip: int = 15  # Plot a wind barb every 15 grid points
+            skip: int = 11  # Plot a wind barb every 15 grid points
             if wind_type == "barbs":
                 ax.barbs(
                     xgrid[::skip, ::skip],
                     ygrid[::skip, ::skip],
-                    u[::skip, ::skip],
-                    v[::skip, ::skip],
+                    u[::skip, ::skip] / 0.5144,
+                    v[::skip, ::skip] / 0.5144,
+                    color="gray",
                     length=3.5,
                     linewidth=0.35,
                 )
             elif wind_type == "stream":
                 ax.streamplot(
-                    xgrid, ygrid, u, v, color="gray", linewidth=0.35, density=1
+                    xgrid, 
+                    ygrid, 
+                    u,
+                    v,
+                    color="gray", 
+                    linewidth=0.35, 
+                    density=1
                 )
 
         ax.contour(
@@ -373,11 +378,11 @@ class WeatherPlotter:
             colors="black", linewidths=0.5, linestyles="-"
         )
         ax.contour(
-            xgrid, ygrid, model_lon, np.linspace(-180, 180, 361), 
+            xgrid, ygrid, model_lon, np.linspace(-180, 180, 181), 
             colors="gray", linewidths=0.35, linestyles=":"
         )
         ax.contour(
-            xgrid, ygrid, model_lat, np.linspace(-90, 90, 181), 
+            xgrid, ygrid, model_lat, np.linspace(-90, 90, 91), 
             colors="gray", linewidths=0.35, linestyles=":"
         )
 

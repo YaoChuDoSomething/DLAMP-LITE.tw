@@ -93,7 +93,7 @@ def read_cwa_ncfile(
                 for q in components
             )  # (1, Z, H, W)
             #data = dataset[dc.combined_key].value
-            #data *= 1000  # kg/kg -> g/kg
+            data *= 1000  # kg/kg -> g/kg
         else:
             data = dataset[dc.combined_key].values  # (1, Z, H, W) or (1, H, W)
 
