@@ -114,8 +114,8 @@ def read_cwa_ncfile(
             for ele in data_compose:
                 ret[str(ele)] = fn(ele)
             return ret
-    except:
-        raise RuntimeError(f"Data retrival fails. Please validate {file_path}")
+    except Exception as e:
+        raise RuntimeError(f"Data retrieval fails for {file_path}. Original error: {e}")
 
 
 def read_cwa_npfile(
@@ -221,7 +221,7 @@ def convert_hydra_dir_to_timestamp(hydra_dir: Path | str) -> str:
         dt = datetime.strptime(
             f"{hydra_dir.parent.name} {hydra_dir.name}", "%Y-%m-%d %H:%M:%S"
         )
-    except:
+    except ValueError:
         if isinstance(hydra_dir, str):
             warnings.warn(
                 f'given hydra dir "{hydra_dir}" can\'t be parsed into datetime, '

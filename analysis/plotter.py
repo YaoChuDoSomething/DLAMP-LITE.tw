@@ -13,15 +13,18 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import gridspec
 from matplotlib.axes import Axes
+from matplotlib.colors import CenteredNorm, LogNorm, PowerNorm, TwoSlopeNorm
 from matplotlib.figure import Figure
 from scipy.interpolate import griddata
+from omegaconf import DictConfig
 
 from analysis.data_manager import AnalysisDataManager
-from analysis.plot_meta import ANALYSIS_PLOT_CONFIGS  # <-- IMPORT NEW CONFIG
+from analysis.plot_meta import ANALYSIS_PLOT_CONFIGS
 from src.utils import DataType, Level
 
 logger = logging.getLogger(__name__)
@@ -40,26 +43,31 @@ class WeatherPlotter:
         map_projection: The cartopy projection used for all subplots.
     """
 
-    def __init__(self, manager: AnalysisDataManager, output_dir: Path):
+    def __init__(
+        self, 
+        cfg: DictConfig, 
+        manager: AnalysisDataManager, 
+        output_dir: Path
+    ):
         """Initializes the WeatherPlotter.
 
         Args:
             manager (AnalysisDataManager): An initialized data manager.
             output_dir (Path): Target directory for saving plot images.
         """
+        self.cfg: DictConfig = cfg
         self.manager: AnalysisDataManager = manager
         self.output_dir: Path = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.map_projection = ccrs.PlateCarree()
 
-        # A dispatch table mapping string keys from the config to actual
-        # plotting methods. This is the core of the refactoring.
         self._plot_dispatch_table: Dict[str, Callable[..., Any]] = {
             "wind_speed": self._plot_wind_speed,
             "vorticity": self._plot_vorticity,
             "temperature": self._plot_temperature,
             "column_max_qw": self._plot_column_max_qw,
             "hydrometeors_mixing_ratio": self._plot_mixing_ratio,
+            "theta-e": self._plot_theta_e,
         }
 
     def create_analysis_figure(self, forecast_step: int) -> Path:
@@ -83,31 +91,25 @@ class WeatherPlotter:
             else f"F{forecast_step + 1:03d}H"
         )
         fig.suptitle(
-            f"Initial: {start_time}Z {step_str} | Valid: {valid_time}Z",
+            f"Initial: {start_time}Z {step_str} | Valid: {valid_time}Z | DLAMP.tw | {self.cfg.inference.onnx_path}",
             fontsize=8, y=0.95
         )
 
-        # Iterate through the configuration from plot_meta.py
         for idx, config in enumerate(ANALYSIS_PLOT_CONFIGS):
             ax_fc: Axes = fig.add_subplot(gs[0, idx])
             ax_gt: Axes = fig.add_subplot(gs[1, idx])
 
-            title: str = config["title"]
-            level: Level = config["level"]
-            unit: str = config["unit"]
             plot_func_key: str = config["plot_func_key"]
 
             try:
-                # Look up the plotting method from the dispatch table
                 plot_func: Callable[..., Any] = self._plot_dispatch_table[plot_func_key]
-                # Call the dynamically selected method
                 plot_func(ax_fc, ax_gt, forecast_step, config)
             except KeyError:
                 logger.error(
                     "Plot function key '%s' not found in dispatch table.",
                     plot_func_key
                 )
-                continue  # Skip this panel if the key is invalid
+                continue
 
         start_time_str: str = self.manager.start_time.strftime('%Y%m%d_%H%M')
         step_str_for_filename: str
@@ -118,7 +120,6 @@ class WeatherPlotter:
 
         filename: str = f"analysis_{start_time_str}_{step_str_for_filename}.png"
         output_path: Path = self.output_dir / filename
-        #plt.show()
         fig.savefig(output_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
         logger.info(f"Saved analysis plot to {output_path}")
@@ -127,34 +128,35 @@ class WeatherPlotter:
     def _plot_wind_speed(
         self, ax_fc: Axes, ax_gt: Axes, step: int, config: Dict[str, Any]
     ):
-        """Plots wind speed as color mesh and geopotential height as contours."""
+        """Plots wind speed and geopotential height."""
         title: str = config["title"]
         level: Level = config["level"]
         unit: str = config["unit"]
         cmap: str = config["cmap"]
         vmin: float = config["vmin"]
         vmax: float = config["vmax"]
+        colorbar_scale: Optional[str] = config.get("colorbar_scale")
+        colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
+        colorbar_center: Optional[float] = config.get("colorbar_center")
 
         z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
         wspd_fc: np.ndarray = self.manager.get_wind_speed(step, level, is_gt=False)
-        u_fc: np.ndarray
-        v_fc: np.ndarray
         u_fc, v_fc = self.manager._get_wind_components(step, level)
 
         time: datetime = self.manager.get_forecast_time(step)
         z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
         wspd_gt: np.ndarray = self.manager.get_wind_speed(step, level, is_gt=True)
-        u_gt: np.ndarray
-        v_gt: np.ndarray
         u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
 
         self._generic_grid_plot(
             ax_fc, f"FC: {title}", wspd_fc, z_fc, (u_fc, v_fc), "stream",
-            cmap, vmin, vmax, unit
+            cmap, vmin, vmax, unit, colorbar_scale, colorbar_gamma,
+            colorbar_center=colorbar_center
         )
         self._generic_grid_plot(
             ax_gt, f"GT: {title}", wspd_gt, z_gt, (u_gt, v_gt), "stream",
-            cmap, vmin, vmax, unit
+            cmap, vmin, vmax, unit, colorbar_scale, colorbar_gamma,
+            colorbar_center=colorbar_center
         )
 
     def _plot_vorticity(
@@ -167,8 +169,10 @@ class WeatherPlotter:
         cmap: str = config["cmap"]
         vmin: float = config["vmin"]
         vmax: float = config["vmax"]
+        colorbar_scale: Optional[str] = config.get("colorbar_scale")
+        colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
+        colorbar_center: Optional[float] = config.get("colorbar_center")
 
-        # The 1e6 is a scaling factor for meteorological convention.
         u_fc, v_fc = self.manager._get_wind_components(step, level)
         vort_fc: np.ndarray = self.manager.get_relative_vorticity(step, level, False) * 1e6
         z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
@@ -179,12 +183,133 @@ class WeatherPlotter:
         z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
 
         self._generic_grid_plot(
-            ax_fc, f"FC: {title}", np.clip(vort_fc, vmin, vmax), z_fc, (u_fc, v_fc), "barbs", 
-            cmap, vmin, vmax, unit
+            ax_fc, 
+            f"FC: {title}", 
+            np.clip(vort_fc, vmin, vmax), 
+            z_fc,
+            (u_fc, v_fc), "barbs", 
+            cmap, vmin, vmax, 
+            unit, 
+            colorbar_scale,
+            colorbar_gamma, 
+            colorbar_center=colorbar_center
         )
         self._generic_grid_plot(
-            ax_gt, f"GT: {title}", np.clip(vort_gt, vmin, vmax), z_gt, (u_gt, v_gt), "barbs", 
-            cmap, vmin, vmax, unit
+            ax_gt, 
+            f"GT: {title}", 
+            np.clip(vort_gt, vmin, vmax), 
+            z_gt,
+            (u_gt, v_gt), "barbs", 
+            cmap, vmin, vmax, 
+            unit, 
+            colorbar_scale,
+            colorbar_gamma, 
+            colorbar_center=colorbar_center
+        )
+
+    def _calculate_theta_e(self, T: np.ndarray, P: float, Qv: np.ndarray) -> np.ndarray:
+        """
+        根據給定的 T, P, Qv 計算相當位溫 (Theta-e)。
+
+        使用以下公式：
+        Theta-e = T * exp(Ls * qvsat / (cp * Td)) * (1000 / P)^(R / cp)
+
+        Args:
+            T (np.ndarray): 溫度 (K)
+            P (float): 氣壓 (hPa)
+            Qv (np.ndarray): 水氣比濕 (kg/kg)
+
+        Returns:
+            np.ndarray: 相當位溫 (K)
+        """
+        # 1. 從比濕 Qv 和氣壓 P 計算水氣分壓 e (hPa)
+        # e = (Qv * P) / (epsilon + Qv)
+        e = (Qv * P) / (EPSILON + Qv)
+
+        # 2. 計算露點 Td (K) (使用 Magnus-Tetens 近似公式反推)
+        # e = 6.112 * exp(17.67 * (Td_c - 273.15) / (Td - 273.15 + 243.5))
+        # 經過整理可得 Td
+        val = np.log(e / 6.112)
+        Td_c = (243.5 * val) / (17.67 - val)
+        Td = Td_c + 273.15
+
+        # 3. 計算在溫度 T 下的飽和水氣壓 es (hPa)
+        es = 6.112 * np.exp(17.67 * (T - 273.15) / (T - 273.15 + 243.5))
+
+        # 4. 計算飽和比濕 qvsat (kg/kg)
+        # qvsat = (epsilon * es) / (P - es)
+        qvsat = (EPSILON * es) / (P - es)
+        
+        # 5. 計算位溫 theta
+        theta = T * (1000.0 / P) ** (R_d / c_p)
+        
+        # 6. 根據使用者提供的公式計算相當位溫 Theta-e
+        # Theta-e = T * exp(Ls*qvsat/cp/Td) * (1000/P)**(R/cp)
+        # 這等價於 theta * exp(...)
+        theta_e = theta * np.exp((L_v * qvsat) / (c_p * Td))
+
+        return theta_e
+
+    # --- 新增：繪製 Theta-e 的方法 ---
+    def _plot_theta_e(
+        self, ax_fc: Axes, ax_gt: Axes, step: int, config: Dict[str, Any]
+    ):
+        """Plots equivalent potential temperature (Theta-e) and wind."""
+        title: str = config["title"]
+        level: Level = config["level"]
+        unit: str = config["unit"]
+        cmap: str = config["cmap"]
+        vmin: float = config["vmin"]
+        vmax: float = config["vmax"]
+        colorbar_scale: Optional[str] = config.get("colorbar_scale")
+        colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
+        colorbar_center: Optional[float] = config.get("colorbar_center")
+
+        # 獲取預報資料
+        # 假設 Qw 在此情境下代表水氣比濕 Qv
+        t_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.T, level)
+        qv_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Qw, level)
+        u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
+        
+        # 從 Level enum 獲取氣壓值 (e.g., Level.hPa850 -> 850.0)
+        pressure_hpa = float(level.value.replace('hPa', ''))
+        
+        # 計算 Theta-e
+        theta_e_fc = self._calculate_theta_e(t_fc, pressure_hpa, qv_fc)
+
+        # 獲取觀測/分析場資料
+        time: datetime = self.manager.get_forecast_time(step)
+        t_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.T, level)
+        qv_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Qw, level)
+        u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
+        
+        # 計算 Theta-e
+        theta_e_gt = self._calculate_theta_e(t_gt, pressure_hpa, qv_gt)
+
+        # 繪圖
+        self._generic_grid_plot(
+            ax_fc,
+            f"FC: {title}",
+            theta_e_fc,
+            None, # 不額外繪製等高線
+            (u10_fc, v10_fc), "barbs",
+            cmap, vmin, vmax,
+            unit,
+            colorbar_scale,
+            colorbar_gamma,
+            colorbar_center=colorbar_center
+        )
+        self._generic_grid_plot(
+            ax_gt,
+            f"GT: {title}",
+            theta_e_gt,
+            None, # 不額外繪製等高線
+            (u10_gt, v10_gt), "barbs",
+            cmap, vmin, vmax,
+            unit,
+            colorbar_scale,
+            colorbar_gamma,
+            colorbar_center=colorbar_center
         )
 
     def _plot_temperature(
@@ -197,27 +322,42 @@ class WeatherPlotter:
         cmap: str = config["cmap"]
         vmin: float = config["vmin"]
         vmax: float = config["vmax"]
+        colorbar_scale: Optional[str] = config.get("colorbar_scale")
+        colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
+        colorbar_center: Optional[float] = config.get("colorbar_center")
 
         t_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.T, level)
-        u10_fc: np.ndarray
-        v10_fc: np.ndarray
         z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
 
         time: datetime = self.manager.get_forecast_time(step)
         t_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.T, level)
-        u10_gt: np.ndarray
-        v10_gt: np.ndarray
         z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
 
         self._generic_grid_plot(
-            ax_fc, f"FC: {title}", t_fc, z_fc, (u10_fc, v10_fc), "stream",
-            cmap, vmin, vmax, unit
+            ax_fc, 
+            f"FC: {title}", 
+            t_fc, 
+            z_fc, 
+            (u10_fc, v10_fc), "stream",
+            cmap, vmin, vmax, 
+            unit, 
+            colorbar_scale, 
+            colorbar_gamma,
+            colorbar_center=colorbar_center
         )
         self._generic_grid_plot(
-            ax_gt, f"GT: {title}", t_gt, z_fc, (u10_gt, v10_gt), "stream",
-            cmap, vmin, vmax, unit
+            ax_gt, 
+            f"GT: {title}", 
+            t_gt, 
+            z_gt, 
+            (u10_gt, v10_gt), "stream",
+            cmap, vmin, vmax, 
+            unit, 
+            colorbar_scale, 
+            colorbar_gamma,
+            colorbar_center=colorbar_center
         )
 
     def _plot_mixing_ratio(
@@ -230,25 +370,40 @@ class WeatherPlotter:
         cmap: str = config["cmap"]
         vmin: float = config["vmin"]
         vmax: float = config["vmax"]
+        colorbar_scale: Optional[str] = config.get("colorbar_scale")
+        colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
+        colorbar_center: Optional[float] = config.get("colorbar_center")
 
         qw_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Qw, level)
-        u10_fc: np.ndarray
-        v10_fc: np.ndarray
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
-        
+
         time: datetime = self.manager.get_forecast_time(step)
         qw_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Qw, level)
-        u10_gt: np.ndarray
-        v10_gt: np.ndarray
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
-        
+
         self._generic_grid_plot(
-            ax_fc, f"FC: {title}", qw_fc, None, (u10_fc, v10_fc), "barbs",
-            cmap, vmin, vmax, unit
+            ax_fc, 
+            f"FC: {title}", 
+            qw_fc, 
+            None, 
+            (u10_fc, v10_fc), "barbs",
+            cmap, vmin, vmax, 
+            unit, 
+            colorbar_scale, 
+            colorbar_gamma,
+            colorbar_center=colorbar_center
         )
         self._generic_grid_plot(
-            ax_gt, f"GT: {title}", qw_gt, None, (u10_gt, v10_gt), "barbs",
-            cmap, vmin, vmax, unit
+            ax_gt, 
+            f"GT: {title}", 
+            qw_gt, 
+            None, 
+            (u10_gt, v10_gt), "barbs",
+            cmap, vmin, vmax, 
+            unit, 
+            colorbar_scale, 
+            colorbar_gamma,
+            colorbar_center=colorbar_center
         )
 
     def _plot_column_max_qw(
@@ -256,30 +411,44 @@ class WeatherPlotter:
     ):
         """Plots column-maximum Qw and 10-meter wind."""
         title: str = config["title"]
-        level: Optional[Level] = config["level"]
         unit: str = config["unit"]
         cmap: str = config["cmap"]
         vmin: float = config["vmin"]
         vmax: float = config["vmax"]
+        colorbar_scale: Optional[str] = config.get("colorbar_scale")
+        colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
+        colorbar_center: Optional[float] = config.get("colorbar_center")
 
         qw_fc: np.ndarray = self.manager.get_column_max_qw(step, False)
-        u10_fc: np.ndarray
-        v10_fc: np.ndarray
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
 
-        time: datetime = self.manager.get_forecast_time(step)
         qw_gt: np.ndarray = self.manager.get_column_max_qw(step, True)
-        u10_gt: np.ndarray
-        v10_gt: np.ndarray
+        time: datetime = self.manager.get_forecast_time(step)
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
 
         self._generic_grid_plot(
-            ax_fc, f"FC: {title}", qw_fc, None, (u10_fc, v10_fc), "barbs",
-            cmap, vmin, vmax, unit
+            ax_fc, 
+            f"FC: {title}", 
+            qw_fc, 
+            None, 
+            (u10_fc, v10_fc), "barbs",
+            cmap, vmin, vmax, 
+            unit, 
+            colorbar_scale, 
+            colorbar_gamma,
+            colorbar_center=colorbar_center
         )
         self._generic_grid_plot(
-            ax_gt, f"GT: {title}", qw_gt, None, (u10_gt, v10_gt), "barbs",
-            cmap, vmin, vmax, unit
+            ax_gt, 
+            f"GT: {title}", 
+            qw_gt, 
+            None, 
+            (u10_gt, v10_gt), "barbs",
+            cmap, vmin, vmax, 
+            unit, 
+            colorbar_scale, 
+            colorbar_gamma,
+            colorbar_center=colorbar_center
         )
 
     def _generic_grid_plot(
@@ -294,83 +463,125 @@ class WeatherPlotter:
         vmin: float,
         vmax: float,
         unit: str,
+        colorbar_scale: Optional[str] = None,
+        colorbar_gamma: Optional[float] = None,
+        colorbar_center: Optional[float] = None,
     ):
         """Plots data on a model grid with transformed coastlines.
 
-        This method operates in a non-geographic, rectilinear grid space
-        defined by the model's output array indices. It transforms cartopy
-        coastline coordinates from lon/lat into this grid space to provide
-        a geographical reference.
-
         Args:
-            ax (Axes): The matplotlib Axes object to plot on.
-            title (str): The title for the subplot.
-            color_data (np.ndarray): 2D data for the pcolormesh.
-            contour_data (Optional[np.ndarray]): 2D data for contours.
-            wind_data (Optional[Tuple[np.ndarray, np.ndarray]]): (u, v) winds.
-            wind_type (str): 'stream' for streamplot or 'barbs' for barbs.
-            cmap (str): The colormap for the color_data.
-            vmin (float): The minimum value for the color scale.
-            vmax (float): The maximum value for the color scale.
-            unit (str): The unit label for the colorbar.
+            ax: The matplotlib Axes object to plot on.
+            title: The title for the subplot.
+            color_data: 2D data for the pcolormesh.
+            contour_data: 2D data for contours.
+            wind_data: (u, v) winds.
+            wind_type: 'stream' for streamplot or 'barbs' for barbs.
+            cmap: The colormap for the color_data.
+            vmin: The minimum value for the color scale.
+            vmax: The maximum value for the color scale.
+            unit: The unit label for the colorbar.
+            colorbar_scale: Scale for the colorbar.
+            colorbar_gamma: Gamma value for the power scale.
+            colorbar_center: Center value for CenteredNorm or TwoSlopeNorm.
         """
         model_lon: np.ndarray = self.manager.results["lon"]
         model_lat: np.ndarray = self.manager.results["lat"]
         model_map: np.ndarray = self.manager.results["mask"]
-        ny: int
-        nx: int
         ny, nx = color_data.shape
-
         x_indices: np.ndarray = np.arange(nx)
         y_indices: np.ndarray = np.arange(ny)
-        xgrid: np.ndarray
-        ygrid: np.ndarray
         xgrid, ygrid = np.meshgrid(x_indices, y_indices)
 
         ax.set_title(title, fontsize=6)
 
+        norm = None
+        if colorbar_scale == 'log':
+            safe_vmin = vmin if vmin > 0 else 1e-6  # Avoid vmin <= 0 for LogNorm
+            norm = LogNorm(
+                vmin=safe_vmin, 
+                vmax=vmax
+            )
+            if vmin <= 0:
+                logger.warning(
+                    f"LogNorm received vmin <= 0 ({vmin}). "
+                    f"Adjusting vmin to {safe_vmin} for plotting '{title}'."
+                )
+        elif colorbar_scale == 'power' and colorbar_gamma is not None:
+            norm = PowerNorm(
+                gamma=colorbar_gamma, 
+                vmin=vmin, 
+                vmax=vmax
+            )
+        elif colorbar_scale == 'centered' and colorbar_center is not None:
+            halfrange = max(
+                abs(vmax - colorbar_center), 
+                abs(vmin - colorbar_center)
+            )
+            norm = CenteredNorm(
+                vcenter=colorbar_center, 
+                halfrange=halfrange
+            )
+        elif colorbar_scale == 'two_slope' and colorbar_center is not None:
+            norm = TwoSlopeNorm(
+                vcenter=colorbar_center,
+                vmin=vmin,
+                vmax=vmax
+            )
+        else:
+            norm = mpl.colors.Normalize(
+                vmin=vmin,
+                vmax=vmax,
+            )
+        
         pcm = ax.pcolormesh(
             xgrid,
             ygrid,
             color_data,
             cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
             shading="auto",
+            norm=norm,
         )
         cbar = plt.colorbar(
-            pcm, ax=ax, orientation="horizontal", pad=0.06, shrink=0.95
+            pcm, ax=ax, 
+            orientation="horizontal", 
+            pad=0.06, 
+            shrink=0.95
         )
         cbar.set_label(unit, size=4)
         cbar.ax.tick_params(labelsize=4, size=4, tickdir="in")
 
         if contour_data is not None:
-            ax.contour(xgrid, ygrid, contour_data, colors="k", linewidths=0.4)
+            ax.contour(
+                xgrid, 
+                ygrid, 
+                contour_data, 
+                colors="k", 
+                linewidths=0.4
+            )
 
         if wind_data:
-            u: np.ndarray
-            v: np.ndarray
             u, v = wind_data
-            skip: int = 11  # Plot a wind barb every 15 grid points
+            skip = 11
             if wind_type == "barbs":
                 ax.barbs(
-                    xgrid[::skip, ::skip],
+                    xgrid[::skip, ::skip], 
                     ygrid[::skip, ::skip],
-                    u[::skip, ::skip] / 0.5144,
+                    u[::skip, ::skip] / 0.5144, 
                     v[::skip, ::skip] / 0.5144,
-                    color="gray",
-                    length=3.5,
-                    linewidth=0.35,
+                    color="gray", 
+                    length=3.5, 
+                    linewidth=0.35
                 )
             elif wind_type == "stream":
                 ax.streamplot(
                     xgrid, 
-                    ygrid, 
-                    u,
-                    v,
-                    color="gray", 
+                    ygrid,
+                    u, 
+                    v, 
+                    color="navy", 
                     linewidth=0.35, 
-                    density=1
+                    density=1.0,
+                    arrowstyle="->",
                 )
 
         ax.contour(
@@ -378,11 +589,11 @@ class WeatherPlotter:
             colors="black", linewidths=0.5, linestyles="-"
         )
         ax.contour(
-            xgrid, ygrid, model_lon, np.linspace(-180, 180, 181), 
+            xgrid, ygrid, model_lon, np.linspace(-180, 180, 73),
             colors="gray", linewidths=0.35, linestyles=":"
         )
         ax.contour(
-            xgrid, ygrid, model_lat, np.linspace(-90, 90, 91), 
+            xgrid, ygrid, model_lat, np.linspace(-90, 90, 37),
             colors="gray", linewidths=0.35, linestyles=":"
         )
 
@@ -391,3 +602,154 @@ class WeatherPlotter:
         ax.set_aspect("equal", adjustable="box")
         ax.set_xticks([])
         ax.set_yticks([])
+
+    def create_cross_section_figure(
+        self,
+        start_point: Tuple[float, float],
+        end_point: Tuple[float, float],
+        forecast_step: int,
+        is_gt: bool = False,
+        band_width_km: float = 0.0,
+        num_points: int = 100,
+    ) -> Path:
+        """
+        繪製指定兩點連線的垂直剖面圖。
+        填色圖(contourf)為 Qw (水氣比濕)，等高線(contour)為位溫。
+
+        Args:
+            start_point (Tuple[float, float]): 起始點 (緯度, 經度)。
+            end_point (Tuple[float, float]): 結束點 (緯度, 經度)。
+            forecast_step (int): 預報步長 (0-indexed)。
+            is_gt (bool): 是否使用 ground truth 資料。
+            band_width_km (float): 剖面帶寬(km)。若為 0，則為"一刀切"剖面。
+                                   若大於 0，則在剖面線法線方向上取此寬度的平均值。
+            num_points (int): 剖面線上取樣點的數量。
+
+        Returns:
+            Path: 儲存的圖片路徑。
+        """
+        logger.info(f"Generating cross section from {start_point} to {end_point}...")
+
+        # 1. 準備網格和資料
+        model_lon: np.ndarray = self.manager.results["lon"]
+        model_lat: np.ndarray = self.manager.results["lat"]
+        points = np.vstack((model_lon.ravel(), model_lat.ravel())).T
+
+        levels_enum = self.manager.levels
+        pressure_levels = np.array([float(l.value.replace('hPa', '')) for l in levels_enum])
+
+        # 獲取所有垂直層的 3D 資料
+        all_level_qw = []
+        all_level_t = []
+        time = self.manager.get_forecast_time(forecast_step)
+
+        for level in levels_enum:
+            if is_gt:
+                qw = self.manager.get_ground_truth_data(time, DataType.Qw, level)
+                t = self.manager.get_ground_truth_data(time, DataType.T, level)
+            else:
+                qw = self.manager.get_forecast_data(forecast_step, DataType.Qw, level)
+                t = self.manager.get_forecast_data(forecast_step, DataType.T, level)
+            all_level_qw.append(qw)
+            all_level_t.append(t)
+
+        qw_3d = np.stack(all_level_qw)
+        t_3d = np.stack(all_level_t)
+
+        # 2. 定義剖面路徑
+        lats = np.linspace(start_point[0], end_point[0], num_points)
+        lons = np.linspace(start_point[1], end_point[1], num_points)
+        path_points = list(zip(lats, lons))
+
+        distances = [0.0]
+        for i in range(1, len(path_points)):
+            dist = great_circle(path_points[i-1], path_points[i]).kilometers
+            distances.append(distances[-1] + dist)
+
+        # 3. 內插資料到剖面路徑上
+        cross_section_qw = np.zeros((len(pressure_levels), num_points))
+        cross_section_theta = np.zeros((len(pressure_levels), num_points))
+
+        for i, (lat, lon) in enumerate(path_points):
+            query_points = np.array([[lon, lat]])
+
+            if band_width_km <= 0: # "一刀切"模式
+                for level_idx in range(len(pressure_levels)):
+                    grid_qw = griddata(points, qw_3d[level_idx].ravel(), query_points, method='linear')
+                    grid_t = griddata(points, t_3d[level_idx].ravel(), query_points, method='linear')
+                    cross_section_qw[level_idx, i] = grid_qw[0]
+                    cross_section_theta[level_idx, i] = grid_t[0] * (1000.0 / pressure_levels[level_idx]) ** (R_d / c_p)
+            else: # 帶寬平均模式
+                # 計算剖面線的法線方向
+                if i < num_points - 1:
+                    d_lat = lats[i+1] - lats[i]
+                    d_lon = lons[i+1] - lons[i]
+                else: # 最後一點使用前一點的方向
+                    d_lat = lats[i] - lats[i-1]
+                    d_lon = lons[i] - lons[i-1]
+
+                # 法線向量 (注意經度在赤道附近與距離的換算)
+                norm_vec = np.array([-d_lon * np.cos(np.deg2rad(lat)), d_lat])
+                norm_vec /= np.linalg.norm(norm_vec)
+
+                # 在法線方向上取樣5個點進行平均
+                sample_points_ll = []
+                for s in np.linspace(-0.5, 0.5, 5):
+                    # 將帶寬轉換為經緯度偏移量 (近似)
+                    offset_lat = s * (band_width_km / 111.0) * norm_vec[1]
+                    offset_lon = s * (band_width_km / (111.0 * np.cos(np.deg2rad(lat)))) * norm_vec[0]
+                    sample_points_ll.append([lon + offset_lon, lat + offset_lat])
+
+                for level_idx in range(len(pressure_levels)):
+                    grid_qw = griddata(points, qw_3d[level_idx].ravel(), sample_points_ll, method='linear')
+                    grid_t = griddata(points, t_3d[level_idx].ravel(), sample_points_ll, method='linear')
+
+                    cross_section_qw[level_idx, i] = np.nanmean(grid_qw)
+                    theta = np.nanmean(grid_t) * (1000.0 / pressure_levels[level_idx]) ** (R_d / c_p)
+                    cross_section_theta[level_idx, i] = theta
+
+        # 4. 繪圖
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        # 繪製 Qw (水氣) 填色圖
+        # 註: 請求是 contourf: Qw 和 contour: Qv，但目前資料只有 Qw。
+        # 我們用位溫 theta 做 contour，這是更常見且有意義的物理剖面圖。
+        qw_levels = np.linspace(0, 0.02, 21) # kg/kg
+        cf = ax.contourf(distances, pressure_levels, cross_section_qw, levels=qw_levels, cmap='GnBu', extend='max')
+        cbar = fig.colorbar(cf, ax=ax, label='Specific Humidity (Qw) [kg kg-1]')
+
+        # 繪製位溫等高線
+        theta_levels = np.arange(280, 400, 4) # K
+        cs = ax.contour(distances, pressure_levels, cross_section_theta, levels=theta_levels, colors='k', linewidths=0.8)
+        ax.clabel(cs, inline=True, fontsize=8, fmt='%1.0f')
+
+        ax.set_ylim(1000, 150) # Y軸反轉，地面在下
+        ax.set_yscale('log')
+        ax.set_yticks([1000, 850, 700, 500, 300, 200])
+        ax.get_yaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
+        ax.set_ylabel('Pressure (hPa)')
+        ax.set_xlabel('Distance (km)')
+
+        title_prefix = "Ground Truth" if is_gt else "Forecast"
+        valid_time = self.manager.get_forecast_time(forecast_step).strftime('%Y-%m-%d %H:%M Z')
+        ax.set_title(
+            f"{title_prefix} Cross Section at {valid_time}\n"
+            f"From ({start_point[0]:.2f}, {start_point[1]:.2f}) to ({end_point[0]:.2f}, {end_point[1]:.2f})"
+        )
+
+        # 在 X 軸上標示起點和終點
+        ax.set_xticks(np.linspace(0, distances[-1], 5))
+        secax = ax.secondary_xaxis('top')
+        secax.set_xticks([distances[0], distances[-1]])
+        secax.set_xticklabels([f'Start\n({start_point[0]:.1f}, {start_point[1]:.1f})',
+                               f'End\n({end_point[0]:.1f}, {end_point[1]:.1f})'])
+
+        ax.grid(True, linestyle='--', alpha=0.6)
+
+        # 5. 儲存圖片
+        filename = f"cross_section_{'gt' if is_gt else 'fc'}_{forecast_step:03d}.png"
+        output_path = self.output_dir / filename
+        fig.savefig(output_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        logger.info(f"Saved cross section plot to {output_path}")
+        return output_path

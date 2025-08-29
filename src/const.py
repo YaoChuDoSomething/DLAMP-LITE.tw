@@ -12,7 +12,7 @@ VAR_SUFFIX = "WE01H0202500"
 
 EXP_CODE = os.environ.get("DLAMP_EXP_CODE", "")
 DATA_SOURCE = os.environ.get("DLAMP_DATA_SOURCE", "RWRF_ERA5")
-DATA_PATH = os.environ.get("DLAMP_DATA_PATH", "/wk2/yaochu/DLAMP_model/db/ncdb/Pool/")
+DATA_PATH = os.environ.get("DLAMP_DATA_PATH", "/wk2/yaochu/CASE_DATA/Pool/")
 
 print(EXP_CODE, DATA_SOURCE, DATA_PATH)
 
@@ -22,10 +22,10 @@ CHECKPOINT_DIR = "./checkpoints/"
 LAND_SEA_MASK_PATH = "./assets/constant_masks/land_sea_mask_4km.npy"
 TOPOGRAPHY_MASK_PATH = "./assets/constant_masks/topography_mask_4km.npy"
 COUNTY_SHP_PATH = "./assets/town_shp/COUNTY_MOI_1090820.shp"
-STANDARDIZATION_PATH = "./assets/standardization/z_score_3h.json"
+STANDARDIZATION_PATH = "./assets/standardization/z_score_3h_20250729.json"
 #DATA_PATH = "../DLAMP.data/ncdb/Pool/"
 FIGURE_PATH = "./gallery/"
-DATA_CONFIG_PATH = "./config/data/rwrf.yaml"
+DATA_CONFIG_PATH = "./config/data/rwrf_20250729.yaml"
 
 # Radar color bar
 DBZ_LV = np.arange(0, 66, 1)

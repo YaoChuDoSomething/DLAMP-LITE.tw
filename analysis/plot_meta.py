@@ -62,8 +62,10 @@ ANALYSIS_PLOT_CONFIGS: List[Dict[str, Any]] = [
         "unit": "g kg-1",
         "level": Level.Hpa925,
         "plot_func_key": "hydrometeors_mixing_ratio",
-        "cmap": "GnBu_r",
-        "vmin": 0,
+        "cmap": "managua",
+        "vmin": 1e-4,
         "vmax": 4,
+        "colorbar_scale": "log",
+        "colorbar_gamma": None,
     },
 ]

@@ -1,1 +1,19 @@
-figure_columns: 31
+# Settings for time framing.
+figure_columns: 25
+# Settings for plotting the unalignment gt-grids and pd-grids
+grid_spacing:
+  ground_truth_m: 2000.0
+  forecast_m: 4000.0
+# Settings for boundary swapping verification plots
+test_bdy:
+  # Set to true to generate and save verification plots during inference.
+  plot_verification: true
+
+  # The vertical level index to use for the debug plot.
+  # For surface data (level=1), this should be 0.
+  # For upper air data, it corresponds to the index in the pressure_lv list.
+  debug_level_idx: 0
+
+  # The variable/channel index to use for the debug plot.
+  # Corresponds to the index in the surface_vars or upper_vars list.
+  debug_channel_idx: 6

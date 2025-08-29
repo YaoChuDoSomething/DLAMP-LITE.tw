@@ -235,11 +235,11 @@ class AnalysisDataManager:
         if is_gt:
             time: datetime = self.get_forecast_time(forecast_step)
             u, v = self._get_gt_wind_components(time, level)
-            dx = self.cfg.data.grid_spacing.ground_truth_m
+            dx = self.cfg.plot.grid_spacing.ground_truth_m
             logger.debug(f"GT shape: u={np.shape(u)}, v={np.shape(v)}")
         else:
             u, v = self._get_wind_components(forecast_step, level)
-            dx = self.cfg.data.grid_spacing.forecast_m
+            dx = self.cfg.plot.grid_spacing.forecast_m
             logger.debug(f"FC shape: u={np.shape(u)}, v={np.shape(v)}")
 
         du_dy: np.ndarray

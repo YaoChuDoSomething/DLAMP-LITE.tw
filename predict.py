@@ -10,7 +10,7 @@ This script orchestrates the entire process:
 
 Usage:
     To run the prediction workflow, execute this script directly:
-    $ python predict_yaochu.py --config-path config --config-name predict
+    $ python predict.py
 """
 
 import logging
@@ -46,6 +46,7 @@ def main(cfg: DictConfig) -> None:
             hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
         )
         log.info("Start workflow -> %s", out_dir)
+        print("cfg = ", cfg)
 
         # Step 1: Execute the model inference
         predictor: PredictionRunner = PredictionRunner(cfg)
@@ -61,7 +62,7 @@ def main(cfg: DictConfig) -> None:
         log.info("All forecast steps saved to NetCDF files.")
 
         # Step 4: Generate and save analysis plots for specific time steps
-        plotter: WeatherPlotter = WeatherPlotter(adm, out_dir / "plots")
+        plotter: WeatherPlotter = WeatherPlotter(cfg, adm, out_dir / "plots")
         # Plot initial state (F000H) and hourly forecasts
         plot_steps: List[int] = [-1] + list(range(cfg.plot.figure_columns))
         log.info("Generating analysis plots for steps: %s", plot_steps)
