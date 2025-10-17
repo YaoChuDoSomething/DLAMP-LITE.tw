@@ -4,7 +4,7 @@ from enum import Enum
 
 
 class DataType(Enum):
-    def __new__(cls, description: str, code: str, nc_key: str):
+    def __new__(cls, description: str, code: str, nc_key: str,):
         obj = object.__new__(cls)
         obj._value_ = description
         obj.code = code
@@ -12,19 +12,19 @@ class DataType(Enum):
         return obj
 
     # var_name = (description, code, nc_key)
-    Z = ("Geopotential Height", "000", "z_p")
+    PH = ("Geopotential Height", "000", "z_p")
     P = ("Pressure Level", "010", "pres_levels")
-    T = ("Temperature", "100", "tk_p")
-    U = ("U-wind", "200", "umet_p")
-    V = ("V-wind", "210", "vmet_p")
-    W = ("W-wind", "", "wa_p")
+    TK = ("Temperature", "100", "tk_p")
+    UM = ("U-wind", "200", "umet_p")
+    VM = ("V-wind", "210", "vmet_p")
+    WA = ("W-wind", "", "wa_p")
     Qv = ("Water Vapor Mixing Ratio", "", "QVAPOR_p")
     Qr = ("Rain Water Mixing Ratio", "", "QRAIN_p")
     Qs = ("Snow Mixing Ratio", "", "QSNOW_p")
     Qg = ("Graupel Mixing Ratio", "", "QGRAUP_p")
     Qc = ("Cloud Water Mixing Ratio", "", "QCLOUD_p")
     Qi = ("Ice Mixing Ratio", "", "QICE_p")
-    Qw = ("Water Mixing Ratio", "", "QWATER_p")
+    Qt = ("Total Hydrometeors Mixing Ratio", "", "QTOTAL_p")
     RH = ("Relative Humidity", "", "rh")
     Td = ("Dew Point Temperature", "", "td")
     SLP = ("Sea Level Pressure", "", "slp")
@@ -37,8 +37,10 @@ class DataType(Enum):
     OLR = ("Outgoing Longwave Radiation", "", "OLR")
     Lat = ("Latitude", "LAT", "XLAT")
     Lon = ("Longitude", "LON", "XLONG")
-    MASK = ("Landmask", "", "LANDMASK")
-    Radar = ("Radar Reflectivity", "MOS", "")
+    MASK = ("Land-Sea Mask", "", "LANDMASK")
+    HGT = ("Terrain Height", "", "HGT")
+    Radar = ("Maximum Radar Reflectivity", "MOS", "MAX_REFL")
+    dBZ = ("Radar Reflectivity", "MOS", "REFL_p")
 
 
 class Level(Enum):
@@ -78,6 +80,7 @@ class Level(Enum):
     Meter100 = ("100 m", "H10", "")
     Surface = ("Surface", "S00", "")
     SeaSurface = ("Sea Surface", "W00", "")
+    TOA = ("Top Of Atmosphere", "W00", "")
     NoRule = ("NoRule", "X00", "")
 
     def is_surface(self) -> bool:
@@ -88,5 +91,6 @@ class Level(Enum):
             self.Meter100,
             self.Surface,
             self.SeaSurface,
+            self.TOA,
             self.NoRule,
         ]
