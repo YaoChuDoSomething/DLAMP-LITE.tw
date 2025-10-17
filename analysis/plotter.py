@@ -25,7 +25,8 @@ from omegaconf import DictConfig
 
 from analysis.data_manager import AnalysisDataManager
 from analysis.plot_meta import ANALYSIS_PLOT_CONFIGS
-from src.utils import DataType, Level
+from src.utils.data_type import DataType, Level
+from src.const import MODEL_CODE
 
 logger = logging.getLogger(__name__)
 
@@ -44,22 +45,26 @@ class WeatherPlotter:
     """
 
     def __init__(
-        self, 
-        cfg: DictConfig, 
-        manager: AnalysisDataManager, 
-        output_dir: Path
+        self,
+        cfg: DictConfig,
+        manager: AnalysisDataManager,
+        output_dir: Path,
+        exp_code: str = "analysis",
     ):
         """Initializes the WeatherPlotter.
 
         Args:
+            cfg (DictConfig): The Hydra configuration object.
             manager (AnalysisDataManager): An initialized data manager.
             output_dir (Path): Target directory for saving plot images.
+            exp_code (str): An experiment code to use as a prefix for filenames.
         """
         self.cfg: DictConfig = cfg
         self.manager: AnalysisDataManager = manager
         self.output_dir: Path = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.map_projection = ccrs.PlateCarree()
+        self.exp_code: str = exp_code
 
         self._plot_dispatch_table: Dict[str, Callable[..., Any]] = {
             "wind_speed": self._plot_wind_speed,
@@ -67,7 +72,7 @@ class WeatherPlotter:
             "temperature": self._plot_temperature,
             "column_max_qw": self._plot_column_max_qw,
             "hydrometeors_mixing_ratio": self._plot_mixing_ratio,
-            "theta-e": self._plot_theta_e,
+            "theta_e": self._plot_theta_e,
         }
 
     def create_analysis_figure(self, forecast_step: int) -> Path:
@@ -91,7 +96,7 @@ class WeatherPlotter:
             else f"F{forecast_step + 1:03d}H"
         )
         fig.suptitle(
-            f"Initial: {start_time}Z {step_str} | Valid: {valid_time}Z | DLAMP.tw | {self.cfg.inference.onnx_path}",
+            f"DLAMP.tw | {MODEL_CODE} | Valid: {valid_time}Z | Initial: {start_time}Z {step_str}",
             fontsize=8, y=0.95
         )
 
@@ -118,7 +123,7 @@ class WeatherPlotter:
         else:
             step_str_for_filename = f"F{forecast_step + 1:03d}H"
 
-        filename: str = f"analysis_{start_time_str}_{step_str_for_filename}.png"
+        filename: str = f"{self.exp_code}_{start_time_str}_{step_str_for_filename}.png"
         output_path: Path = self.output_dir / filename
         fig.savefig(output_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
@@ -139,12 +144,12 @@ class WeatherPlotter:
         colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
         colorbar_center: Optional[float] = config.get("colorbar_center")
 
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
         wspd_fc: np.ndarray = self.manager.get_wind_speed(step, level, is_gt=False)
         u_fc, v_fc = self.manager._get_wind_components(step, level)
 
         time: datetime = self.manager.get_forecast_time(step)
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
         wspd_gt: np.ndarray = self.manager.get_wind_speed(step, level, is_gt=True)
         u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
 
@@ -175,86 +180,45 @@ class WeatherPlotter:
 
         u_fc, v_fc = self.manager._get_wind_components(step, level)
         vort_fc: np.ndarray = self.manager.get_relative_vorticity(step, level, False) * 1e6
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
 
         time: datetime = self.manager.get_forecast_time(step)
         u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
         vort_gt: np.ndarray = self.manager.get_relative_vorticity(step, level, True) * 1e6
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
 
         self._generic_grid_plot(
-            ax_fc, 
-            f"FC: {title}", 
-            np.clip(vort_fc, vmin, vmax), 
+            ax_fc,
+            f"FC: {title}",
+            np.clip(vort_fc, vmin, vmax),
             z_fc,
-            (u_fc, v_fc), "barbs", 
-            cmap, vmin, vmax, 
-            unit, 
+            (u_fc, v_fc), "barbs",
+            cmap, vmin, vmax,
+            unit,
             colorbar_scale,
-            colorbar_gamma, 
+            colorbar_gamma,
             colorbar_center=colorbar_center
         )
         self._generic_grid_plot(
-            ax_gt, 
-            f"GT: {title}", 
-            np.clip(vort_gt, vmin, vmax), 
+            ax_gt,
+            f"GT: {title}",
+            np.clip(vort_gt, vmin, vmax),
             z_gt,
-            (u_gt, v_gt), "barbs", 
-            cmap, vmin, vmax, 
-            unit, 
+            (u_gt, v_gt), "barbs",
+            cmap, vmin, vmax,
+            unit,
             colorbar_scale,
-            colorbar_gamma, 
+            colorbar_gamma,
             colorbar_center=colorbar_center
         )
-
-    def _calculate_theta_e(self, T: np.ndarray, P: float, Qv: np.ndarray) -> np.ndarray:
-        """
-        根據給定的 T, P, Qv 計算相當位溫 (Theta-e)。
-
-        使用以下公式：
-        Theta-e = T * exp(Ls * qvsat / (cp * Td)) * (1000 / P)^(R / cp)
-
-        Args:
-            T (np.ndarray): 溫度 (K)
-            P (float): 氣壓 (hPa)
-            Qv (np.ndarray): 水氣比濕 (kg/kg)
-
-        Returns:
-            np.ndarray: 相當位溫 (K)
-        """
-        # 1. 從比濕 Qv 和氣壓 P 計算水氣分壓 e (hPa)
-        # e = (Qv * P) / (epsilon + Qv)
-        e = (Qv * P) / (EPSILON + Qv)
-
-        # 2. 計算露點 Td (K) (使用 Magnus-Tetens 近似公式反推)
-        # e = 6.112 * exp(17.67 * (Td_c - 273.15) / (Td - 273.15 + 243.5))
-        # 經過整理可得 Td
-        val = np.log(e / 6.112)
-        Td_c = (243.5 * val) / (17.67 - val)
-        Td = Td_c + 273.15
-
-        # 3. 計算在溫度 T 下的飽和水氣壓 es (hPa)
-        es = 6.112 * np.exp(17.67 * (T - 273.15) / (T - 273.15 + 243.5))
-
-        # 4. 計算飽和比濕 qvsat (kg/kg)
-        # qvsat = (epsilon * es) / (P - es)
-        qvsat = (EPSILON * es) / (P - es)
-        
-        # 5. 計算位溫 theta
-        theta = T * (1000.0 / P) ** (R_d / c_p)
-        
-        # 6. 根據使用者提供的公式計算相當位溫 Theta-e
-        # Theta-e = T * exp(Ls*qvsat/cp/Td) * (1000/P)**(R/cp)
-        # 這等價於 theta * exp(...)
-        theta_e = theta * np.exp((L_v * qvsat) / (c_p * Td))
-
-        return theta_e
 
     # --- 新增：繪製 Theta-e 的方法 ---
     def _plot_theta_e(
         self, ax_fc: Axes, ax_gt: Axes, step: int, config: Dict[str, Any]
     ):
-        """Plots equivalent potential temperature (Theta-e) and wind."""
+        """Plots equivalent potential temperature (Theta-e) with geopotential
+        height contours and 10-m wind streams, mirroring the temperature panel.
+        """
         title: str = config["title"]
         level: Level = config["level"]
         unit: str = config["unit"]
@@ -265,51 +229,49 @@ class WeatherPlotter:
         colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
         colorbar_center: Optional[float] = config.get("colorbar_center")
 
-        # 獲取預報資料
-        # 假設 Qw 在此情境下代表水氣比濕 Qv
-        t_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.T, level)
-        qv_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Qw, level)
-        u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
-        
-        # 從 Level enum 獲取氣壓值 (e.g., Level.hPa850 -> 850.0)
-        pressure_hpa = float(level.value.replace('hPa', ''))
-        
-        # 計算 Theta-e
-        theta_e_fc = self._calculate_theta_e(t_fc, pressure_hpa, qv_fc)
+        # Forecast fields
+        thetae_fc: np.ndarray = self.manager.get_equivalent_potential_temperature(
+            step, level, is_gt=False
+        )
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
+        u_fc, v_fc = self.manager._get_wind_components(step, level)
 
-        # 獲取觀測/分析場資料
+        # Ground-truth fields
         time: datetime = self.manager.get_forecast_time(step)
-        t_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.T, level)
-        qv_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Qw, level)
-        u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
-        
-        # 計算 Theta-e
-        theta_e_gt = self._calculate_theta_e(t_gt, pressure_hpa, qv_gt)
+        thetae_gt: np.ndarray = self.manager.get_equivalent_potential_temperature(
+            step, level, is_gt=True
+        )
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
+        u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
 
-        # 繪圖
+        # Plot: FC (theta-e shading + Z contours + streamlines)
         self._generic_grid_plot(
             ax_fc,
             f"FC: {title}",
-            theta_e_fc,
-            None, # 不額外繪製等高線
-            (u10_fc, v10_fc), "barbs",
+            thetae_fc,
+            z_fc,
+            (u_fc, v_fc),
+            "stream",
             cmap, vmin, vmax,
             unit,
             colorbar_scale,
             colorbar_gamma,
-            colorbar_center=colorbar_center
+            colorbar_center=colorbar_center,
         )
+
+        # Plot: GT (theta-e shading + Z contours + streamlines)
         self._generic_grid_plot(
             ax_gt,
             f"GT: {title}",
-            theta_e_gt,
-            None, # 不額外繪製等高線
-            (u10_gt, v10_gt), "barbs",
+            thetae_gt,
+            z_gt,
+            (u_gt, v_gt),
+            "stream",
             cmap, vmin, vmax,
             unit,
             colorbar_scale,
             colorbar_gamma,
-            colorbar_center=colorbar_center
+            colorbar_center=colorbar_center,
         )
 
     def _plot_temperature(
@@ -326,36 +288,36 @@ class WeatherPlotter:
         colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
         colorbar_center: Optional[float] = config.get("colorbar_center")
 
-        t_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.T, level)
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
+        t_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.TK, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
 
         time: datetime = self.manager.get_forecast_time(step)
-        t_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.T, level)
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
+        t_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.TK, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
 
         self._generic_grid_plot(
-            ax_fc, 
-            f"FC: {title}", 
-            t_fc, 
-            z_fc, 
+            ax_fc,
+            f"FC: {title}",
+            t_fc,
+            z_fc,
             (u10_fc, v10_fc), "stream",
-            cmap, vmin, vmax, 
-            unit, 
-            colorbar_scale, 
+            cmap, vmin, vmax,
+            unit,
+            colorbar_scale,
             colorbar_gamma,
             colorbar_center=colorbar_center
         )
         self._generic_grid_plot(
-            ax_gt, 
-            f"GT: {title}", 
-            t_gt, 
-            z_gt, 
+            ax_gt,
+            f"GT: {title}",
+            t_gt,
+            z_gt,
             (u10_gt, v10_gt), "stream",
-            cmap, vmin, vmax, 
-            unit, 
-            colorbar_scale, 
+            cmap, vmin, vmax,
+            unit,
+            colorbar_scale,
             colorbar_gamma,
             colorbar_center=colorbar_center
         )
@@ -374,34 +336,34 @@ class WeatherPlotter:
         colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
         colorbar_center: Optional[float] = config.get("colorbar_center")
 
-        qw_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Qw, level)
+        qt_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Qt, level)
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
 
         time: datetime = self.manager.get_forecast_time(step)
-        qw_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Qw, level)
+        qt_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Qt, level)
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
 
         self._generic_grid_plot(
-            ax_fc, 
-            f"FC: {title}", 
-            qw_fc, 
-            None, 
+            ax_fc,
+            f"FC: {title}",
+            qt_fc,
+            None,
             (u10_fc, v10_fc), "barbs",
-            cmap, vmin, vmax, 
-            unit, 
-            colorbar_scale, 
+            cmap, vmin, vmax,
+            unit,
+            colorbar_scale,
             colorbar_gamma,
             colorbar_center=colorbar_center
         )
         self._generic_grid_plot(
-            ax_gt, 
-            f"GT: {title}", 
-            qw_gt, 
-            None, 
+            ax_gt,
+            f"GT: {title}",
+            qt_gt,
+            None,
             (u10_gt, v10_gt), "barbs",
-            cmap, vmin, vmax, 
-            unit, 
-            colorbar_scale, 
+            cmap, vmin, vmax,
+            unit,
+            colorbar_scale,
             colorbar_gamma,
             colorbar_center=colorbar_center
         )
@@ -427,26 +389,26 @@ class WeatherPlotter:
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
 
         self._generic_grid_plot(
-            ax_fc, 
-            f"FC: {title}", 
-            qw_fc, 
-            None, 
+            ax_fc,
+            f"FC: {title}",
+            qw_fc,
+            None,
             (u10_fc, v10_fc), "barbs",
-            cmap, vmin, vmax, 
-            unit, 
-            colorbar_scale, 
+            cmap, vmin, vmax,
+            unit,
+            colorbar_scale,
             colorbar_gamma,
             colorbar_center=colorbar_center
         )
         self._generic_grid_plot(
-            ax_gt, 
-            f"GT: {title}", 
-            qw_gt, 
-            None, 
+            ax_gt,
+            f"GT: {title}",
+            qw_gt,
+            None,
             (u10_gt, v10_gt), "barbs",
-            cmap, vmin, vmax, 
-            unit, 
-            colorbar_scale, 
+            cmap, vmin, vmax,
+            unit,
+            colorbar_scale,
             colorbar_gamma,
             colorbar_center=colorbar_center
         )
@@ -498,7 +460,7 @@ class WeatherPlotter:
         if colorbar_scale == 'log':
             safe_vmin = vmin if vmin > 0 else 1e-6  # Avoid vmin <= 0 for LogNorm
             norm = LogNorm(
-                vmin=safe_vmin, 
+                vmin=safe_vmin,
                 vmax=vmax
             )
             if vmin <= 0:
@@ -508,17 +470,17 @@ class WeatherPlotter:
                 )
         elif colorbar_scale == 'power' and colorbar_gamma is not None:
             norm = PowerNorm(
-                gamma=colorbar_gamma, 
-                vmin=vmin, 
+                gamma=colorbar_gamma,
+                vmin=vmin,
                 vmax=vmax
             )
         elif colorbar_scale == 'centered' and colorbar_center is not None:
             halfrange = max(
-                abs(vmax - colorbar_center), 
+                abs(vmax - colorbar_center),
                 abs(vmin - colorbar_center)
             )
             norm = CenteredNorm(
-                vcenter=colorbar_center, 
+                vcenter=colorbar_center,
                 halfrange=halfrange
             )
         elif colorbar_scale == 'two_slope' and colorbar_center is not None:
@@ -532,7 +494,7 @@ class WeatherPlotter:
                 vmin=vmin,
                 vmax=vmax,
             )
-        
+
         pcm = ax.pcolormesh(
             xgrid,
             ygrid,
@@ -542,9 +504,9 @@ class WeatherPlotter:
             norm=norm,
         )
         cbar = plt.colorbar(
-            pcm, ax=ax, 
-            orientation="horizontal", 
-            pad=0.06, 
+            pcm, ax=ax,
+            orientation="horizontal",
+            pad=0.06,
             shrink=0.95
         )
         cbar.set_label(unit, size=4)
@@ -552,10 +514,10 @@ class WeatherPlotter:
 
         if contour_data is not None:
             ax.contour(
-                xgrid, 
-                ygrid, 
-                contour_data, 
-                colors="k", 
+                xgrid,
+                ygrid,
+                contour_data,
+                colors="k",
                 linewidths=0.4
             )
 
@@ -564,22 +526,22 @@ class WeatherPlotter:
             skip = 11
             if wind_type == "barbs":
                 ax.barbs(
-                    xgrid[::skip, ::skip], 
+                    xgrid[::skip, ::skip],
                     ygrid[::skip, ::skip],
-                    u[::skip, ::skip] / 0.5144, 
+                    u[::skip, ::skip] / 0.5144,
                     v[::skip, ::skip] / 0.5144,
-                    color="gray", 
-                    length=3.5, 
+                    color="gray",
+                    length=3.5,
                     linewidth=0.35
                 )
             elif wind_type == "stream":
                 ax.streamplot(
-                    xgrid, 
+                    xgrid,
                     ygrid,
-                    u, 
-                    v, 
-                    color="navy", 
-                    linewidth=0.35, 
+                    u,
+                    v,
+                    color="navy",
+                    linewidth=0.35,
                     density=1.0,
                     arrowstyle="->",
                 )
@@ -645,11 +607,11 @@ class WeatherPlotter:
 
         for level in levels_enum:
             if is_gt:
-                qw = self.manager.get_ground_truth_data(time, DataType.Qw, level)
-                t = self.manager.get_ground_truth_data(time, DataType.T, level)
+                qw = self.manager.get_ground_truth_data(time, DataType.Qt, level)
+                t = self.manager.get_ground_truth_data(time, DataType.TK, level)
             else:
-                qw = self.manager.get_forecast_data(forecast_step, DataType.Qw, level)
-                t = self.manager.get_forecast_data(forecast_step, DataType.T, level)
+                qw = self.manager.get_forecast_data(forecast_step, DataType.Qt, level)
+                t = self.manager.get_forecast_data(forecast_step, DataType.TK, level)
             all_level_qw.append(qw)
             all_level_t.append(t)
 
