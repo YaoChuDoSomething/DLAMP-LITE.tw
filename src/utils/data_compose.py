@@ -55,11 +55,11 @@ class DataCompose:
         if self.var_name in [DataType.Td, DataType.RH]:
             return f"{self.var_name.nc_key}{self.level.nc_key}"
 
-        if self.var_name in [DataType.U, DataType.V]:
+        if self.var_name in [DataType.UM, DataType.VM]:
             prefix = self.var_name.nc_key.split("_")[0]
             return f"{prefix}{self.level.nc_key}"
 
-        if self.var_name in [DataType.T, DataType.Qv]:
+        if self.var_name in [DataType.TK, DataType.Qv]:
             prefix = self.var_name.name[0]
             return f"{prefix}{self.level.nc_key}"
 
@@ -72,8 +72,8 @@ class DataCompose:
             config (dict[str, str]): A dictionary containing the configuration.
                 The dictoinary should have the following structure:
                     {
-                        "GeoHeight": ["Hpa200", "Hpa500", "Hpa700", "Hpa850", "Hpa925"],
-                        "T": ["Hpa200", "Hpa500", "Hpa700", "Hpa850", "Hpa925"],
+                        "PH": ["Hpa200", "Hpa500", "Hpa700", "Hpa850", "Hpa925"],
+                        "TK": ["Hpa200", "Hpa500", "Hpa700", "Hpa850", "Hpa925"],
                         ...
                     }
         Returns:
