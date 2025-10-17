@@ -65,9 +65,9 @@ class BatchInferenceOnnx(InferenceBase):
                 }
                 inp_upper, inp_surface = self.ort_sess.run(None, ort_inputs)
 
-                if (step + 1) % interval == 0:
-                    tmp_upper.append(inp_upper.copy())
-                    tmp_sfc.append(inp_surface.copy())
+                #if (step + 1) % interval == 0:
+                #    tmp_upper.append(inp_upper.copy())
+                #    tmp_sfc.append(inp_surface.copy())
 
                 curr_time = self.init_time[batch_id] + timedelta(hours=step + 1)
                 if self.cfg.data.add_time_features:
@@ -90,6 +90,10 @@ class BatchInferenceOnnx(InferenceBase):
                         bdy_swap_method["name"],
                         bdy_swap_method["n_of_grid"],
                     )
+
+                if (step + 1) % interval == 0:
+                    tmp_upper.append(inp_upper.copy())
+                    tmp_sfc.append(inp_surface.copy())
 
             # post-process 1, shape = (1, lv, H, W, c) or (Seq, lv, H, W, c)
             tmp_upper = np.concatenate(tmp_upper, axis=0)
