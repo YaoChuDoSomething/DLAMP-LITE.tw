@@ -1,3 +1,4 @@
+# src/const.py
 from datetime import datetime
 import os
 
@@ -5,16 +6,19 @@ import matplotlib as mpl
 import numpy as np
 
 # Constant
-#EXP_CODE = "MUIFA_m2507E99l10"
 #DATA_SOURCE = "CWA_RWRF"
-DATA_SOURCE = "RWRF_ERA5"
+#DATA_SOURCE = "OP_ERA5"
+DATA_SOURCE = "OP_E2S"
 VAR_SUFFIX = "WE01H0202500"
 
-EXP_CODE = os.environ.get("DLAMP_EXP_CODE", "")
-DATA_SOURCE = os.environ.get("DLAMP_DATA_SOURCE", "RWRF_ERA5")
+MODEL_CODE = os.environ.get("DLAMP_EXP_CODE", "20250627")
+DATA_SOURCE = os.environ.get("DLAMP_DATA_SOURCE", "OP_ERA5")
 DATA_PATH = os.environ.get("DLAMP_DATA_PATH", "/wk2/yaochu/CASE_DATA/Pool/")
 
-print(EXP_CODE, DATA_SOURCE, DATA_PATH)
+STANDARDIZATION_PATH = f"./assets/standardization/z_score_3h_{MODEL_CODE}.json"
+DATA_CONFIG_PATH = f"./config/data/rwrf_{MODEL_CODE}.yaml"
+
+print(MODEL_CODE, DATA_SOURCE, DATA_PATH, STANDARDIZATION_PATH)
 
 # Path
 BLACKLIST_PATH = "./assets/blacklist_rwrf_3h.txt"
@@ -22,10 +26,7 @@ CHECKPOINT_DIR = "./checkpoints/"
 LAND_SEA_MASK_PATH = "./assets/constant_masks/land_sea_mask_4km.npy"
 TOPOGRAPHY_MASK_PATH = "./assets/constant_masks/topography_mask_4km.npy"
 COUNTY_SHP_PATH = "./assets/town_shp/COUNTY_MOI_1090820.shp"
-STANDARDIZATION_PATH = "./assets/standardization/z_score_3h_20250729.json"
-#DATA_PATH = "../DLAMP.data/ncdb/Pool/"
 FIGURE_PATH = "./gallery/"
-DATA_CONFIG_PATH = "./config/data/rwrf_20250729.yaml"
 
 # Radar color bar
 DBZ_LV = np.arange(0, 66, 1)
