@@ -7,7 +7,7 @@ the plot design from the plotting logic.
 """
 from typing import Any, Dict, List
 
-from src.utils import Level
+from src.utils.data_type import Level
 
 # A list of dictionaries, where each dictionary defines one plot panel.
 # This structure makes it easy to add, remove, or reorder plots.
@@ -49,13 +49,13 @@ ANALYSIS_PLOT_CONFIGS: List[Dict[str, Any]] = [
         "vmax": 200,
     },
     {
-        "title": "925hPa Temp & 10m Wind",
+        "title": "925hPa Theta-e & Wind",
         "unit": "K",
         "level": Level.Hpa925,
-        "plot_func_key": "temperature",
-        "cmap": "coolwarm",
-        "vmin": 270,
-        "vmax": 310,
+        "plot_func_key": "theta_e",
+        "cmap": "twilight_shifted",
+        "vmin": 320,
+        "vmax": 360,
     },
     {
         "title": "925hPa Qw & 10m Wind",
