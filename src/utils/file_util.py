@@ -1,4 +1,3 @@
-# src/utils/file_util.py
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -89,27 +88,19 @@ def read_cwa_ncfile(
                 For pressure level variables, extracts the specified level and returns shape (H, W).
                 H and W are the horizontal dimensions of the data.
         """
-        if dc.var_name == DataType.Qt:
-            components = ["Qt"]
-            data = sum(
-                dataset[DataCompose(getattr(DataType, q), dc.level).combined_key].values
-                for q in components
-            )  # (1, Z, H, W)
-            data *= 1000
-
-        elif dc.var_name == DataType.Qt:
+        if dc.var_name == DataType.Qw:
             # Qw = Qr + Qc + Qi + Qs + Qg
             components = ["Qr", "Qc", "Qi", "Qs", "Qg"]
             data = sum(
                 dataset[DataCompose(getattr(DataType, q), dc.level).combined_key].values
                 for q in components
             )  # (1, Z, H, W)
-            data *= 1000  # kg/kg -> g/kg; STANDARDIZATION uses [g/kg]
-
+            #data = dataset[dc.combined_key].value
+            data *= 1000  # kg/kg -> g/kg
         elif dc.var_name == DataType.SST:
             data = dataset[dc.combined_key].values
-            data[np.isnan(data)] = 298.60870361328125 # mean SST
-
+            mask = dataset[DataCompose(getattr(DataType, MASK), dc.level).combined_key].values
+            #np.where(mask==1,0) 
         else:
             data = dataset[dc.combined_key].values  # (1, Z, H, W) or (1, H, W)
 
@@ -128,11 +119,10 @@ def read_cwa_ncfile(
         elif isinstance(data_compose, list):
             ret = {}
             for ele in data_compose:
-                # print(str(ele)) # DEBUG used
                 ret[str(ele)] = fn(ele)
             return ret
-    except:
-        raise RuntimeError(f"Data retrival fails. Please validate {file_path}")
+    except Exception as e:
+        raise RuntimeError(f"Data retrieval fails for {file_path}. Original error: {e}")
 
 
 def read_cwa_npfile(
@@ -208,19 +198,19 @@ def gen_path(
 
             return (
                 Path(DATA_PATH)
-                / f"RWRF_{target_time.strftime('%Y-%m')}"
-                / f"{target_time.strftime('%Y-%m-%d_%H')}"
+                #/ f"RWRF_{target_time.strftime('%Y-%m')}"
+                #/ f"{target_time.strftime('%Y-%m-%d_%H')}"
                 / f"wrfout_d01_{predict_dt.strftime('%Y-%m-%d_%H')}_interp"
             )
         case "OP_ERA5":
             return (
                 Path(DATA_PATH)
-                / f"E5dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
+                / f"e5dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
             )
         case "OP_E2S":
             return (
                 Path(DATA_PATH)
-                / f"e2s_sfno_{target_time.strftime('%Y%m%d_%H%M')}.nc"
+                / f"e2s_sfno_dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
             )
         case _:
             raise ValueError(f"Invalid data source: {data_source}")
@@ -243,7 +233,7 @@ def convert_hydra_dir_to_timestamp(hydra_dir: Path | str) -> str:
         dt = datetime.strptime(
             f"{hydra_dir.parent.name} {hydra_dir.name}", "%Y-%m-%d %H:%M:%S"
         )
-    except:
+    except ValueError:
         if isinstance(hydra_dir, str):
             warnings.warn(
                 f'given hydra dir "{hydra_dir}" can\'t be parsed into datetime, '
