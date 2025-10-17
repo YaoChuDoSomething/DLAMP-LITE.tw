@@ -1,15 +1,18 @@
 import abc
 import warnings
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.ndimage import distance_transform_cdt
 from omegaconf import DictConfig
 from tqdm import trange
+from scipy.ndimage import distance_transform_cdt
+from scipy.fft import fft2, ifft2, fftshift, ifftshift
 
 from src.datasets import CustomDataset
+from src.debug.boundary_plots import (
+    plot_bdy_blending_verification,
+    plot_fft_blending_debug,
+)
 from src.managers import DataManager, DatetimeManager
 from src.utils import DataCompose, DataGenerator, DataType, Level
 
@@ -89,12 +92,11 @@ class InferenceBase(metaclass=abc.ABCMeta):
         Since `self.init_time_list` is not always available, this function returns default init times
         used by CustomDataset from `self.data_manager` or `self.init_time_list`
         """
-        if self.init_time_list is not None:
-            return self.init_time_list
-
-        # TODO: This is a temporary solution. The DataManager should provide a public
-        # interface to get the prediction init time list.
-        return self.data_manager._predict_dataset._init_time_list
+        return (
+            self.init_time_list
+            if self.init_time_list is not None
+            else self.data_manager._predict_dataset._init_time_list
+        )
 
     @abc.abstractmethod
     def _setup(self):
@@ -111,7 +113,13 @@ class InferenceBase(metaclass=abc.ABCMeta):
         return NotImplemented
 
     def _boundary_swapping(
-        self, data: np.ndarray, dt: datetime, method: str, bdy_grid: int = 8
+        self,
+        data: np.ndarray,
+        dt: datetime,
+        method: str,
+        bdy_grid: int = 8,
+        fft_k_critical: int = 16,
+        fft_transition_ratio: float = 0.2,
     ) -> np.ndarray:
         """
         Swaps the boundary values of the predicted data with actual values
@@ -121,33 +129,86 @@ class InferenceBase(metaclass=abc.ABCMeta):
             data (np.ndarray): Input data array with shape (batch, level,
                 width, height, channel). Batch must be 1.
             dt (datetime): The datetime for which to get the actual values.
-            method (str): "exp_decay", "linear", "override".
-                "override" means replace all values on the boundary with the actual values.
-                "linear" means linearly replacing the boundary values.
-                "exp_decay" means
-                for the
-            bdy_grid (int, optional): Number of pixels to swap. Defaults to 8.
+            method (str): "exp_decay", "linear", "override",
+                "fft_tukey_linear_boundary", "None".
+                - "override": Replace boundary with actual values.
+                - "linear": Linearly blend boundary values.
+                - "exp_decay": Exponentially blend boundary values.
+                - "fft_tukey_linear_boundary": First applies a frequency-domain blending,
+                                               then performs a "linear" spatial blending
+                                               on the boundaries of the FFT-blended result.
+                - "None": No boundary swapping.
+            bdy_grid (int, optional): Number of pixels to swap for spatial methods. Defaults to 8.
+                                      Used for "linear", "exp_decay", "override", and the linear
+                                      part of "fft_tukey_linear_boundary".
+            fft_k_critical (int, optional): The critical wavenumber (radius in pixels from the
+                                            frequency spectrum center) for the FFT-based Tukey filter.
+                                            This defines where the filter starts to transition.
+                                            Defaults to 16.
+            fft_transition_ratio (float, optional): The ratio of the transition width to `fft_k_critical`
+                                                    for the FFT-based Tukey filter. E.g., 0.5 means
+                                                    the transition width is 0.5 * `fft_k_critical`.
+                                                    Defaults to 0.5.
 
         Returns:
             np.ndarray: Data array with boundary values swapped, same shape as input
                 (batch, level, width, height, channel).
 
         Raises:
-            AssertionError: If batch size is not 1.
+            ValueError: If batch size is not 1 or an unknown method is specified.
         """
+        # --- Helper function for FFT filter mask generation (nested for self-containment) ---
+        def _create_scale_filter_masks(shape, k_critical, transition_width_ratio):
+            """
+            Creates radially symmetric smooth low-pass and high-pass filter masks
+            using a Tukey Window concept for smooth transition in the frequency domain.
+            """
+            h, w = shape
+
+            # Create a meshgrid representing pixel distances from the center of the frequency spectrum.
+            k_x = np.arange(w) - (w // 2)
+            k_y = np.arange(h) - (h // 2)
+            K_X, K_Y = np.meshgrid(k_x, k_y)
+
+            radius_map = np.sqrt(K_X**2 + K_Y**2)
+
+            # Calculate the inner and outer radii for the Tukey window's transition band
+            transition_width = k_critical * transition_width_ratio
+            r_inner = k_critical - transition_width / 2
+            r_outer = k_critical + transition_width / 2
+
+            r_inner = max(0.0, float(r_inner)) # Ensure non-negative
+            max_possible_radius = np.sqrt((w/2)**2 + (h/2)**2)
+            r_outer = min(float(max_possible_radius), float(r_outer)) # Cap at max possible frequency
+
+            low_pass_mask = np.zeros(shape, dtype=np.float32)
+
+            low_pass_mask[radius_map <= r_inner] = 1.0 # Fully pass region
+
+            # Transition region (Tukey window application)
+            transition_indices = (radius_map > r_inner) & (radius_map < r_outer)
+            if np.any(transition_indices) and (r_outer - r_inner) > 1e-9: # Avoid division by zero
+                normalized_distance = (radius_map[transition_indices] - r_inner) / (r_outer - r_inner)
+                low_pass_mask[transition_indices] = 0.5 * (1 + np.cos(np.pi * normalized_distance))
+
+            high_pass_mask = 1.0 - low_pass_mask
+
+            return low_pass_mask, high_pass_mask
+        # --- End of FFT filter helper function ---
+
+
         # --- Read debug settings from the config object ---
-        # We use OmegaConf.get to safely access nested keys, providing a default value.
-        # This makes the code robust even if the keys don't exist in the yaml.
-        plot_cfg = self.cfg.plot.get('test_bdy', {}) # Get the test_bdy dict, or an empty one
-        plot_verification = plot_cfg.get('plot_verification', False)
+        plot_cfg = self.cfg.plot.get('test_bdy', {})
+        plot_verification = plot_cfg.get('plot_verification', True)
+        plot_fft_debug = plot_cfg.get('plot_fft_debug', True)
         debug_level_idx = plot_cfg.get('debug_level_idx', 0)
-        debug_channel_idx = plot_cfg.get('debug_channel_idx', 0)
+        debug_channel_idx = plot_cfg.get('debug_channel_idx', 1)
 
         batch, level, width, height, channel = data.shape
         if batch != 1:
             raise ValueError(f"Only 1 eval case at a time, but got {batch}")
 
-        pd_data = np.copy(data)
+        pd_data = np.copy(data) # Make a copy of the input predicted data
 
         dataset: CustomDataset = self.data_manager._predict_dataset
         data_dict = dataset._get_variables_from_dt(dt, is_input=True)
@@ -156,224 +217,164 @@ class InferenceBase(metaclass=abc.ABCMeta):
         if gt_data.shape != pd_data[0].shape:
             warnings.warn(
                 f"Shape mismatch between ground truth {gt_data.shape} and "
-                f"prediction {pd_data[0].shape}. Boundary swapping may fail."
+                f"prediction {pd_data[0].shape}. Boundary swapping may fail "
+                f"and data will not be modified for this call."
             )
+            return data # Return original data if shapes don't match
 
+        # --- Spatial Blending Methods ---
+        #if method in ["override", "linear", "exp_decay"]:
         gt_mask = np.zeros((width, height), dtype=np.float32)
 
         if method == "override":
-            gt_mask[:bdy_grid, :] = gt_mask[-bdy_grid:, :] = 1.0
-            gt_mask[:, :bdy_grid] = gt_mask[:, -bdy_grid:] = 1.0
+            gt_mask[:bdy_grid, :] = 1.0
+            gt_mask[-bdy_grid:, :] = 1.0
+            gt_mask[:, :bdy_grid] = 1.0
+            gt_mask[:, -bdy_grid:] = 1.0
+
+            pd_mask = 1.0 - gt_mask
+            pd_mask_b = pd_mask.reshape(1, width, height, 1)
+            gt_mask_b = gt_mask.reshape(1, width, height, 1)
+
+            data[0] = (pd_data[0] * pd_mask_b) + (gt_data * gt_mask_b)
 
         elif method == "linear":
-            # --- Logic for Linear Decay ---
-            # We need a distance ramp that is 0 in the center and increases outwards.
-            # 1. Define the interior "safe zone" as False (0).
             interior_mask = np.ones((width, height), dtype=bool)
             interior_mask[bdy_grid:-bdy_grid, bdy_grid:-bdy_grid] = False
-
-            # 2. Calculate distance TO the nearest False point.
-            # This creates a ramp from 0 (in the safe zone) to bdy_grid (at the outer edge).
             dist_from_interior = distance_transform_cdt(interior_mask, metric="chessboard")
-
-            # 3. Normalize the ramp to create weights from 0 to 1.
             gt_mask = dist_from_interior / bdy_grid
+            gt_mask = np.clip(gt_mask, 0.0, 1.0)
+            gt_mask[gt_mask < 0.01] = 0.0
+
+            pd_mask = 1.0 - gt_mask
+            pd_mask_b = pd_mask.reshape(1, width, height, 1)
+            gt_mask_b = gt_mask.reshape(1, width, height, 1)
+
+            data[0] = (pd_data[0] * pd_mask_b) + (gt_data * gt_mask_b)
 
         elif method == "exp_decay":
-            # Define the boundary on mass points
             interior_mask = np.zeros((width, height), dtype=bool)
-            interior_mask[1:-1, 1:-1] = True
+            interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
+            dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
+            gt_mask = np.exp(-dist_from_true_boundary / bdy_grid)
+            gt_mask = np.clip(gt_mask, 0.0, 1.0)
+            gt_mask[gt_mask < 0.01] = 0.0
 
-            # Calculate the distance from boundary to arbitory mass points
-            dist_from_true_boundary = distance_transform_cdt(
-                interior_mask, metric="chessboard"
+            pd_mask = 1.0 - gt_mask
+            pd_mask_b = pd_mask.reshape(1, width, height, 1)
+            gt_mask_b = gt_mask.reshape(1, width, height, 1)
+
+            data[0] = (pd_data[0] * pd_mask_b) + (gt_data * gt_mask_b)
+
+        elif method == "fft_tukey":
+            interior_mask = np.zeros((width, height), dtype=bool)
+            interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
+            dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
+            gt_mask = np.exp(-dist_from_true_boundary / bdy_grid)
+            gt_mask = np.clip(gt_mask, 0.0, 1.0)
+            gt_mask[gt_mask < 0.01] = 0.0
+
+            fft_blended_initial = np.zeros_like(pd_data[0], dtype=np.float32)
+            lpf_mask, hpf_mask = _create_scale_filter_masks(
+                (width, height), fft_k_critical, fft_transition_ratio
             )
 
-            # Generate the math defined mask
+            pd_fft = np.zeros(pd_data.shape)
+            for lv in range(level):
+                for ch in range(channel):
+                    pd_slice = pd_data[0, lv, :, :, ch]
+                    gt_slice = gt_data[lv, :, :, ch]
+                    lwn_pd_slice = ifft2(ifftshift(fftshift(fft2(pd_slice)) * lpf_mask))
+                    lwn_gt_slice = ifft2(ifftshift(fftshift(fft2(gt_slice)) * lpf_mask))
+                    hwn_pd_slice = ifft2(ifftshift(fftshift(fft2(pd_slice)) * hpf_mask))
+
+                    pd_fft[0, lv, :, :, ch] = (lwn_gt_slice * gt_mask) + (lwn_pd_slice * pd_mask) + hwn_pd_slice
+
+            interior_mask = np.zeros((width, height), dtype=bool)
+            interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
+            dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
             gt_mask = np.exp(-dist_from_true_boundary / bdy_grid)
-        
+            gt_mask = np.clip(gt_mask, 0.0, 1.0)
+            gt_mask[gt_mask < 0.01] = 0.0
+
+            pd_mask = 1.0 - gt_mask
+            pd_mask_b = pd_mask.reshape(1, width, height, 1)
+            gt_mask_b = gt_mask.reshape(1, width, height, 1)
+
+            data[0] = (pd_fft[0] * pd_mask_b) + (gt_data * gt_mask_b)
+
+
+        # --- FFT-based Blending Methods (Pure or Combined) ---
+        elif method == "fft_tukey0":
+            fft_blended_initial = np.zeros_like(pd_data[0], dtype=np.float32)
+
+            lpf_mask, hpf_mask = _create_scale_filter_masks(
+                (width, height), fft_k_critical, fft_transition_ratio
+            )
+
+            l = debug_level_idx
+            c = debug_channel_idx
+
+            for l_idx in range(level):
+                for c_idx in range(channel):
+                    pd_slice = pd_data[0, l_idx, :, :, c_idx]
+                    gt_slice = gt_data[l_idx, :, :, c_idx]
+
+                    fft_pd_slice = fftshift(fft2(pd_slice)) # pd_data in wavenumber domain
+                    fft_gt_slice = fftshift(fft2(gt_slice)) # gt_data in wavenumber domain
+
+                    combined_fft_slice = (fft_gt_slice * lpf_mask) + (fft_pd_slice * hpf_mask)
+
+                    blended_spatial_slice = np.real(ifft2(ifftshift(combined_fft_slice)))
+                    fft_blended_initial[l_idx, :, :, c_idx] = blended_spatial_slice
+
+                    if plot_fft_debug and l_idx == l and c_idx == c:
+                        plot_fft_blending_debug(
+                            pd_slice=pd_slice, gt_slice=gt_slice,
+                            fft_pd_slice=fft_pd_slice, fft_gt_slice=fft_gt_slice,
+                            lpf_mask=lpf_mask, hpf_mask=hpf_mask,
+                            blended_spatial_slice=blended_spatial_slice,
+                            level_idx=l, channel_idx=c,
+                            dt=dt, method=method,
+                        )
+
+            gt_mask_linear = np.zeros((width, height), dtype=np.float32)
+            interior_mask_linear = np.ones((width, height), dtype=bool)
+            interior_mask_linear[bdy_grid:-bdy_grid, bdy_grid:-bdy_grid] = False
+            dist_from_interior_linear = distance_transform_cdt(interior_mask_linear, metric="chessboard")
+            gt_mask_linear = dist_from_interior_linear / bdy_grid
+            gt_mask_linear = np.clip(gt_mask_linear, 0.0, 1.0)
+            gt_mask_linear[gt_mask_linear < 0.01] = 0.0
+
+            pd_mask_linear = 1.0 - gt_mask_linear
+
+            pd_mask_b_linear = pd_mask_linear.reshape(1, width, height, 1)
+            gt_mask_b_linear = gt_mask_linear.reshape(1, width, height, 1)
+
+            data[0] = (fft_blended_initial * pd_mask_b_linear) + (gt_data * gt_mask_b_linear)
+
+            if plot_verification:
+                plot_boundary_blending_verification(
+                    pd_data=pd_data,
+                    gt_data=gt_data,
+                    fft_blended_initial=fft_blended_initial,
+                    final_data=data,
+                    pd_mask=pd_mask_linear,
+                    gt_mask=gt_mask_linear,
+                    level_idx=debug_level_idx,
+                    channel_idx=debug_channel_idx,
+                    dt=dt,
+                    method=method,
+                )
+
         elif method == "None":
-            gt_mask = np.zeros((width, height), dtype=np.float32)
+            pass
 
         else:
-            raise ValueError(f"Unknown Method: {method}")
+            raise ValueError(f"Unknown Method: {method}. Supported methods are: 'override', 'linear', 'exp_decay', 'fft_tukey_linear_boundary', 'None'.")
 
-        gt_mask = np.clip(gt_mask, 0.0, 1.0)
-        gt_mask[gt_mask < 0.01] = 0.0
-
-        pd_mask = 1.0 - gt_mask
-
-        # Reshape masks for broadcasting over level and channel dimensions.
-        pd_mask_b = pd_mask.reshape(1, width, height, 1)
-        gt_mask_b = gt_mask.reshape(1, width, height, 1)
-
-        # Blend data using broadcasting
-        data[0] = (pd_data[0] * pd_mask_b) + (gt_data * gt_mask_b)
-
-        if plot_verification:
-            self._plot_boundary_swapping_verification(
-                original_pred=pd_data[0],
-                ground_truth=gt_data,
-                blended_result=data[0],
-                gt_mask=gt_mask,
-                method=method,
-                level_idx=debug_level_idx,    # Use value from cfg
-                channel_idx=debug_channel_idx, # Use value from cfg
-                dt=dt
-            )
         return data
 
-        """
-        # Plotting for verification for the first channel
-        c = 0 if level == 1 else 1
-        l = 0 if level == 1 else 1
-        fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(15, 15))
-        axes = axes.flatten()
-
-        plot_data = [
-            (
-                gt_data[l, :, :, c],
-                f"L{l} C{c} Ground Truth",
-                "seismic",
-            ),
-            (
-                gt_mask,
-                "Ground Truth Mask",
-                "magma",
-            ),
-            (
-                gt_data[l, :, :, c] * gt_mask,
-                "GT Component",
-                "twilight_shifted",
-            ),
-            (
-                pd_data[0, l, :, :, c],
-                f"L{l} C{c} Predicted",
-                "seismic",
-            ),
-            (
-                pd_mask,
-                "Predicted Mask",
-                "magma",
-            ),
-            (
-                pd_data[0, l, :, :, c] * pd_mask,
-                "Predicted Component",
-                "twilight_shifted",
-            ),
-            (
-                pd_data[0, l, :, :, c] - gt_data[l, :, :, c],
-                "GT - Predicted Difference",
-                "seismic",
-            ),
-            (
-                gt_mask + pd_mask,
-                "Mask Sum (should be 1)",
-                "magma",
-            ),
-            (
-                data[0, l, :, :, c],
-                f"L{l} C{c} Blended Result",
-                "twilight_shifted",
-            ),
-        ]
-
-        for i, (img_data, title, cmap) in enumerate(plot_data):
-            ax = axes[i]
-            im = ax.imshow(img_data, cmap=cmap, origin="lower")
-            ax.set_title(title)
-            fig.colorbar(im, ax=ax)
-
-        fig.suptitle(
-            f"Boundary Swapping Verification: Level {l}, Channel {c}, Method '{method}'",
-            fontsize=16,
-        )
-        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-
-        fig.savefig(f"DEBUG_bdy_swapping_var{c:02d}_lev{l:02d}_{method}.png")
-        plt.close(fig)
-        """
-
-    def _plot_boundary_swapping_verification(
-        self,
-        original_pred: np.ndarray,
-        ground_truth: np.ndarray,
-        blended_result: np.ndarray,
-        gt_mask: np.ndarray,
-        method: str,
-        level_idx: int,
-        channel_idx: int,
-        dt: datetime
-    ):
-        """
-        Generates and saves a 3x3 grid of plots to verify the boundary swapping process.
-        """
-        pd_mask = 1.0 - gt_mask
-        
-        # Safely get the data slices for plotting
-        try:
-            gt_slice = ground_truth[level_idx, :, :, channel_idx]
-            pred_slice = original_pred[level_idx, :, :, channel_idx]
-            blended_slice = blended_result[level_idx, :, :, channel_idx]
-        except IndexError:
-            warnings.warn(
-                f"Cannot plot verification for level_idx={level_idx}, channel_idx={channel_idx}. "
-                f"Index out of bounds for shape {original_pred.shape}."
-            )
-            return
-
-        fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(15, 15))
-        axes = axes.flatten()
-
-        plot_data = [
-            (gt_mask, "GT Mask (Weight for GT)", "magma"),
-            (gt_slice, f"L{level_idx} C{channel_idx} GT", "twilight_shifted"),
-            (gt_slice * gt_mask, "GT Component (GT * GT_Mask)", "twilight_shifted"),
-
-            (pd_mask, "PD Mask (Weight for PD)", "magma"),
-            (pred_slice, f"L{level_idx} C{channel_idx} PD", "twilight_shifted"),
-            (pred_slice * pd_mask, "PD Component (PD * PD_Mask)", "twilight_shifted"),
-
-            (gt_mask + pd_mask, "Mask Sum (Should be 1.0)", "magma"),
-            (pred_slice - gt_slice, "Difference (PD - GT)", "seismic"),
-            (blended_slice, f"L{level_idx} C{channel_idx} Blended Result", "twilight_shifted"),
-        ]
-
-        for i, (img_data, title, cmap) in enumerate(plot_data):
-            ax = axes[i]
-            # Use a common color range for comparable plots for better visualization
-            if cmap is "magma":
-                vmin, vmax = (0, 1)
-            elif cmap is "twilight_shifted":
-                vmin = np.minimum(
-                    np.min(gt_slice.ravel()), 
-                    np.min(pred_slice.ravel())
-                )
-                vmax = np.maximum(
-                    np.max(gt_slice.ravel()),
-                    np.max(pred_slice.ravel())
-                )
-            else:
-                vmin, vmax = (None, None)
-            #vmin, vmax = (np.min(gt_slice), np.max(gt_slice)) if "Component" in title or "Truth" in title or "Predicted" in title or "Result" in title else (None, None)
-            im = ax.imshow(img_data, cmap=cmap, origin="lower", vmin=vmin, vmax=vmax)
-            ax.set_title(title)
-            fig.colorbar(im, ax=ax, orientation='horizontal', pad=0.15)
-        
-        fig.suptitle(
-            f"Boundary Swapping Verification @ {dt.strftime('%Y-%m-%d %H:%M')}\n"
-            f"Method: '{method}', Level: {level_idx}, Channel: {channel_idx}",
-            fontsize=16,
-        )
-        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-
-        # Ensure the debug directory exists
-        output_dir = Path("debug_plots")
-        output_dir.mkdir(exist_ok=True)
-        dsname = "sfc" if np.size(original_pred, 0) == 1 else "upp"
-        save_path = output_dir / f"bdy_swap_{dsname}_L{level_idx}_C{channel_idx}_{method}_{dt.strftime('%Y%m%d%H%M')}.png"        
-        fig.savefig(save_path)
-        plt.close(fig)
 
     def get_figure_materials(self, case_dt: datetime, data_compose: DataCompose):
         """Get ground truth and prediction data for plotting figures.
@@ -419,20 +420,13 @@ class InferenceBase(metaclass=abc.ABCMeta):
 
         Raises:
             AssertionError: If phase is not "input" or "output"
-            ValueError: If the requested variable or level is not found, or if the
-                datetime `dt` is not in the list of initial times.
+            ValueError: If the requested variable or level is not found
         """
         assert phase in ["input", "output"], f"invalid phase: {phase}"
-        try:
-            time_idx = self.init_time.index(dt)
-        except ValueError:
-            raise ValueError(f"Datetime {dt} not found in initial time list.")
-
+        time_idx = self.init_time.index(dt)
         if data_compose.level.is_surface():
             data = getattr(self, f"{phase}_surface")
             var_idx = self.surface_vars.index(data_compose.var_name)
-            # Input shape: (time, level, height, width, channel)
-            # Output shape: (time, seq_len, level, height, width, channel)
             return (
                 data[time_idx, :, :, :, var_idx]
                 if phase == "input"
@@ -442,8 +436,6 @@ class InferenceBase(metaclass=abc.ABCMeta):
             data = getattr(self, f"{phase}_upper")
             level_idx = self.pressure_lv.index(data_compose.level)
             var_idx = self.upper_vars.index(data_compose.var_name)
-            # Input shape: (time, level, height, width, channel)
-            # Output shape: (time, seq_len, level, height, width, channel)
             return (
                 data[time_idx, level_idx : level_idx + 1, :, :, var_idx]
                 if phase == "input"
