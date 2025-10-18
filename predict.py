@@ -50,7 +50,7 @@ def main(cfg: DictConfig) -> None:
 
         EXP_CODE = f"FANAPI_{cfg.inference.bdy_swap_method.name}"
         cfg.data.start_time = "2010-09-18 18:00"
-        cfg.data.end_time = "2010-09-19 00:00"
+        cfg.data.end_time = "2010-09-18 20:00"
 
         #EXP_CODE = f"MY2020_{cfg.inference.bdy_swap_method.name}"
         #cfg.data.start_time = "2020-05-21 12:00"

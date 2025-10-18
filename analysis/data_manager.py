@@ -460,5 +460,5 @@ class AnalysisDataManager:
 
         Tlcl = 1.0 / (1.0 / (Td - 56.0) + np.log(TK / Td) / 800.0) + 56.0
 
-        theta_e = theta * np.exp((L_v * r) / (c_p * Tlcl)) * (TK / Tlcl) ** (0.28 * r)
+        theta_e = theta * np.exp((L_v * Qv) / (c_p * Tlcl)) * (TK / Tlcl) ** (0.28 * Qv)
         return theta_e

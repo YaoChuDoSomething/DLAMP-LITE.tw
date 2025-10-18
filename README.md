@@ -2,7 +2,7 @@
 
 # Data-driven Limited Area Mesoscale Prediction for Taiwan (DLAMP.tw)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB)](https://www.python.org/downloads/release/python-310/)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.3.1-purple?logo=PyTorch&link=https%3A%2F%2Fpypi.org%2Fproject%2Ftorch%2F)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.9.0-purple?logo=PyTorch&link=https%3A%2F%2Fpypi.org%2Fproject%2Ftorch%2F)
 ![PyTorch Lightning](https://img.shields.io/badge/PyTorch--lightning-2.2.4-blue?link=https%3A%2F%2Flightning.ai%2Fdocs%2Fpytorch%2F2.0.3%2Flevels%2Fcore_skills.html)
 </div>
 
@@ -12,25 +12,29 @@ This repository contains the codebase of `DLAMP.tw`, a pure data-driven regional
 Demo for Typhoon Muifa (2022). From left to right are: (a). ground truth, (b). prediction of Swin-Transformer (Pangu-weather) model and (c). Swin-Transformer predicts the mean field plus DDPM predicts the convections.
 
 # Build Environment
-activate a virtual envirionment, here use conda env
-```
-conda create --name [env name] python=3.11 -y
-conda activate [env name]
-```
-install NVIDIA modulus package
-```
-git clone https://github.com/NVIDIA/modulus.git && cd modulus
-make install
-```
-other packages
-```
-pip3 install -r requirements.txt
-pip3 install hydra-core --upgrade
-```
-install onnxruntime according to your CUDA version, please check [onnxruntime_official](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#cuda-11x) for more details.
-```
-pip install onnxruntime-gpu==1.18.0
-```
+This project uses `uv` and `earth2studio` to manage the Python environment and assist with PyTorch installation.
+
+1.  **Install `uv`:**
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+    Ensure `uv` is added to your PATH.
+
+2.  **Create and activate a virtual environment:**
+    ```bash
+    uv venv
+    source .venv/bin/activate
+    ```
+
+3.  **Install dependencies using `uv`:**
+    ```bash
+    uv pip install -r requirements.txt
+    ```
+
+4.  **Install PyTorch via `earth2studio`:**
+    `earth2studio` handles the PyTorch installation, ensuring compatibility with your CUDA version.
+    The current PyTorch version used is `2.9.0+cu128`.
+
 
 # Quick Start
 step 1. set hyperparameters
