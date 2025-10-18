@@ -124,7 +124,7 @@ def standardization(dc_name: str, array: np.ndarray) -> np.ndarray:
         stat = stat_dict[dc_name]
         if abs(stat["mean"]) < MEAN_THRESHOLD:
             return array
-        elif "Qw@Hpa" in dc_name:
+        elif "Qt@Hpa" in dc_name:
             return np.log(array * 1e5 + 1)
         else:
             return (array - stat["mean"]) / stat["std"]
@@ -208,7 +208,7 @@ def destandardize_array(
     """Apply destandardization to a single array using statistics from stat_dict."""
     if abs(stat["mean"]) < MEAN_THRESHOLD:
         return array
-    elif "Qw@Hpa" in str(dc):
+    elif "Qt@Hpa" in str(dc):
         return (np.exp(array) - 1) / 1e5
     else:
         return array * stat["std"] + stat["mean"]
