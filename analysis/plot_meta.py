@@ -58,7 +58,7 @@ ANALYSIS_PLOT_CONFIGS: List[Dict[str, Any]] = [
         "vmax": 360,
     },
     {
-        "title": "925hPa Qw & 10m Wind",
+        "title": "925hPa Qt & 10m Wind",
         "unit": "g kg-1",
         "level": Level.Hpa925,
         "plot_func_key": "hydrometeors_mixing_ratio",
