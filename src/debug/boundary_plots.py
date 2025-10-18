@@ -6,7 +6,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 
 
-def plot_boundary_blending_verification(
+def plot_bdy_blending_verification(
     pd_data: np.ndarray,
     gt_data: np.ndarray,
     fft_blended_initial: np.ndarray,
