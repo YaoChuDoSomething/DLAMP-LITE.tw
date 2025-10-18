@@ -88,7 +88,7 @@ def read_cwa_ncfile(
                 For pressure level variables, extracts the specified level and returns shape (H, W).
                 H and W are the horizontal dimensions of the data.
         """
-        if dc.var_name == DataType.Qw:
+        if dc.var_name == DataType.Qt:
             # Qw = Qr + Qc + Qi + Qs + Qg
             components = ["Qr", "Qc", "Qi", "Qs", "Qg"]
             data = sum(
@@ -99,6 +99,7 @@ def read_cwa_ncfile(
             data *= 1000  # kg/kg -> g/kg
         elif dc.var_name == DataType.SST:
             data = dataset[dc.combined_key].values
+            data[np.isnan(data)] = 298.60870361328125 # SST mean
             mask = dataset[DataCompose(getattr(DataType, MASK), dc.level).combined_key].values
             #np.where(mask==1,0) 
         else:
