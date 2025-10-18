@@ -119,7 +119,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
         method: str,
         bdy_grid: int = 8,
         fft_k_critical: int = 16,
-        fft_transition_ratio: float = 0.2,
+        fft_transition_ratio: float = 0.5,
     ) -> np.ndarray:
         """
         Swaps the boundary values of the predicted data with actual values
@@ -284,11 +284,11 @@ class InferenceBase(metaclass=abc.ABCMeta):
                 for ch in range(channel):
                     pd_slice = pd_data[0, lv, :, :, ch]
                     gt_slice = gt_data[lv, :, :, ch]
-                    lwn_pd_slice = ifft2(ifftshift(fftshift(fft2(pd_slice)) * lpf_mask))
-                    lwn_gt_slice = ifft2(ifftshift(fftshift(fft2(gt_slice)) * lpf_mask))
-                    hwn_pd_slice = ifft2(ifftshift(fftshift(fft2(pd_slice)) * hpf_mask))
+                    lwn_pd_slice = np.real(ifft2(ifftshift(np.real(fftshift(fft2(pd_slice))) * lpf_mask)))
+                    lwn_gt_slice = np.real(ifft2(ifftshift(np.real(fftshift(fft2(gt_slice))) * lpf_mask)))
+                    hwn_pd_slice = np.real(ifft2(ifftshift(np.real(fftshift(fft2(pd_slice))) * hpf_mask)))
 
-                    pd_fft[0, lv, :, :, ch] = (lwn_gt_slice * gt_mask) + (lwn_pd_slice * pd_mask) + hwn_pd_slice
+                    pd_fft[0, lv, :, :, ch] = (lwn_gt_slice * gt_mask) + (lwn_pd_slice * (1 - gt_mask)) + hwn_pd_slice
 
             interior_mask = np.zeros((width, height), dtype=bool)
             interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
@@ -354,7 +354,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
             data[0] = (fft_blended_initial * pd_mask_b_linear) + (gt_data * gt_mask_b_linear)
 
             if plot_verification:
-                plot_boundary_blending_verification(
+                plot_bdy_blending_verification(
                     pd_data=pd_data,
                     gt_data=gt_data,
                     fft_blended_initial=fft_blended_initial,
