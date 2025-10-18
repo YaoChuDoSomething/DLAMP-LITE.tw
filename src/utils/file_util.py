@@ -74,7 +74,7 @@ def read_cwa_ncfile(
             containing the requested data. If data_compose is a list, returns a dictionary mapping DataCompose
             string representations to their corresponding numpy arrays.
     """
-    dataset = xr.open_dataset(str(file_path))
+    dataset = xr.open_dataset(str(file_path), engine="netcdf4")
 
     def fn(dc: DataCompose):
         """
@@ -89,6 +89,7 @@ def read_cwa_ncfile(
                 H and W are the horizontal dimensions of the data.
         """
         if dc.var_name == DataType.Qt:
+            ## 
             # Qw = Qr + Qc + Qi + Qs + Qg
             components = ["Qr", "Qc", "Qi", "Qs", "Qg"]
             data = sum(
@@ -97,11 +98,13 @@ def read_cwa_ncfile(
             )  # (1, Z, H, W)
             #data = dataset[dc.combined_key].value
             data *= 1000  # kg/kg -> g/kg
+
         elif dc.var_name == DataType.SST:
+            ## To-Do: Fine interpolate the mask area. Using the ERA5 (grid-size: 0.25 deg) LANDMASK now. 
             data = dataset[dc.combined_key].values
             data[np.isnan(data)] = 298.60870361328125 # SST mean
-            mask = dataset[DataCompose(getattr(DataType, MASK), dc.level).combined_key].values
-            #np.where(mask==1,0) 
+            #mask = dataset[DataCompose(getattr(DataType, MASK), dc.level).combined_key].values
+
         else:
             data = dataset[dc.combined_key].values  # (1, Z, H, W) or (1, H, W)
 
@@ -206,7 +209,7 @@ def gen_path(
         case "OP_ERA5":
             return (
                 Path(DATA_PATH)
-                / f"e5dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
+                / f"E5dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
             )
         case "OP_E2S":
             return (

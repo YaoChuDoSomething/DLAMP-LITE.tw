@@ -83,8 +83,6 @@ class AnalysisDataManager:
         self.pressure_levels: List[Level] = DataCompose.get_all_levels(
             self.data_compositions, only_upper=True
         )
-        self._qw_output_unit_gkg: bool = self.cfg.plot.get('qw_display_unit', 'kg/kg').lower() == 'g/kg'
-        logger.info(f"AnalysisDataManager initialized. Qw display unit for plots set to g/kg: {self._qw_output_unit_gkg}")
 
     def _get_pressure_from_level(self, level: Level) -> float:
         """Extract pressure in Pascals [Pa] from a Level object robustly.
@@ -283,12 +281,12 @@ class AnalysisDataManager:
         vorticity: np.ndarray = dv_dx - du_dy
         return vorticity
 
-    def get_column_max_qw(
+    def get_column_max_qt(
         self,
         forecast_step: int,
         is_gt: bool = False
     ) -> np.ndarray:
-        """Calculates the maximum water content (Qw) in the vertical column.
+        """Calculates the maximum water content (Qt) in the vertical column.
 
         Args:
             forecast_step (int): The 0-indexed forecast step (-1 for F000H).
@@ -301,14 +299,14 @@ class AnalysisDataManager:
         Raises:
             ValueError: If no Qw data is defined in the configuration.
         """
-        qw_levels: List[Level] = [
+        qt_levels: List[Level] = [
             dc.level for dc in self.data_compositions
             if dc.var_name == DataType.Qt
         ]
-        if not qw_levels:
+        if not qt_levels:
             raise ValueError("No Qw data found in configuration.")
 
-        all_qw_layers: List[np.ndarray] = []
+        all_qt_layers: List[np.ndarray] = []
         time: datetime = self.get_forecast_time(forecast_step)
         for level in qw_levels:
             data: np.ndarray
@@ -320,9 +318,9 @@ class AnalysisDataManager:
                 data = self.get_forecast_data(
                     forecast_step, DataType.Qt, level
                 )
-            all_qw_layers.append(data)
+            all_qt_layers.append(data)
 
-        return np.max(np.stack(all_qw_layers, axis=0), axis=0)
+        return np.max(np.stack(all_qt_layers, axis=0), axis=0)
 
     def get_potential_temperature(
         self, forecast_step: int, level: Level, is_gt: bool = False
@@ -339,13 +337,13 @@ class AnalysisDataManager:
         """
         time = self.get_forecast_time(forecast_step)
         if is_gt:
-            T = self.get_ground_truth_data(time, DataType.TK, level)
+            TK = self.get_ground_truth_data(time, DataType.TK, level)
         else:
-            T = self.get_forecast_data(forecast_step, DataType.TK, level)
+            TK = self.get_forecast_data(forecast_step, DataType.TK, level)
 
         pressure_pa = self._get_pressure_from_level(level)
         p0 = 100000.0  # Pa
-        theta = T * (p0 / pressure_pa) ** kappa
+        theta = TK * (p0 / pressure_pa) ** kappa
         return theta
 
     def get_saturation_vapor_pressure(
@@ -363,18 +361,18 @@ class AnalysisDataManager:
         """
         time = self.get_forecast_time(forecast_step)
         if is_gt:
-            T = self.get_ground_truth_data(time, DataType.TK, level)
+            TK = self.get_ground_truth_data(time, DataType.TK, level)
         else:
-            T = self.get_forecast_data(forecast_step, DataType.TK, level)
+            TK = self.get_forecast_data(forecast_step, DataType.TK, level)
 
-        T_c = T - 273.15
+        T_c = TK - 273.15
         es = 611.2 * np.exp((17.67 * T_c) / (T_c + 243.5))
         return es
 
     def get_dew_point_temperature(
         self, forecast_step: int, level: Level, is_gt: bool = False
     ) -> np.ndarray:
-        """Calculates dew point temperature (Td) from mixing ratio r (kg/kg).
+        """Calculates dew point temperature (Td) from mixing ratio Qv (kg/kg).
 
         Args:
             forecast_step (int): The 0-indexed forecast step.
@@ -386,12 +384,12 @@ class AnalysisDataManager:
         """
         time = self.get_forecast_time(forecast_step)
         if is_gt:
-            r = self.get_ground_truth_data(time, DataType.Qv, level)
+            Qv = self.get_ground_truth_data(time, DataType.Qv, level)
         else:
-            r = self.get_forecast_data(forecast_step, DataType.Qv, level)
+            Qv = self.get_forecast_data(forecast_step, DataType.Qv, level)
 
         pressure_pa = self._get_pressure_from_level(level)
-        e = (r * pressure_pa) / (epsilon + r)
+        e = (Qv * pressure_pa) / (epsilon + Qv)
         e = np.maximum(e, 1.0)
 
         val = np.log(e / 611.2)
@@ -414,15 +412,15 @@ class AnalysisDataManager:
         """
         time = self.get_forecast_time(forecast_step)
         if is_gt:
-            T = self.get_ground_truth_data(time, DataType.TK, level)
-            r = self.get_ground_truth_data(time, DataType.Qv, level)
+            TK = self.get_ground_truth_data(time, DataType.TK, level)
+            Qv = self.get_ground_truth_data(time, DataType.Qv, level)
         else:
-            T = self.get_forecast_data(forecast_step, DataType.TK, level)
-            r = self.get_forecast_data(forecast_step, DataType.Qv, level)
+            TK = self.get_forecast_data(forecast_step, DataType.TK, level)
+            Qv = self.get_forecast_data(forecast_step, DataType.Qv, level)
 
         pressure_pa = self._get_pressure_from_level(level)
-        e = (r * pressure_pa) / (epsilon + r)
-        T_c = T - 273.15
+        e = (Qv * pressure_pa) / (epsilon + Qv)
+        T_c = TK - 273.15
         es = 611.2 * np.exp((17.67 * T_c) / (T_c + 243.5))
 
         rh = (e / es) * 100.0
@@ -443,24 +441,24 @@ class AnalysisDataManager:
         """
         time = self.get_forecast_time(forecast_step)
         if is_gt:
-            T = self.get_ground_truth_data(time, DataType.TK, level)
-            r = self.get_ground_truth_data(time, DataType.Qv, level)
+            TK = self.get_ground_truth_data(time, DataType.TK, level)
+            Qv = self.get_ground_truth_data(time, DataType.Qv, level)
         else:
-            T = self.get_forecast_data(forecast_step, DataType.TK, level)
-            r = self.get_forecast_data(forecast_step, DataType.Qv, level)
+            TK = self.get_forecast_data(forecast_step, DataType.TK, level)
+            Qv = self.get_forecast_data(forecast_step, DataType.Qv, level)
 
         # 1) Use the existing method to get potential temperature (reduces duplication)
         theta = self.get_potential_temperature(forecast_step, level, is_gt)
         # 2) Get pressure for vapor pressure / dewpoint
         pressure_pa = self._get_pressure_from_level(level)
 
-        e = (r * pressure_pa) / (epsilon + r)
+        e = (Qv * pressure_pa) / (epsilon + Qv)
         e = np.maximum(e, 1.0)
         val = np.log(e / 611.2)
         Td_c = (243.5 * val) / (17.67 - val)
         Td = Td_c + 273.15
 
-        Tlcl = 1.0 / (1.0 / (Td - 56.0) + np.log(T / Td) / 800.0) + 56.0
+        Tlcl = 1.0 / (1.0 / (Td - 56.0) + np.log(TK / Td) / 800.0) + 56.0
 
-        theta_e = theta * np.exp((L_v * r) / (c_p * Tlcl)) * (T / Tlcl) ** (0.28 * r)
+        theta_e = theta * np.exp((L_v * r) / (c_p * Tlcl)) * (TK / Tlcl) ** (0.28 * r)
         return theta_e

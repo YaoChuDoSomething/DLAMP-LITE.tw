@@ -1,10 +1,8 @@
 # **Minimalist Environment Installation**
-#
+# 
 ## **Using conda/mamba/micromamba**
-#
-#[-1-$] micromamba create -n dlampTW -c conda-forge python=3.11 conda
-#
-#[-2-$] pip install "numpy<2.0" "torch==2.4.0" "torchvision==0.19.0" "torchaudio==2.4.0" --default-index "https://download.pytorch.org/whl/cu124"
+#[-1-$] micromamba create -n dlampTW -c conda-forge python=3.12 conda ffmpeg 
+#[-2-$] pip install "torch==2.8.0" "torchvision==0.23.0" "torchaudio==2.8.0" --default-index "https://download.pytorch.org/whl/cu128"
 #
 #[-3-$] pip install importlib-metadata requests termcolor wandb mlflow cftime opencv-python
 #
@@ -12,7 +10,7 @@
 #
 #[-5-$] pip install hydra-core --upgrade
 #
-#[-6-$] pip install "onnxruntime-gpu==1.19.0"
+#[-6-$] pip install "onnxruntime-gpu>=1.19.0"
 #
 # **Libraries for Nvidia-modulus**
 importlib-metadata
@@ -22,10 +20,8 @@ wandb
 mlflow
 cftime
 opencv-python
-# other
-numpy<2.0
-torch==2.4.0
-torchvision==0.19.0
+torch
+torchvision
 pyyaml
 scipy
 metpy
@@ -38,3 +34,6 @@ einops
 rasterio
 xarray
 netCDF4
+hydra-core
+onnxruntime-gpu
+ffmpeg

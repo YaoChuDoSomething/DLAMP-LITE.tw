@@ -65,6 +65,24 @@ class BatchInferenceOnnx(InferenceBase):
                 }
                 inp_upper, inp_surface = self.ort_sess.run(None, ort_inputs)
 
+                # --- ADD GAUSSIAN FILTER HERE ---
+                from scipy.ndimage import gaussian_filter
+
+                # Determine the sigma value empirically (e.g., 0.5, 1.0, 1.5, 2.0)
+                # You might make this configurable via self.cfg.inference.gaussian_sigma
+                sigma_value = 1.0 # Example value, needs tuning
+
+                # Apply Gaussian filter. Assuming H and W are at indices 2 and 3
+                # (based on inp_surface.shape[2:4] used later for time_features).
+                # The '0' for other dimensions means no smoothing along those axes (batch, features/channels).
+                # Ensure these dimensions are correct for your specific model's output shape.
+                # If inp_upper/inp_surface have shape (B, F, H, W):
+                inp_upper = gaussian_filter(inp_upper, sigma=(0, 0, sigma_value, sigma_value, 0))
+                inp_surface = gaussian_filter(inp_surface, sigma=(0, 0, sigma_value, sigma_value, 0))
+                # If inp_upper/inp_surface have shape (B, L, H, W, C) where C is a channel dimension:
+                # inp_upper = gaussian_filter(inp_upper, sigma=(0, 0, sigma_value, sigma_value, 0))
+                # inp_surface = gaussian_filter(inp_surface, sigma=(0, 0, sigma_value, sigma_value, 0))
+
                 #if (step + 1) % interval == 0:
                 #    tmp_upper.append(inp_upper.copy())
                 #    tmp_sfc.append(inp_surface.copy())

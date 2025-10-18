@@ -16,6 +16,7 @@ Usage:
 import logging
 from pathlib import Path
 from typing import List
+from datetime import datetime, timedelta
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -46,7 +47,28 @@ def main(cfg: DictConfig) -> None:
             hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
         )
         log.info("Start workflow -> %s", out_dir)
-        print("cfg = ", cfg)
+
+        EXP_CODE = f"FANAPI_{cfg.inference.bdy_swap_method.name}"
+        cfg.data.start_time = "2010-09-18 18:00"
+        cfg.data.end_time = "2010-09-19 00:00"
+
+        #EXP_CODE = f"MY2020_{cfg.inference.bdy_swap_method.name}"
+        #cfg.data.start_time = "2020-05-21 12:00"
+        #cfg.data.end_time = "2020-05-22 12:00"
+
+        #EXP_CODE = f"MUIFA_{cfg.inference.bdy_swap_method.name}"
+        #cfg.data.start_time = "2022-09-11 00:00"
+        #cfg.data.end_time = "2022-09-11 03:00"
+
+        case_end = datetime.strptime(cfg.data.end_time, cfg.data.format)
+        case_start = datetime.strptime(cfg.data.start_time, cfg.data.format)
+        case_duration = (case_end - case_start)
+        cfg.data.use_Kth_hour_pred = 0
+        cfg.plot.figure_columns = int(case_duration.total_seconds() // 3600) + 1
+
+        eval_cases = [case_start]
+        eval_cases.sort()
+        log.info(f"cfg = {cfg}")
 
         # Step 1: Execute the model inference
         predictor: PredictionRunner = PredictionRunner(cfg)

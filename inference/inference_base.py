@@ -117,8 +117,8 @@ class InferenceBase(metaclass=abc.ABCMeta):
         data: np.ndarray,
         dt: datetime,
         method: str,
-        bdy_grid: int = 8,
-        fft_k_critical: int = 16,
+        bdy_grid: int = 10,
+        fft_k_critical: int = 17,
         fft_transition_ratio: float = 0.5,
     ) -> np.ndarray:
         """
@@ -138,7 +138,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
                                                then performs a "linear" spatial blending
                                                on the boundaries of the FFT-blended result.
                 - "None": No boundary swapping.
-            bdy_grid (int, optional): Number of pixels to swap for spatial methods. Defaults to 8.
+            bdy_grid (int, optional): Number of pixels to swap for spatial methods. Defaults to 10.
                                       Used for "linear", "exp_decay", "override", and the linear
                                       part of "fft_tukey_linear_boundary".
             fft_k_critical (int, optional): The critical wavenumber (radius in pixels from the
@@ -267,6 +267,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
             data[0] = (pd_data[0] * pd_mask_b) + (gt_data * gt_mask_b)
 
         elif method == "fft_tukey":
+            # Build mask exp_decay for scale blending
             interior_mask = np.zeros((width, height), dtype=bool)
             interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
             dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
@@ -274,22 +275,25 @@ class InferenceBase(metaclass=abc.ABCMeta):
             gt_mask = np.clip(gt_mask, 0.0, 1.0)
             gt_mask[gt_mask < 0.01] = 0.0
 
+            # Build FFT mask in wavenumber space
             fft_blended_initial = np.zeros_like(pd_data[0], dtype=np.float32)
             lpf_mask, hpf_mask = _create_scale_filter_masks(
                 (width, height), fft_k_critical, fft_transition_ratio
             )
 
+            # Apply the mask in wavenumber spaces
             pd_fft = np.zeros(pd_data.shape)
             for lv in range(level):
                 for ch in range(channel):
                     pd_slice = pd_data[0, lv, :, :, ch]
                     gt_slice = gt_data[lv, :, :, ch]
-                    lwn_pd_slice = np.real(ifft2(ifftshift(np.real(fftshift(fft2(pd_slice))) * lpf_mask)))
-                    lwn_gt_slice = np.real(ifft2(ifftshift(np.real(fftshift(fft2(gt_slice))) * lpf_mask)))
-                    hwn_pd_slice = np.real(ifft2(ifftshift(np.real(fftshift(fft2(pd_slice))) * hpf_mask)))
+                    lwn_pd_slice = np.real(ifft2(ifftshift(fftshift(fft2(pd_slice)) * lpf_mask)))
+                    lwn_gt_slice = np.real(ifft2(ifftshift(fftshift(fft2(gt_slice)) * lpf_mask)))
+                    hwn_pd_slice = np.real(ifft2(ifftshift(fftshift(fft2(pd_slice)) * hpf_mask)))
 
                     pd_fft[0, lv, :, :, ch] = (lwn_gt_slice * gt_mask) + (lwn_pd_slice * (1 - gt_mask)) + hwn_pd_slice
 
+            # Build mask linear to stick the boundaries
             interior_mask = np.zeros((width, height), dtype=bool)
             interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
             dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
