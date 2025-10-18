@@ -70,7 +70,7 @@ class WeatherPlotter:
             "wind_speed": self._plot_wind_speed,
             "vorticity": self._plot_vorticity,
             "temperature": self._plot_temperature,
-            "column_max_qw": self._plot_column_max_qw,
+            "column_max_qt": self._plot_column_max_qt,
             "hydrometeors_mixing_ratio": self._plot_mixing_ratio,
             "theta_e": self._plot_theta_e,
         }
@@ -325,7 +325,7 @@ class WeatherPlotter:
     def _plot_mixing_ratio(
         self, ax_fc: Axes, ax_gt: Axes, step: int, config: Dict[str, Any]
     ):
-        """Plots 925hPa Qw and 10-meter wind."""
+        """Plots 925hPa Qt and 10-meter wind."""
         title: str = config["title"]
         level: Optional[Level] = config["level"]
         unit: str = config["unit"]
@@ -368,10 +368,10 @@ class WeatherPlotter:
             colorbar_center=colorbar_center
         )
 
-    def _plot_column_max_qw(
+    def _plot_column_max_qt(
         self, ax_fc: Axes, ax_gt: Axes, step: int, config: Dict[str, Any]
     ):
-        """Plots column-maximum Qw and 10-meter wind."""
+        """Plots column-maximum Qt and 10-meter wind."""
         title: str = config["title"]
         unit: str = config["unit"]
         cmap: str = config["cmap"]
@@ -381,17 +381,17 @@ class WeatherPlotter:
         colorbar_gamma: Optional[float] = config.get("colorbar_gamma")
         colorbar_center: Optional[float] = config.get("colorbar_center")
 
-        qw_fc: np.ndarray = self.manager.get_column_max_qw(step, False)
+        qt_fc: np.ndarray = self.manager.get_column_max_qt(step, False)
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
 
-        qw_gt: np.ndarray = self.manager.get_column_max_qw(step, True)
+        qt_gt: np.ndarray = self.manager.get_column_max_qt(step, True)
         time: datetime = self.manager.get_forecast_time(step)
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
 
         self._generic_grid_plot(
             ax_fc,
             f"FC: {title}",
-            qw_fc,
+            qt_fc,
             None,
             (u10_fc, v10_fc), "barbs",
             cmap, vmin, vmax,
@@ -403,7 +403,7 @@ class WeatherPlotter:
         self._generic_grid_plot(
             ax_gt,
             f"GT: {title}",
-            qw_gt,
+            qt_gt,
             None,
             (u10_gt, v10_gt), "barbs",
             cmap, vmin, vmax,
@@ -576,7 +576,7 @@ class WeatherPlotter:
     ) -> Path:
         """
         繪製指定兩點連線的垂直剖面圖。
-        填色圖(contourf)為 Qw (水氣比濕)，等高線(contour)為位溫。
+        填色圖(contourf)為 Qv (水氣混和比)，等高線(contour)為位溫。
 
         Args:
             start_point (Tuple[float, float]): 起始點 (緯度, 經度)。
@@ -601,21 +601,21 @@ class WeatherPlotter:
         pressure_levels = np.array([float(l.value.replace('hPa', '')) for l in levels_enum])
 
         # 獲取所有垂直層的 3D 資料
-        all_level_qw = []
+        all_level_qv = []
         all_level_t = []
         time = self.manager.get_forecast_time(forecast_step)
 
         for level in levels_enum:
             if is_gt:
-                qw = self.manager.get_ground_truth_data(time, DataType.Qt, level)
+                qv = self.manager.get_ground_truth_data(time, DataType.Qt, level)
                 t = self.manager.get_ground_truth_data(time, DataType.TK, level)
             else:
-                qw = self.manager.get_forecast_data(forecast_step, DataType.Qt, level)
+                qv = self.manager.get_forecast_data(forecast_step, DataType.Qt, level)
                 t = self.manager.get_forecast_data(forecast_step, DataType.TK, level)
-            all_level_qw.append(qw)
+            all_level_qv.append(qv)
             all_level_t.append(t)
 
-        qw_3d = np.stack(all_level_qw)
+        qv_3d = np.stack(all_level_qv)
         t_3d = np.stack(all_level_t)
 
         # 2. 定義剖面路徑
@@ -629,7 +629,7 @@ class WeatherPlotter:
             distances.append(distances[-1] + dist)
 
         # 3. 內插資料到剖面路徑上
-        cross_section_qw = np.zeros((len(pressure_levels), num_points))
+        cross_section_qv = np.zeros((len(pressure_levels), num_points))
         cross_section_theta = np.zeros((len(pressure_levels), num_points))
 
         for i, (lat, lon) in enumerate(path_points):
@@ -637,9 +637,9 @@ class WeatherPlotter:
 
             if band_width_km <= 0: # "一刀切"模式
                 for level_idx in range(len(pressure_levels)):
-                    grid_qw = griddata(points, qw_3d[level_idx].ravel(), query_points, method='linear')
+                    grid_qv = griddata(points, qv_3d[level_idx].ravel(), query_points, method='linear')
                     grid_t = griddata(points, t_3d[level_idx].ravel(), query_points, method='linear')
-                    cross_section_qw[level_idx, i] = grid_qw[0]
+                    cross_section_qv[level_idx, i] = grid_qv[0]
                     cross_section_theta[level_idx, i] = grid_t[0] * (1000.0 / pressure_levels[level_idx]) ** (R_d / c_p)
             else: # 帶寬平均模式
                 # 計算剖面線的法線方向
@@ -663,22 +663,22 @@ class WeatherPlotter:
                     sample_points_ll.append([lon + offset_lon, lat + offset_lat])
 
                 for level_idx in range(len(pressure_levels)):
-                    grid_qw = griddata(points, qw_3d[level_idx].ravel(), sample_points_ll, method='linear')
+                    grid_qv = griddata(points, qv_3d[level_idx].ravel(), sample_points_ll, method='linear')
                     grid_t = griddata(points, t_3d[level_idx].ravel(), sample_points_ll, method='linear')
 
-                    cross_section_qw[level_idx, i] = np.nanmean(grid_qw)
+                    cross_section_qv[level_idx, i] = np.nanmean(grid_qv)
                     theta = np.nanmean(grid_t) * (1000.0 / pressure_levels[level_idx]) ** (R_d / c_p)
                     cross_section_theta[level_idx, i] = theta
 
         # 4. 繪圖
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        # 繪製 Qw (水氣) 填色圖
-        # 註: 請求是 contourf: Qw 和 contour: Qv，但目前資料只有 Qw。
+        # 繪製 Qv (水氣) 填色圖
+        # 註: 請求是 contourf: Qv 和 contour: Qv，但目前資料只有 Qv。
         # 我們用位溫 theta 做 contour，這是更常見且有意義的物理剖面圖。
-        qw_levels = np.linspace(0, 0.02, 21) # kg/kg
-        cf = ax.contourf(distances, pressure_levels, cross_section_qw, levels=qw_levels, cmap='GnBu', extend='max')
-        cbar = fig.colorbar(cf, ax=ax, label='Specific Humidity (Qw) [kg kg-1]')
+        qv_levels = np.linspace(0, 0.02, 21) # kg/kg
+        cf = ax.contourf(distances, pressure_levels, cross_section_qv, levels=qv_levels, cmap='GnBu', extend='max')
+        cbar = fig.colorbar(cf, ax=ax, label='Specific Humidity (Qv) [kg kg-1]')
 
         # 繪製位溫等高線
         theta_levels = np.arange(280, 400, 4) # K
