@@ -25,6 +25,7 @@ from analysis.data_manager import AnalysisDataManager
 from analysis.forecast_saver import ForecastSaver
 from analysis.plotter import WeatherPlotter
 from analysis.prediction import PredictionRunner
+from analysis.video_creator import create_animation
 
 log = logging.getLogger(__name__)
 
@@ -48,27 +49,26 @@ def main(cfg: DictConfig) -> None:
         )
         log.info("Start workflow -> %s", out_dir)
 
-        EXP_CODE = f"FANAPI_{cfg.inference.bdy_swap_method.name}"
+        EXP_CODE = "FANAPI"
         cfg.data.start_time = "2010-09-18 18:00"
-        cfg.data.end_time = "2010-09-18 20:00"
+        cfg.data.end_time = "2010-09-20 00:00"
 
-        #EXP_CODE = f"MY2020_{cfg.inference.bdy_swap_method.name}"
+        #EXP_CODE = "MY2020"
         #cfg.data.start_time = "2020-05-21 12:00"
         #cfg.data.end_time = "2020-05-22 12:00"
 
-        #EXP_CODE = f"MUIFA_{cfg.inference.bdy_swap_method.name}"
+        #EXP_CODE = "MUIFA"
         #cfg.data.start_time = "2022-09-11 00:00"
         #cfg.data.end_time = "2022-09-11 03:00"
 
         case_end = datetime.strptime(cfg.data.end_time, cfg.data.format)
         case_start = datetime.strptime(cfg.data.start_time, cfg.data.format)
-        case_duration = (case_end - case_start)
-        cfg.data.use_Kth_hour_pred = 0
+        case_duration = case_end - case_start
         cfg.plot.figure_columns = int(case_duration.total_seconds() // 3600) + 1
 
         eval_cases = [case_start]
         eval_cases.sort()
-        log.info(f"cfg = {cfg}")
+        print("cfg = ", cfg)
 
         # Step 1: Execute the model inference
         predictor: PredictionRunner = PredictionRunner(cfg)
@@ -79,16 +79,21 @@ def main(cfg: DictConfig) -> None:
         adm: AnalysisDataManager = AnalysisDataManager(cfg, results)
 
         # Step 3: Save all forecast time steps to WRF-compatible NetCDF files
-        saver: ForecastSaver = ForecastSaver(adm, out_dir / "netcdf_forecasts")
+        saver: ForecastSaver = ForecastSaver(
+            adm, out_dir / "netcdf_forecasts", exp_code=EXP_CODE
+        )
         saver.save_all_forecasts()
         log.info("All forecast steps saved to NetCDF files.")
 
         # Step 4: Generate and save analysis plots for specific time steps
-        plotter: WeatherPlotter = WeatherPlotter(cfg, adm, out_dir / "plots")
+        plotter: WeatherPlotter = WeatherPlotter(
+            cfg, adm, out_dir / "plots", exp_code=EXP_CODE
+        )
         # Plot initial state (F000H) and hourly forecasts
         plot_steps: List[int] = [-1] + list(range(cfg.plot.figure_columns))
         log.info("Generating analysis plots for steps: %s", plot_steps)
 
+        generated_plots: List[Path] = []
         for step in plot_steps:
             try:
                 # Ensure step is within the valid forecast range
@@ -101,12 +106,19 @@ def main(cfg: DictConfig) -> None:
                     continue
 
                 path: Path = plotter.create_analysis_figure(step)
+                generated_plots.append(path)
             except (ValueError, IndexError) as e:
                 step_plus_one: int = step + 1
                 step_str: str = (
                     "F000H" if step == -1 else f"F{step_plus_one:03d}H"
                 )
                 log.exception("Plot for step %s failed: %s", step_str, e)
+
+        # Step 5: Create an animation from the generated plots
+        if generated_plots:
+            video_filename = f"{EXP_CODE}_{case_start.strftime('%Y%m%d_%H%M')}.mp4"
+            video_path = out_dir / "plots" / video_filename
+            create_animation(generated_plots, video_path, framerate=1)
 
         log.info("Workflow finished successfully.")
 
@@ -117,3 +129,4 @@ def main(cfg: DictConfig) -> None:
 
 if __name__ == "__main__":
     main()
+
