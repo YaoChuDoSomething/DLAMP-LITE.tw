@@ -77,11 +77,11 @@ class BatchInferenceOnnx(InferenceBase):
                 # The '0' for other dimensions means no smoothing along those axes (batch, features/channels).
                 # Ensure these dimensions are correct for your specific model's output shape.
                 # If inp_upper/inp_surface have shape (B, F, H, W):
+                #inp_upper = gaussian_filter(inp_upper, sigma=(0, 0, sigma_value, sigma_value, 0))
+                #inp_surface = gaussian_filter(inp_surface, sigma=(0, 0, sigma_value, sigma_value, 0))
+                # If inp_upper/inp_surface have shape (B, L, H, W, C) where C is a channel dimension:
                 inp_upper = gaussian_filter(inp_upper, sigma=(0, 0, sigma_value, sigma_value, 0))
                 inp_surface = gaussian_filter(inp_surface, sigma=(0, 0, sigma_value, sigma_value, 0))
-                # If inp_upper/inp_surface have shape (B, L, H, W, C) where C is a channel dimension:
-                # inp_upper = gaussian_filter(inp_upper, sigma=(0, 0, sigma_value, sigma_value, 0))
-                # inp_surface = gaussian_filter(inp_surface, sigma=(0, 0, sigma_value, sigma_value, 0))
 
                 #if (step + 1) % interval == 0:
                 #    tmp_upper.append(inp_upper.copy())

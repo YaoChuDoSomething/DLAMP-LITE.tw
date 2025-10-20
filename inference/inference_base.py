@@ -1,20 +1,25 @@
 import abc
+import logging
 import warnings
 from datetime import datetime, timedelta
 
 import numpy as np
 from omegaconf import DictConfig
-from tqdm import trange
-from scipy.ndimage import distance_transform_cdt
 from scipy.fft import fft2, ifft2, fftshift, ifftshift
+from scipy.ndimage import distance_transform_cdt
+from tqdm import trange
 
 from src.datasets import CustomDataset
 from src.debug.boundary_plots import (
-    plot_bdy_blending_verification,
+    BoundaryPlotData,
+    FFTPlotData,
+    plot_bdy_blending_debug,
     plot_fft_blending_debug,
 )
 from src.managers import DataManager, DatetimeManager
 from src.utils import DataCompose, DataGenerator, DataType, Level
+
+logger = logging.getLogger(__name__)
 
 
 class InferenceBase(metaclass=abc.ABCMeta):
@@ -119,7 +124,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
         method: str,
         bdy_grid: int = 10,
         fft_k_critical: int = 17,
-        fft_transition_ratio: float = 0.5,
+        fft_transition_ratio: float = 0.2,
     ) -> np.ndarray:
         """
         Swaps the boundary values of the predicted data with actual values
@@ -129,18 +134,18 @@ class InferenceBase(metaclass=abc.ABCMeta):
             data (np.ndarray): Input data array with shape (batch, level,
                 width, height, channel). Batch must be 1.
             dt (datetime): The datetime for which to get the actual values.
-            method (str): "exp_decay", "linear", "override",
-                "fft_tukey_linear_boundary", "None".
+            method (str): 
                 - "override": Replace boundary with actual values.
                 - "linear": Linearly blend boundary values.
                 - "exp_decay": Exponentially blend boundary values.
-                - "fft_tukey_linear_boundary": First applies a frequency-domain blending,
-                                               then performs a "linear" spatial blending
-                                               on the boundaries of the FFT-blended result.
+                - "fft_tukey": First applies a frequency-domain blending, then 
+                               performs a "linear" spatial blending on the 
+                               boundaries of the FFT-blended result.
                 - "None": No boundary swapping.
-            bdy_grid (int, optional): Number of pixels to swap for spatial methods. Defaults to 10.
-                                      Used for "linear", "exp_decay", "override", and the linear
-                                      part of "fft_tukey_linear_boundary".
+            bdy_grid (int, optional): Number of pixels to swap for spatial 
+                                      methods. Defaults to 10. Used for 
+                                      "linear", "exp_decay", "override", and 
+                                      the "fft_tukey".
             fft_k_critical (int, optional): The critical wavenumber (radius in pixels from the
                                             frequency spectrum center) for the FFT-based Tukey filter.
                                             This defines where the filter starts to transition.
@@ -157,6 +162,224 @@ class InferenceBase(metaclass=abc.ABCMeta):
         Raises:
             ValueError: If batch size is not 1 or an unknown method is specified.
         """
+        # --- Read debug settings from the config object ---
+        plot_cfg = self.cfg.plot.get("test_infer", {})
+        plot_bdy_debug = plot_cfg.get("plot_bdy_debug", True)
+        plot_fft_debug = plot_cfg.get("plot_fft_debug", True)
+        debug_lv_idx = plot_cfg.get("debug_lv_idx", 0)
+        debug_ch_idx = plot_cfg.get("debug_ch_idx", 1)
+
+        batch, level, width, height, channel = data.shape
+        if batch != 1:
+            raise ValueError(f"Only 1 eval case at a time, but got {batch}")
+
+        tensor_type = "surface" if level == 1 else "upper"
+
+        pd_data = np.copy(data)  # Make a copy of the input predicted data
+
+        dataset: CustomDataset = self.data_manager._predict_dataset
+        data_dict = dataset._get_variables_from_dt(dt, is_input=True)
+        gt_data = data_dict["surface"] if level == 1 else data_dict["upper_air"]
+
+        if gt_data.shape != pd_data[0].shape:
+            warnings.warn(
+                f"Shape mismatch between ground truth {gt_data.shape} and "
+                f"prediction {pd_data[0].shape}. Boundary swapping may fail "
+                f"and data will not be modified for this call."
+            )
+            return data  # Return original data if shapes don't match
+
+        # Initialize variables for plotting and blending
+        blended_data = np.copy(pd_data[0])  # Start with predicted data
+        gt_mask = np.zeros((width, height), dtype=np.float32)
+        fft_blended_initial = np.zeros_like(pd_data[0], dtype=np.float32)
+
+        # --- Helper functions for flow-dependent mask generation ---
+        def _create_inflow_dependent_mask(
+            width: int,
+            height: int,
+            bdy_grid: int,
+            U: np.ndarray,
+            V: np.ndarray,
+            grid_resolution_km_inv: float,
+            outflow_grid_width: int = 5,
+        ) -> np.ndarray:
+            """
+            Creates a physically-aware anisotropic boundary blending mask that
+            distinguishes between inflow and outflow based on boundary winds.
+
+            Design Principles:
+            - Inflow: Mask weight is determined by an ellipse aligned with the
+                      wind, where the weight is 0.5 at a one-hour wind
+                      advection distance downwind.
+            - Outflow: The mask defaults to a simple linear ramp with a width
+                       of `outflow_grid_width`.
+
+            Args:
+                width: Grid width.
+                height: Grid height.
+                bdy_grid: Base width (in grid points) for the crosswind
+                          component of the inflow ellipse.
+                U: 2D array of the U-component of the wind.
+                V: 2D array of the V-component of the wind.
+                grid_resolution_km_inv: Inverse of grid resolution (grids/km).
+                outflow_grid_width: Width of the linear mask for outflow.
+
+            Returns:
+                The calculated final weight mask, where 1.0 means full ground
+                truth and 0.0 means full prediction.
+            """
+            # 1. Create a baseline linear mask for outflow regions.
+            interior_mask = np.ones((height, width), dtype=bool)
+            interior_mask[
+                outflow_grid_width:-outflow_grid_width,
+                outflow_grid_width:-outflow_grid_width,
+            ] = False
+            dist = distance_transform_cdt(interior_mask, metric="chessboard")
+            safe_divisor = float(outflow_grid_width) if outflow_grid_width > 0 else 1.0
+            baseline_mask = np.clip(dist / safe_divisor, 0.0, 1.0)
+
+            # 2. Calculate the anisotropic mask generated by inflow regions.
+            inflow_effect_mask = np.zeros((height, width), dtype=np.float32)
+            rows, cols = np.mgrid[0:height, 0:width]
+
+            boundary_indices = []
+            for j in range(width):
+                boundary_indices.extend([(0, j), (height - 1, j)])
+            for i in range(1, height - 1):
+                boundary_indices.extend([(i, 0), (i, width - 1)])
+
+            for br, bc in boundary_indices:
+                # Determine outward normal vector at the boundary point
+                normal_r, normal_c = 0.0, 0.0
+                if br == 0:
+                    normal_r = -1.0
+                elif br == height - 1:
+                    normal_r = 1.0
+                if bc == 0:
+                    normal_c = -1.0
+                elif bc == width - 1:
+                    normal_c = 1.0
+
+                # Check for inflow by comparing wind and normal vectors
+                wind_r, wind_c = V[br, bc], U[br, bc]
+                dot_product = (wind_r * normal_r) + (wind_c * normal_c)
+
+                if dot_product < 0:  # Inflow condition
+                    speed_ms = np.sqrt(wind_c**2 + wind_r**2)
+
+                    # Define ellipse axes based on wind advection distance
+                    dist_km_one_hour = speed_ms * 3.6  # 3600s/h / 1000m/km
+                    dist_grid_one_hour = dist_km_one_hour * grid_resolution_km_inv
+                    R_major = 2.0 * dist_grid_one_hour  # Downwind axis
+                    R_minor = 2.0 * bdy_grid  # Crosswind axis
+
+                    # Make ellipse circular for very low wind speeds
+                    if speed_ms < 0.1:
+                        R_major = R_minor
+
+                    R_major = max(1.0, R_major)
+                    R_minor = max(1.0, R_minor)
+
+                    # Rotate grid to align with wind direction
+                    angle = np.arctan2(wind_r, wind_c)
+                    cos_a, sin_a = np.cos(-angle), np.sin(-angle)
+                    dr, dc = rows - br, cols - bc
+                    d_rot_c = dc * cos_a - dr * sin_a  # Downwind distance
+                    d_rot_r = dc * sin_a + dr * cos_a  # Crosswind distance
+
+                    # Calculate weight based on normalized distance in rotated frame
+                    with np.errstate(divide="ignore", invalid="ignore"):
+                        norm_dist_sq = (d_rot_c / R_major) ** 2 + (
+                            d_rot_r / R_minor
+                        ) ** 2
+                    weight = np.maximum(0, 1 - np.sqrt(norm_dist_sq))
+                    inflow_effect_mask = np.maximum(inflow_effect_mask, weight)
+
+            # 3. Combine masks: Use inflow mask where active, otherwise use baseline.
+            final_mask = np.maximum(baseline_mask, inflow_effect_mask)
+            return np.clip(final_mask, 0.0, 1.0)
+
+        # --- Helper function ---
+        def _create_flow_advection_mask(
+            width: int,
+            height: int,
+            bdy_grid: int,
+            U: np.ndarray,
+            V: np.ndarray,
+            grid_resolution_km_inv: float,
+        ) -> np.ndarray:
+            """
+            Creates a physically-aware anisotropic boundary blending mask based
+            on the wind field at all boundary points.
+
+            Unlike `_create_inflow_dependent_mask`, this method does not
+            distinguish between inflow and outflow, applying the advection
+            effect universally from all boundary points.
+
+            Design Principles:
+            - The mask weight is determined by an ellipse aligned with the
+              wind, where the weight is 0.5 at a one-hour wind advection
+              distance downwind.
+            - The final mask at any grid point is the maximum influence from
+              all boundary points.
+
+            Args:
+                width: Grid width.
+                height: Grid height.
+                bdy_grid: Base width (in grid points) for the crosswind
+                          component of the influence ellipse.
+                U: 2D array of the U-component of the wind.
+                V: 2D array of the V-component of the wind.
+                grid_resolution_km_inv: Inverse of grid resolution (grids/km).
+
+            Returns:
+                The calculated weight mask, where 1.0 means full ground truth
+                and 0.0 means full prediction.
+            """
+            gt_mask = np.zeros((height, width), dtype=np.float32)
+            rows, cols = np.mgrid[0:height, 0:width]
+
+            boundary_indices = []
+            for j in range(width):
+                boundary_indices.extend([(0, j), (height - 1, j)])
+            for i in range(1, height - 1):
+                boundary_indices.extend([(i, 0), (i, width - 1)])
+
+            # Calculate the influence of each boundary point on the grid
+            for br, bc in boundary_indices:
+                u, v = U[br, bc], V[br, bc]
+                speed_ms = np.sqrt(u**2 + v**2)
+
+                # Define ellipse axes based on wind advection distance
+                dist_km_one_hour = speed_ms * 3.6  # 3600s/h / 1000m/km
+                dist_grid_one_hour = dist_km_one_hour * grid_resolution_km_inv
+                R_major = 2.0 * dist_grid_one_hour  # Downwind axis
+                R_minor = 2.0 * bdy_grid  # Crosswind axis
+
+                # Make ellipse circular for very low wind speeds
+                if speed_ms < 0.1:
+                    R_major = R_minor
+
+                R_major = max(1.0, R_major)
+                R_minor = max(1.0, R_minor)
+
+                # Rotate grid to align with wind direction
+                angle = np.arctan2(v, u)
+                cos_a, sin_a = np.cos(-angle), np.sin(-angle)
+                dr, dc = rows - br, cols - bc
+                d_rot_c = dc * cos_a - dr * sin_a  # Downwind distance
+                d_rot_r = dc * sin_a + dr * cos_a  # Crosswind distance
+
+                # Calculate weight based on normalized distance in rotated frame
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    norm_dist_sq = (d_rot_c / R_major) ** 2 + (d_rot_r / R_minor) ** 2
+                weight = np.maximum(0, 1 - np.sqrt(norm_dist_sq))
+                gt_mask = np.maximum(gt_mask, weight)
+
+            return np.clip(gt_mask, 0.0, 1.0)
+
+
         # --- Helper function for FFT filter mask generation (nested for self-containment) ---
         def _create_scale_filter_masks(shape, k_critical, transition_width_ratio):
             """
@@ -177,208 +400,219 @@ class InferenceBase(metaclass=abc.ABCMeta):
             r_inner = k_critical - transition_width / 2
             r_outer = k_critical + transition_width / 2
 
-            r_inner = max(0.0, float(r_inner)) # Ensure non-negative
-            max_possible_radius = np.sqrt((w/2)**2 + (h/2)**2)
-            r_outer = min(float(max_possible_radius), float(r_outer)) # Cap at max possible frequency
+            r_inner = max(0.0, float(r_inner))  # Ensure non-negative
+            max_possible_radius = np.sqrt((w / 2) ** 2 + (h / 2) ** 2)
+            r_outer = min(
+                float(max_possible_radius), float(r_outer)
+            )  # Cap at max possible frequency
 
             low_pass_mask = np.zeros(shape, dtype=np.float32)
 
-            low_pass_mask[radius_map <= r_inner] = 1.0 # Fully pass region
+            low_pass_mask[radius_map <= r_inner] = 1.0  # Fully pass region
 
             # Transition region (Tukey window application)
             transition_indices = (radius_map > r_inner) & (radius_map < r_outer)
-            if np.any(transition_indices) and (r_outer - r_inner) > 1e-9: # Avoid division by zero
-                normalized_distance = (radius_map[transition_indices] - r_inner) / (r_outer - r_inner)
-                low_pass_mask[transition_indices] = 0.5 * (1 + np.cos(np.pi * normalized_distance))
+            if (
+                np.any(transition_indices) and (r_outer - r_inner) > 1e-9
+            ):  # Avoid division by zero
+                normalized_distance = (radius_map[transition_indices] - r_inner) / (
+                    r_outer - r_inner
+                )
+                low_pass_mask[transition_indices] = 0.5 * (
+                    1 + np.cos(np.pi * normalized_distance)
+                )
 
             high_pass_mask = 1.0 - low_pass_mask
 
             return low_pass_mask, high_pass_mask
+
         # --- End of FFT filter helper function ---
 
 
-        # --- Read debug settings from the config object ---
-        plot_cfg = self.cfg.plot.get('test_bdy', {})
-        plot_verification = plot_cfg.get('plot_verification', True)
-        plot_fft_debug = plot_cfg.get('plot_fft_debug', True)
-        debug_level_idx = plot_cfg.get('debug_level_idx', 0)
-        debug_channel_idx = plot_cfg.get('debug_channel_idx', 1)
-
-        batch, level, width, height, channel = data.shape
-        if batch != 1:
-            raise ValueError(f"Only 1 eval case at a time, but got {batch}")
-
-        pd_data = np.copy(data) # Make a copy of the input predicted data
-
-        dataset: CustomDataset = self.data_manager._predict_dataset
-        data_dict = dataset._get_variables_from_dt(dt, is_input=True)
-        gt_data = data_dict["surface"] if level == 1 else data_dict["upper_air"]
-
-        if gt_data.shape != pd_data[0].shape:
-            warnings.warn(
-                f"Shape mismatch between ground truth {gt_data.shape} and "
-                f"prediction {pd_data[0].shape}. Boundary swapping may fail "
-                f"and data will not be modified for this call."
-            )
-            return data # Return original data if shapes don't match
-
-        # --- Spatial Blending Methods ---
-        #if method in ["override", "linear", "exp_decay"]:
-        gt_mask = np.zeros((width, height), dtype=np.float32)
-
+        # --- Blending Methods ---
         if method == "override":
             gt_mask[:bdy_grid, :] = 1.0
             gt_mask[-bdy_grid:, :] = 1.0
             gt_mask[:, :bdy_grid] = 1.0
             gt_mask[:, -bdy_grid:] = 1.0
 
-            pd_mask = 1.0 - gt_mask
-            pd_mask_b = pd_mask.reshape(1, width, height, 1)
-            gt_mask_b = gt_mask.reshape(1, width, height, 1)
-
-            data[0] = (pd_data[0] * pd_mask_b) + (gt_data * gt_mask_b)
-
         elif method == "linear":
             interior_mask = np.ones((width, height), dtype=bool)
             interior_mask[bdy_grid:-bdy_grid, bdy_grid:-bdy_grid] = False
-            dist_from_interior = distance_transform_cdt(interior_mask, metric="chessboard")
+            dist_from_interior = distance_transform_cdt(
+                interior_mask, metric="chessboard"
+            )
             gt_mask = dist_from_interior / bdy_grid
             gt_mask = np.clip(gt_mask, 0.0, 1.0)
             gt_mask[gt_mask < 0.01] = 0.0
 
-            pd_mask = 1.0 - gt_mask
-            pd_mask_b = pd_mask.reshape(1, width, height, 1)
-            gt_mask_b = gt_mask.reshape(1, width, height, 1)
-
-            data[0] = (pd_data[0] * pd_mask_b) + (gt_data * gt_mask_b)
-
         elif method == "exp_decay":
             interior_mask = np.zeros((width, height), dtype=bool)
-            interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
-            dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
+            interior_mask[1:-1, 1:-1] = True  # Consider outer boundary for distance
+            dist_from_true_boundary = distance_transform_cdt(
+                interior_mask, metric="chessboard"
+            )
             gt_mask = np.exp(-dist_from_true_boundary / bdy_grid)
             gt_mask = np.clip(gt_mask, 0.0, 1.0)
             gt_mask[gt_mask < 0.01] = 0.0
 
-            pd_mask = 1.0 - gt_mask
-            pd_mask_b = pd_mask.reshape(1, width, height, 1)
-            gt_mask_b = gt_mask.reshape(1, width, height, 1)
+        elif method == "flow_depend":
+            # For multi-level data, use the mean wind across pressure levels.
+            # For surface data, use the wind from the single surface level.
+            if level == 1:
+                u_wind = gt_data[0, ..., 1]
+                v_wind = gt_data[0, ..., 2]
+            else:
+                u_wind = np.mean(gt_data[..., 2], axis=0)
+                v_wind = np.mean(gt_data[..., 3], axis=0)
 
-            data[0] = (pd_data[0] * pd_mask_b) + (gt_data * gt_mask_b)
+            gt_mask = _create_flow_advection_mask(
+                width=width,
+                height=height,
+                bdy_grid=bdy_grid,
+                U=u_wind,
+                V=v_wind,
+                grid_resolution_km_inv=0.25,  # Assuming 4km resolution
+            )
+
+        elif method == "inflow_advect":
+            # For multi-level data, use the mean wind across pressure levels.
+            # For surface data, use the wind from the single surface level.
+            if level == 1:
+                u_wind = gt_data[0, ..., 1]
+                v_wind = gt_data[0, ..., 2]
+            else:
+                u_wind = np.mean(gt_data[..., 2], axis=0)
+                v_wind = np.mean(gt_data[..., 3], axis=0)
+
+            gt_mask = _create_inflow_dependent_mask(
+                width=width,
+                height=height,
+                bdy_grid=bdy_grid,
+                U=u_wind,
+                V=v_wind,
+                grid_resolution_km_inv=0.25,  # Assuming 4km resolution
+                outflow_grid_width=5,
+            )
 
         elif method == "fft_tukey":
-            # Build mask exp_decay for scale blending
             interior_mask = np.zeros((width, height), dtype=bool)
-            interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
-            dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
-            gt_mask = np.exp(-dist_from_true_boundary / bdy_grid)
-            gt_mask = np.clip(gt_mask, 0.0, 1.0)
-            gt_mask[gt_mask < 0.01] = 0.0
-
+            interior_mask[1:-1, 1:-1] = True  # Consider outer boundary for distance
+            dist_from_true_boundary = distance_transform_cdt(
+                interior_mask, metric="chessboard"
+            )
+            lwn_gt_mask = np.ones((width, height), dtype=np.float32)
+            lwn_gt_mask = 0.9 ** (dist_from_true_boundary / 2)
             # Build FFT mask in wavenumber space
-            fft_blended_initial = np.zeros_like(pd_data[0], dtype=np.float32)
             lpf_mask, hpf_mask = _create_scale_filter_masks(
                 (width, height), fft_k_critical, fft_transition_ratio
             )
 
             # Apply the mask in wavenumber spaces
-            pd_fft = np.zeros(pd_data.shape)
             for lv in range(level):
                 for ch in range(channel):
                     pd_slice = pd_data[0, lv, :, :, ch]
                     gt_slice = gt_data[lv, :, :, ch]
-                    lwn_pd_slice = np.real(ifft2(ifftshift(fftshift(fft2(pd_slice)) * lpf_mask)))
-                    lwn_gt_slice = np.real(ifft2(ifftshift(fftshift(fft2(gt_slice)) * lpf_mask)))
-                    hwn_pd_slice = np.real(ifft2(ifftshift(fftshift(fft2(pd_slice)) * hpf_mask)))
 
-                    pd_fft[0, lv, :, :, ch] = (lwn_gt_slice * gt_mask) + (lwn_pd_slice * (1 - gt_mask)) + hwn_pd_slice
+                    fft_pd_slice = fftshift(fft2(pd_slice))
+                    fft_gt_slice = fftshift(fft2(gt_slice))
 
-            # Build mask linear to stick the boundaries
-            interior_mask = np.zeros((width, height), dtype=bool)
-            interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
-            dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
-            gt_mask = np.exp(-dist_from_true_boundary / bdy_grid)
+                    lwn_gt_slice = np.real(ifft2(ifftshift(fft_gt_slice * lpf_mask)))
+                    lwn_pd_slice = np.real(ifft2(ifftshift(fft_pd_slice * lpf_mask)))
+                    hwn_pd_slice = np.real(ifft2(ifftshift(fft_pd_slice * hpf_mask)))
+
+                    # Blend low-wavenumber components from GT and high-wavenumber from PD
+                    fft_blended_initial[lv, :, :, ch] = (
+                        (lwn_gt_slice * lwn_gt_mask)
+                        + (lwn_pd_slice * (1 - lwn_gt_mask))
+                        + hwn_pd_slice
+                    )
+                    # z t u v w q qt
+                    # t u v q st sp swdown olr
+                    debug_ch_idx = 3 if level == 1 else 5
+                    debug_lv_idx = 0 if level == 1 else 10
+                    if plot_fft_debug and lv == debug_lv_idx and ch == debug_ch_idx:
+                        logger.debug(
+                            "Plotting FFT blending debug figure for dt=%s, level=%s, channel=%s.",
+                            dt,
+                            debug_lv_idx,
+                            debug_ch_idx,
+                        )
+                        plot_fft_blending_debug(
+                            FFTPlotData(
+                                pd_slice=pd_slice,
+                                gt_slice=gt_slice,
+                                fft_pd_slice=fft_pd_slice,
+                                fft_gt_slice=fft_gt_slice,
+                                lpf_mask=lpf_mask,
+                                hpf_mask=hpf_mask,
+                                blended_spatial_slice=fft_blended_initial[
+                                    lv, :, :, ch
+                                ],
+                                level_idx=debug_lv_idx,
+                                channel_idx=debug_ch_idx,
+                                dt=dt,
+                                method=method,
+                                tensor_type=tensor_type,
+                            )
+                        )
+
+            # For the final result, use the FFT blended data as the new "predicted" data
+            blended_data = fft_blended_initial
+
+            # Build linear mask to stick the boundaries
+            interior_mask = np.ones((width, height), dtype=bool)
+            interior_mask[bdy_grid:-bdy_grid, bdy_grid:-bdy_grid] = False
+            dist_from_interior = distance_transform_cdt(
+                interior_mask, metric="chessboard"
+            )
+            gt_mask = dist_from_interior / bdy_grid
             gt_mask = np.clip(gt_mask, 0.0, 1.0)
             gt_mask[gt_mask < 0.01] = 0.0
 
-            pd_mask = 1.0 - gt_mask
-            pd_mask_b = pd_mask.reshape(1, width, height, 1)
-            gt_mask_b = gt_mask.reshape(1, width, height, 1)
-
-            data[0] = (pd_fft[0] * pd_mask_b) + (gt_data * gt_mask_b)
-
-
-        # --- FFT-based Blending Methods (Pure or Combined) ---
-        elif method == "fft_tukey0":
-            fft_blended_initial = np.zeros_like(pd_data[0], dtype=np.float32)
-
-            lpf_mask, hpf_mask = _create_scale_filter_masks(
-                (width, height), fft_k_critical, fft_transition_ratio
-            )
-
-            l = debug_level_idx
-            c = debug_channel_idx
-
-            for l_idx in range(level):
-                for c_idx in range(channel):
-                    pd_slice = pd_data[0, l_idx, :, :, c_idx]
-                    gt_slice = gt_data[l_idx, :, :, c_idx]
-
-                    fft_pd_slice = fftshift(fft2(pd_slice)) # pd_data in wavenumber domain
-                    fft_gt_slice = fftshift(fft2(gt_slice)) # gt_data in wavenumber domain
-
-                    combined_fft_slice = (fft_gt_slice * lpf_mask) + (fft_pd_slice * hpf_mask)
-
-                    blended_spatial_slice = np.real(ifft2(ifftshift(combined_fft_slice)))
-                    fft_blended_initial[l_idx, :, :, c_idx] = blended_spatial_slice
-
-                    if plot_fft_debug and l_idx == l and c_idx == c:
-                        plot_fft_blending_debug(
-                            pd_slice=pd_slice, gt_slice=gt_slice,
-                            fft_pd_slice=fft_pd_slice, fft_gt_slice=fft_gt_slice,
-                            lpf_mask=lpf_mask, hpf_mask=hpf_mask,
-                            blended_spatial_slice=blended_spatial_slice,
-                            level_idx=l, channel_idx=c,
-                            dt=dt, method=method,
-                        )
-
-            gt_mask_linear = np.zeros((width, height), dtype=np.float32)
-            interior_mask_linear = np.ones((width, height), dtype=bool)
-            interior_mask_linear[bdy_grid:-bdy_grid, bdy_grid:-bdy_grid] = False
-            dist_from_interior_linear = distance_transform_cdt(interior_mask_linear, metric="chessboard")
-            gt_mask_linear = dist_from_interior_linear / bdy_grid
-            gt_mask_linear = np.clip(gt_mask_linear, 0.0, 1.0)
-            gt_mask_linear[gt_mask_linear < 0.01] = 0.0
-
-            pd_mask_linear = 1.0 - gt_mask_linear
-
-            pd_mask_b_linear = pd_mask_linear.reshape(1, width, height, 1)
-            gt_mask_b_linear = gt_mask_linear.reshape(1, width, height, 1)
-
-            data[0] = (fft_blended_initial * pd_mask_b_linear) + (gt_data * gt_mask_b_linear)
-
-            if plot_verification:
-                plot_bdy_blending_verification(
-                    pd_data=pd_data,
-                    gt_data=gt_data,
-                    fft_blended_initial=fft_blended_initial,
-                    final_data=data,
-                    pd_mask=pd_mask_linear,
-                    gt_mask=gt_mask_linear,
-                    level_idx=debug_level_idx,
-                    channel_idx=debug_channel_idx,
-                    dt=dt,
-                    method=method,
-                )
-
         elif method == "None":
-            pass
+            pass  # gt_mask remains all zeros, so no change to data
 
         else:
-            raise ValueError(f"Unknown Method: {method}. Supported methods are: 'override', 'linear', 'exp_decay', 'fft_tukey_linear_boundary', 'None'.")
+            raise ValueError(
+                f"Unknown Method: {method}. Supported methods are: 'override', 'linear', 'exp_decay', 'fft_tukey', 'None'."
+            )
+
+        # Apply the spatial blending using the calculated gt_mask
+        if method != "None":
+            pd_mask = 1.0 - gt_mask
+            pd_mask_b = pd_mask.reshape(1, 1, width, height, 1)
+            gt_mask_b = gt_mask.reshape(1, 1, width, height, 1)
+            data[0] = (blended_data * pd_mask_b) + (gt_data * gt_mask_b)
+        else:
+            pd_mask = np.ones_like(gt_mask)  # for plotting
+            data[0] = blended_data
+
+        if plot_bdy_debug:
+            logger.info(
+                "Plotting boundary blending debug figure for dt=%s, method=%s.",
+                dt,
+                method,
+            )
+            plot_bdy_blending_debug(
+                BoundaryPlotData(
+                    pd_data=pd_data,
+                    gt_data=gt_data,
+                    fft_blended_initial=fft_blended_initial
+                    if "fft" in method
+                    else None,
+                    final_data=data,
+                    pd_mask=pd_mask,
+                    gt_mask=gt_mask,
+                    level_idx=debug_lv_idx,
+                    channel_idx=debug_ch_idx,
+                    dt=dt,
+                    method=method,
+                    tensor_type=tensor_type,
+                )
+            )
 
         return data
-
 
     def get_figure_materials(self, case_dt: datetime, data_compose: DataCompose):
         """Get ground truth and prediction data for plotting figures.
