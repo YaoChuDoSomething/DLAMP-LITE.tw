@@ -597,7 +597,7 @@ class WeatherPlotter:
         model_lat: np.ndarray = self.manager.results["lat"]
         points = np.vstack((model_lon.ravel(), model_lat.ravel())).T
 
-        levels_enum = self.manager.levels
+        levels_enum = self.manager.pressure_levels
         pressure_levels = np.array([float(l.value.replace('hPa', '')) for l in levels_enum])
 
         # 獲取所有垂直層的 3D 資料
@@ -714,4 +714,120 @@ class WeatherPlotter:
         fig.savefig(output_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
         logger.info(f"Saved cross section plot to {output_path}")
+        return output_path
+
+    def create_full_stamps_plots(
+        self,
+        forecast_step: int,
+    ) -> Tuple[Path, Path]:
+        """Creates and saves full stamp plots for all variables and levels.
+
+        This generates two separate plots: one for the forecast fields and one
+        for the ground truth fields at a specific forecast step. Each plot is a
+        grid of subplots, with variables along the columns and pressure levels
+        along the rows.
+
+        Args:
+            forecast_step (int): The 0-indexed forecast step to visualize.
+
+        Returns:
+            A tuple containing the paths to the saved forecast and ground
+            truth PNG image files.
+        """
+        fc_path = self._plot_full_stamps_panel(forecast_step, is_gt=False)
+        gt_path = self._plot_full_stamps_panel(forecast_step, is_gt=True)
+        return fc_path, gt_path
+
+    def _plot_full_stamps_panel(
+        self,
+        forecast_step: int,
+        is_gt: bool,
+    ) -> Path:
+        """Helper to generate a single full stamps plot panel."""
+        data_type_name = "GroundTruth" if is_gt else "Forecast"
+        logger.info(f"Generating full stamps plot for {data_type_name}...")
+
+        levels = self.manager.pressure_levels
+        variables = self.manager.upper_vars + self.manager.surface_vars
+        num_levels = len(levels)
+        num_vars = len(variables)
+
+        if num_levels == 0 or num_vars == 0:
+            logger.warning("No levels or variables found to plot for full stamps.")
+            return Path()
+
+        model_lon: np.ndarray = self.manager.results["lon"]
+        model_lat: np.ndarray = self.manager.results["lat"]
+        model_map: np.ndarray = self.manager.results["mask"]
+        ny, nx = model_lon.shape
+        x_indices: np.ndarray = np.arange(nx)
+        y_indices: np.ndarray = np.arange(ny)
+        xgrid, ygrid = np.meshgrid(x_indices, y_indices)
+
+        data_grid = []
+        time = self.manager.get_forecast_time(forecast_step)
+        for level in levels:
+            row_data = []
+            for var in variables:
+                try:
+                    if is_gt:
+                        data = self.manager.get_ground_truth_data(time, var, level)
+                    else:
+                        data = self.manager.get_forecast_data(forecast_step, var, level)
+                except ValueError:
+                    data = np.full((ny, nx), np.nan)
+                row_data.append(data)
+            data_grid.append(row_data)
+
+        fig, axes = plt.subplots(
+            num_levels, num_vars,
+            figsize=(num_vars * 3, num_levels * 2.5),
+            squeeze=False  # Always return 2D array for axes
+        )
+
+        forecast_time = self.manager.get_forecast_time(forecast_step)
+        fig.suptitle(
+            f'{data_type_name} at {forecast_time.strftime("%Y-%m-%d %H:%M")}',
+            fontsize=16
+        )
+
+        for l_idx, level in enumerate(levels):
+            for v_idx, var in enumerate(variables):
+                ax = axes[l_idx, v_idx]
+                plot_field = data_grid[l_idx][v_idx]
+
+                level_name = level.value if hasattr(level, 'value') else str(level)
+                var_name = var.value if hasattr(var, 'value') else str(var)
+                ax.set_title(f'L: {level_name}, V: {var_name}', fontsize=8)
+
+                pcm = ax.pcolormesh(xgrid, ygrid, plot_field, cmap='viridis', shading="auto")
+                cbar = plt.colorbar(pcm, ax=ax, orientation="vertical", pad=0.1, shrink=0.8)
+                cbar.ax.tick_params(labelsize=6)
+
+                ax.contour(
+                    xgrid, ygrid, model_map, [0.5, 1.5],
+                    colors="black", linewidths=0.5
+                )
+                ax.contour(
+                    xgrid, ygrid, model_lon, np.linspace(-180, 180, 10),
+                    colors="gray", linewidths=0.35, linestyles=":"
+                )
+                ax.contour(
+                    xgrid, ygrid, model_lat, np.linspace(-90, 90, 6),
+                    colors="gray", linewidths=0.35, linestyles=":"
+                )
+
+                ax.set_aspect("equal", adjustable="box")
+                ax.set_xticks([])
+                ax.set_yticks([])
+
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+        start_time_str = self.manager.start_time.strftime('%Y%m%d_%H%M')
+        step_str = f"F{forecast_step + 1:03d}H" if forecast_step != -1 else "F000H"
+        filename = f"{self.exp_code}_{data_type_name}_stamps_{start_time_str}_{step_str}.png"
+        output_path = self.output_dir / filename
+        fig.savefig(output_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        logger.info(f"Saved full stamps plot to {output_path}")
         return output_path
