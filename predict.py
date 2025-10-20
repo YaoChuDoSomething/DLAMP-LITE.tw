@@ -25,8 +25,7 @@ from analysis.data_manager import AnalysisDataManager
 from analysis.forecast_saver import ForecastSaver
 from analysis.plotter import WeatherPlotter
 from analysis.prediction import PredictionRunner
-from analysis.video_creator import create_animation
-
+from analysis.video_creator import create_animation 
 log = logging.getLogger(__name__)
 
 
@@ -49,26 +48,27 @@ def main(cfg: DictConfig) -> None:
         )
         log.info("Start workflow -> %s", out_dir)
 
-        EXP_CODE = "FANAPI"
+        EXP_CODE = f"FANAPI_{cfg.inference.bdy_swap_method.name}"
         cfg.data.start_time = "2010-09-18 18:00"
-        cfg.data.end_time = "2010-09-20 00:00"
+        cfg.data.end_time = "2010-09-18 20:00"
 
-        #EXP_CODE = "MY2020"
+        #EXP_CODE = f"MY2020_{cfg.inference.bdy_swap_method.name}"
         #cfg.data.start_time = "2020-05-21 12:00"
         #cfg.data.end_time = "2020-05-22 12:00"
 
-        #EXP_CODE = "MUIFA"
+        #EXP_CODE = f"MUIFA_{cfg.inference.bdy_swap_method.name}"
         #cfg.data.start_time = "2022-09-11 00:00"
-        #cfg.data.end_time = "2022-09-11 03:00"
+        #cfg.data.end_time = "2022-09-12 00:00"
 
         case_end = datetime.strptime(cfg.data.end_time, cfg.data.format)
         case_start = datetime.strptime(cfg.data.start_time, cfg.data.format)
-        case_duration = case_end - case_start
+        case_duration = (case_end - case_start)
+        cfg.data.use_Kth_hour_pred = 0
         cfg.plot.figure_columns = int(case_duration.total_seconds() // 3600) + 1
 
         eval_cases = [case_start]
         eval_cases.sort()
-        print("cfg = ", cfg)
+        log.info(f"cfg = {cfg}")
 
         # Step 1: Execute the model inference
         predictor: PredictionRunner = PredictionRunner(cfg)
@@ -114,11 +114,37 @@ def main(cfg: DictConfig) -> None:
                 )
                 log.exception("Plot for step %s failed: %s", step_str, e)
 
+        log.info("Generating full stamps plots for steps: %s", plot_steps)
+
+        generated_fc_stamps: List[Path] = []
+        generated_gt_stamps: List[Path] = []
+        for step in plot_steps:
+            try:
+                num_forecasts: int = results["output_upper"].shape[1]
+                if step >= num_forecasts:
+                    log.warning(
+                        "Skipping full stamps plot for step F%03dH as it exceeds max.",
+                        step + 1
+                    )
+                    continue
+                fc_stamps_path, gt_stamps_path = plotter.create_full_stamps_plots(step)
+                generated_fc_stamps.append(fc_stamps_path)
+                generated_gt_stamps.append(gt_stamps_path)
+            except (ValueError, IndexError) as e:
+                step_plus_one: int = step + 1
+                step_str: str = (
+                    "F000H" if step == -1 else f"F{step_plus_one:03d}H"
+                )
+                log.exception("Full stamps plot for step %s failed: %s", step_str, e)
+
         # Step 5: Create an animation from the generated plots
-        if generated_plots:
-            video_filename = f"{EXP_CODE}_{case_start.strftime('%Y%m%d_%H%M')}.mp4"
-            video_path = out_dir / "plots" / video_filename
-            create_animation(generated_plots, video_path, framerate=1)
+        video_filename = f"{EXP_CODE}_{case_start.strftime('%Y%m%d_%H%M')}.mp4"
+        video_path = out_dir / "plots" / video_filename
+        fc_video_path = out_dir / "plots" / f"fc_{video_filename}"
+        gt_video_path = out_dir / "plots" / f"gt_{video_filename}"
+        create_animation(generated_plots, video_path, framerate=1)
+        create_animation(generated_fc_stamps, fc_video_path, framerate=1)
+        create_animation(generated_gt_stamps, gt_video_path, framerate=1)
 
         log.info("Workflow finished successfully.")
 
@@ -129,4 +155,3 @@ def main(cfg: DictConfig) -> None:
 
 if __name__ == "__main__":
     main()
-
