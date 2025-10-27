@@ -63,8 +63,8 @@ def transform_to_rwrf(
             data_subset.attrs["units"] = "kg kg-1"
 
         # Reshape and assign coordinates
-        data_subset = data_subset.rename({"variable": "pressure"}).assign_coords(
-            pressure=pressure_levels
+        data_subset = data_subset.rename({"variable": "pres_bottom_top"}).assign_coords(
+            pres_bottom_top=("pres_bottom_top", pressure_levels)
         )
 
         rwrf_name = mappings[prefix_3d]
@@ -72,6 +72,16 @@ def transform_to_rwrf(
         logger.debug(f"Processed 3D var '{prefix_3d}' into RWRF '{rwrf_name}'.")
 
     rwrf_ds = xr.Dataset(rwrf_vars)
+
+    # Add RWRF pressure coordinate/variable
+    rwrf_ds = rwrf_ds.assign(
+        pres_levels=("pres_bottom_top", pressure_levels)
+    )
+    rwrf_ds["pres_levels"].attrs.update(
+        long_name="Pressure levels",
+        units="hPa"
+    )
+
     logger.info("Transformation to RWRF dataset complete.")
     return rwrf_ds
 

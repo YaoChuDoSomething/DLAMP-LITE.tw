@@ -1,12 +1,9 @@
-# coupled_forecast.py
 # File: coupled_forecast.py
 # Description: Main entry point for the one-way coupled SFNO-GFS forecast workflow.
 
-import asyncio
 import logging
 import os
-from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -14,14 +11,12 @@ import torch
 import xarray as xr
 import yaml
 from earth2studio.data import GFS, fetch_data
-from earth2studio.io import NetCDF4Backend
 from earth2studio.models.px import SFNO
 
 # Import from local project structure
 from src.op.diag.diagnostics import run_diagnostics
 from src.op.io.rwrf_io import save_hourly_rwrf_series
 from src.op.regrid.regridding import to_rwrf_grid
-from src.op.utils.time_interp import to_hourly_linear
 from src.op.utils.variables_conversion import transform_to_rwrf
 
 # Module-level logger setup
@@ -49,8 +44,8 @@ class CoupledForecastWorkflow:
         self.gfs_config: Dict[str, Any] = self._load_yaml(gfs_config_path)
         self.device: torch.device = self._get_device()
         self.model: Optional[SFNO] = None
-        # Data source can be configured here if needed, defaults to GFS.
         self.data_source: GFS = GFS()
+        logger.info("Configurations and device initialized.")
 
     def _load_yaml(self, path: str) -> Dict[str, Any]:
         """Loads a YAML configuration file."""
@@ -70,21 +65,19 @@ class CoupledForecastWorkflow:
     def setup(self) -> None:
         """Sets up the SFNO model for the workflow."""
         logger.info("Setting up the SFNO prognostic model.")
-        # Earth2Studio uses a cache directory for model weights.
         cache_dir = os.path.join(os.path.expanduser("~"), ".cache/earth2studio")
         os.environ["EARTH2STUDIO_CACHE"] = cache_dir
         logger.info(f"Earth2Studio model cache is set to: {cache_dir}")
+        logger.info("Model cache directory configured.")
 
+        # API Call with full type annotations for loading the model
         package = SFNO.load_default_package()
-        self.model = SFNO.load_model(package).to(self.device)
-        logger.info("SFNO model loaded successfully and moved to target device.")
-        logger.info(
-            "🚨 USAGE ALERT: Verify the function name, parameter order, and "
-            "expected input/output format for 'SFNO.load_model'. Refer to the "
-            "official Earth2Studio documentation."
-        )
+        model = SFNO.load_model(package)
+        self.model = model.to(self.device)
 
-    async def _fetch_initial_conditions(
+        logger.info("SFNO model loaded successfully and moved to target device.")
+
+    def _fetch_initial_conditions(
         self, start_time: np.datetime64
     ) -> Tuple[torch.Tensor, Dict[str, np.ndarray]]:
         """Fetches initial conditions from the GFS data source."""
@@ -92,41 +85,45 @@ class CoupledForecastWorkflow:
             raise RuntimeError("Model is not set up. Call setup() first.")
 
         logger.info(f"Fetching initial conditions for forecast start: {start_time}")
-        input_variables: list[str] = self.model.variables
-        coords: Dict[str, np.ndarray] = self.model.input_coords()
+        input_variables: List[str] = self.model.input_coords()["variable"]
         time_array = np.array([start_time])
 
-        # API Call with full type annotations
+        # API Call with full type annotations for fetching data
         x: torch.Tensor
         coords: Dict[str, np.ndarray]
         x, coords = fetch_data(
             source=self.data_source,
             time=time_array,
             variable=input_variables,
+            device=self.device,
         )
 
-        logger.info(
-            f"Fetched data from GFS with tensor shape {x.shape}."
-        )
-        logger.info(
-            "🚨 USAGE ALERT: Verify the function name, parameter order, and "
-            "expected input/output format for 'earth2studio.data.fetch_data'. "
-            "Refer to the official Earth2Studio documentation."
-        )
+        logger.info(f"Fetched data from GFS with tensor shape {x.shape}.")
+        logger.info("Initial conditions successfully fetched from GFS.")
         return x, coords
 
     def _tensor_to_dataarray(
-        self,
-        tensor: torch.Tensor,
-        coords: Dict[str, Any],
-        variable_names: List[str],
+        self, tensor: torch.Tensor, coords: Dict[str, Any]
     ) -> xr.DataArray:
-        """Converts an output tensor to a labeled xarray.DataArray."""
-        if tensor.shape[0] != 1:
-            raise ValueError(f"Expected batch size of 1, but got {tensor.shape[0]}")
+        """
+        Converts an input or output tensor to a labeled xarray.DataArray,
+        robustly handling different tensor dimensions.
+        """
+        # Squeeze leading dimensions of size 1 until the tensor is 3D
+        # (variable, lat, lon)
+        squeezed_tensor = tensor
+        while squeezed_tensor.ndim > 3 and squeezed_tensor.shape[0] == 1:
+            squeezed_tensor = squeezed_tensor.squeeze(0)
 
+        if squeezed_tensor.ndim != 3:
+            raise ValueError(
+                "Tensor could not be squeezed to 3 dimensions "
+                f"(variable, lat, lon). Final shape: {squeezed_tensor.shape}"
+            )
+
+        variable_names = self.model.variables
         return xr.DataArray(
-            data=tensor.squeeze(0).cpu().numpy(),
+            data=squeezed_tensor.cpu().numpy(),
             dims=("variable", "lat", "lon"),
             coords={
                 "variable": variable_names,
@@ -135,103 +132,155 @@ class CoupledForecastWorkflow:
             },
         )
 
-    async def run(self) -> None:
+    def run(self) -> None:
         """Executes the entire forecast and processing workflow."""
         self.setup()
         if self.model is None:
             raise RuntimeError("Model setup failed, cannot run forecast.")
 
-        # Extract configuration parameters
         time_cfg = self.config["share"]["time_control"]
         start_dt = datetime.strptime(time_cfg["start"], time_cfg["format"])
         end_dt = datetime.strptime(time_cfg["end"], time_cfg["format"])
-        one_step_hour = 6
-        nsteps = int((end_dt - start_dt).total_seconds() / (3600 * one_step_hour))
+        one_step_hour = timedelta(hours=6)
+        nsteps = int((end_dt - start_dt).total_seconds() // one_step_hour.total_seconds())
         start_time_np = np.datetime64(start_dt)
+        logger.info(f"Forecast time range set from {start_dt} to {end_dt} for {nsteps} steps.")
 
-        # Fetch initial conditions
-        x_ic, coords_ic = await self._fetch_initial_conditions(start_time_np)
-        
-        rwrf_datasets_6h = []
+        # --- PHASE 1: Data Acquisition & Inference ---
+        logger.info("--- Starting Phase 1: Data Acquisition & Inference ---")
+        x_ic, coords_ic = self._fetch_initial_conditions(start_time_np)
 
-        # Process initial condition (Forecast hour 0)
-        logger.info("Processing initial condition (F000).")
-        ic_da = self._tensor_to_dataarray(
-            x_ic, coords_ic, self.model.input_coords()["variable"]
-        )
-        
-        # Post-process for RWRF compatibility
-        regridded_ic = to_rwrf_grid(ic_da, self.config["rwrf"]["target_grid_path"])
-        rwrf_ic_ds = transform_to_rwrf(regridded_ic, self.config, self.gfs_config)
-        
-        if self.config["diagnostics"]["enable"]:
-            run_diagnostics(rwrf_ic_ds, self.config["diagnostics"]["set"])
-        
-        rwrf_datasets_6h.append(rwrf_ic_ds.expand_dims(time=[start_dt]))
-        
-        # Run forecast iterator
-        logger.info(f"Starting forecast for {nsteps} steps of {one_step_hour} hours each.")
-        model_iterator = self.model.create_iterator(x_ic, coords_ic)
-        logger.info(
-            "🚨 USAGE ALERT: Verify the function name, parameter order, and "
-            "expected input/output format for 'model.create_iterator'. "
-            "Refer to the official Earth2Studio documentation."
-        )
+        raw_forecast_dataarrays: List[xr.DataArray] = []
+
+        # Store initial condition (F000)
+        ic_da = self._tensor_to_dataarray(x_ic, coords_ic)
+        raw_forecast_dataarrays.append(ic_da)
+        logger.info("Initial condition (F000) stored in raw model format.")
+
+        # API Call for creating the forecast iterator
+        model_iterator = self.model.create_iterator(x=x_ic, coords=coords_ic)
+        logger.info("Forecast iterator created for sequential model inference.")
+        logger.info("Starting sequential SFNO model inference.")
 
         for i, (x_step, coords_step) in enumerate(model_iterator):
             if i >= nsteps:
                 break
-            
-            current_dt = start_dt + (i + 1) * self.model.time_step
-            logger.info(f"Processing forecast step {i + 1}/{nsteps} for time {current_dt}.")
+            logger.info(f"Running SFNO inference for step {i + 1}/{nsteps}.")
+            step_da = self._tensor_to_dataarray(x_step, coords_step)
+            raw_forecast_dataarrays.append(step_da)
+            logger.info(f"SFNO inference step {i + 1} completed and data stored.")
 
-            step_da = self._tensor_to_dataarray(
-                x_step, coords_step, self.model.output_coords()["variable"]
-            )
-            
-            regridded_step = to_rwrf_grid(step_da, self.config["rwrf"]["target_grid_path"])
-            rwrf_step_ds = transform_to_rwrf(regridded_step, self.config, self.gfs_config)
+        logger.info("--- Phase 1: Inference Complete ---")
 
+        # --- PHASE 2: Post-processing (Regrid, Transform, Diagnostics) ---
+        # 1. Spatial Regridding (lat-lon grid -> RWRF south_north-west_east grid)
+        # 2. Variable Transformation (Lexicon 73 -> RWRF variables with proper dimensions)
+        # 3. Diagnostics (if enabled)
+        # 4. Time dimension and variable preparation for RWRF format
+
+        logger.info("--- Starting Phase 2: Post-Processing ---")
+        processed_datasets_6h: List[xr.Dataset] = []
+        logger.info("Beginning post-processing for 6-hourly forecast data.")
+        
+        # Process each 6-hourly timestep
+        for i, raw_da in enumerate(raw_forecast_dataarrays):
+            current_dt = np.datetime64(start_dt + i * one_step_hour)  # Use np.datetime64 consistently
+            logger.info(f"Post-processing step {i} for time {current_dt}.")
+
+            # 1. Spatial regridding to RWRF grid
+            regridded_da = to_rwrf_grid(raw_da, self.config["rwrf"]["target_grid_path"])
+            
+            # 2. Transform variables to RWRF format (including proper dimension naming)
+            rwrf_ds = transform_to_rwrf(regridded_da, self.config, self.gfs_config)
+            
+            # 3. Run diagnostics if enabled
             if self.config["diagnostics"]["enable"]:
-                run_diagnostics(rwrf_step_ds, self.config["diagnostics"]["set"])
+                run_diagnostics(rwrf_ds, self.config["diagnostics"]["set"])
             
-            rwrf_datasets_6h.append(rwrf_step_ds.expand_dims(time=[current_dt]))
-
-        logger.info("Forecast iteration complete.")
-
-        # Final RWRF output generation
-        if rwrf_datasets_6h:
-            combined_ds = xr.concat(rwrf_datasets_6h, dim="time")
+            # 4. Add time dimension using np.datetime64
+            rwrf_ds = rwrf_ds.expand_dims(time=[current_dt])
             
+            processed_datasets_6h.append(rwrf_ds)
+            logger.info(f"Post-processing for time {current_dt} completed.")
+
+        logger.info("--- Phase 2: Post-Processing Complete ---")
+        logger.info("Preparing to generate final RWRF output files.")
+
+        # --- PHASE 3: Final Output Generation ---
+        if processed_datasets_6h:
+            logger.info("--- Starting Phase 3: Output Generation ---")
+            # Combine all 6-hourly datasets while preserving RWRF dimensions
+            combined_ds = xr.concat(processed_datasets_6h, dim="time")
+            logger.info("All 6-hourly datasets combined into a single xarray Dataset.")
+            
+            # Convert to hourly RWRF format and save individual files
+            # The save_hourly_rwrf_series function handles:
+            # - Linear time interpolation to hourly data
+            # - RWRF-compliant file naming
+            # - Proper dimension ordering (Time, pres_bottom_top, south_north, west_east)
+            # - Times variable creation in RWRF format
             save_hourly_rwrf_series(
                 ds6h=combined_ds,
-                var_map=self.gfs_config["registry"]["mappings"],
                 gattrs=self.gfs_config["share"]["global_attrs"],
                 outdir=self.config["rwrf"]["output_dir"],
                 bbox=self.config["rwrf"]["bbox"],
             )
+            logger.info("Hourly RWRF series successfully saved to output directory.")
         else:
             logger.warning("No forecast steps were processed to save.")
 
         logger.info("Workflow finished successfully.")
 
 
-if __name__ == "__main__":
+def create_dummy_files() -> None:
+    """Creates dummy config and asset files for a runnable example."""
+    logger.info("Creating dummy configuration and asset files for demonstration.")
+    os.makedirs("config/op/models", exist_ok=True)
+    os.makedirs("config/op/data", exist_ok=True)
+    os.makedirs("assets", exist_ok=True)
 
-    target_grid_path = "assets/target_grid.nc"
-    if not os.path.exists(target_grid_path):
-        target_ds = xr.Dataset(
-            coords={
-                "XLAT": (("y", "x"), np.random.rand(50, 50) * 10 + 20),
-                "XLONG": (("y", "x"), np.random.rand(50, 50) * 10 + 115),
-            }
+    with open("config/op/models/sfno_config.yaml", "w") as f:
+        yaml.safe_dump(
+            yaml.safe_load("""
+            model:
+              name: SFNO
+              variable_2d: [u10m, v10m, u100m, v100m, t2m, sp, msl, tcwv]
+              variable_3d: [u, v, t, z, q]
+              pressure_levels: [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000]
+            share:
+              time_control:
+                start: "2023-01-01 00:00:00"
+                end: "2023-01-01 12:00:00"
+                format: "%Y-%m-%d %H:%M:%S"
+            rwrf:
+              output_dir: outputs/rwrf_processed
+              target_grid_path: assets/target.nc
+              bbox: {lat_min: 20.0, lat_max: 30.0, lon_min: 115.0, lon_max: 125.0}
+            diagnostics: {enable: true, set: rwrf_default}
+            """), f, default_flow_style=False
         )
-        target_ds.to_netcdf(target_grid_path)
-        logger.info(f"Dummy target grid created at: {target_grid_path}")
+
+    with open("config/op/data/gfs_config.yaml", "w") as f:
+        yaml.safe_dump(
+            yaml.safe_load("""
+            registry:
+              mappings: {u10m: U10, v10m: V10, t2m: T2, sp: PSFC, msl: MSLP, tcwv: PWAT, u: U, v: V, t: T, z: GHT, q: Q}
+            share:
+              global_attrs:
+                model_name: "NVIDIA SFNO via Earth2Studio"
+                initial_condition_source: "NOAA/NCEP GFS"
+                processing_history: "Created by coupled_forecast.py workflow."
+            """), f, default_flow_style=False
+        )
+
+    logger.info("Dummy files created successfully.")
+
+
+if __name__ == "__main__":
+    create_dummy_files()
 
     workflow = CoupledForecastWorkflow()
     try:
-        # Execute the asynchronous run method.
-        asyncio.run(workflow.run())
+        workflow.run()
     except Exception as e:
         logger.error(f"An critical error occurred during workflow execution: {e}", exc_info=True)

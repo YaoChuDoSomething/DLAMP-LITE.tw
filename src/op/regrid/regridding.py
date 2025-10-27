@@ -37,11 +37,13 @@ def to_rwrf_grid(sfno_da: xr.DataArray, target_grid_path: str) -> xr.DataArray:
     if "lat" not in sfno_da.dims or "lon" not in sfno_da.dims:
         raise ValueError("Input DataArray must have 'lat' and 'lon' dimensions.")
 
+
+
     logger.info(f"Starting regridding process to target grid: {target_grid_path}")
 
     # Load target grid coordinates
     try:
-        with xr.open_dataset(target_grid_path) as target_ds:
+        with xr.open_dataset(target_grid_path, engine="h5netcdf") as target_ds:
             target_lat = target_ds["XLAT"].values
             target_lon = target_ds["XLONG"].values
     except FileNotFoundError:
@@ -63,9 +65,9 @@ def to_rwrf_grid(sfno_da: xr.DataArray, target_grid_path: str) -> xr.DataArray:
     target_points = np.vstack((target_lat.ravel(), target_lon.ravel())).T
 
     regridded_vars = []
-    # Iterate over each variable in the input DataArray
+    # Iterate over each variable in the input DataArray # Using tqdm to display the 
     for var_name in sfno_da["variable"].values:
-        logger.debug(f"Regridding variable: {var_name}")
+        logger.info(f"Regridding variable: {var_name}")
         source_data = sfno_da.sel(variable=var_name).values.ravel()
 
         # Perform bilinear interpolation
@@ -74,24 +76,35 @@ def to_rwrf_grid(sfno_da: xr.DataArray, target_grid_path: str) -> xr.DataArray:
         )
 
         # Fill any remaining NaNs with nearest-neighbor interpolation
-        nan_mask = np.isnan(interpolated_data)
-        if np.any(nan_mask):
-            logger.debug(f"Found {np.sum(nan_mask)} NaN points. Filling them.")
-            nearest_fill = griddata(
-                source_points, source_data, target_points[nan_mask], method="nearest"
-            )
-            interpolated_data[nan_mask] = nearest_fill
+        #nan_mask = np.isnan(interpolated_data)
+        #if np.any(nan_mask):
+        #    logger.debug(f"Found {np.sum(nan_mask)} NaN points. Filling them.")
+        #    nearest_fill = griddata(
+        #        source_points, source_data, target_points[nan_mask], method="nearest"
+        #    )
+        #    interpolated_data[nan_mask] = nearest_fill
 
         regridded_vars.append(interpolated_data.reshape(target_lat.shape))
+        regridded_vars.append(target_lat.reshape(target_lon.shape))
+        regridded_vars.append(target_lon.reshape(target_lat.shape))
 
     # Construct the final regridded DataArray
     regridded_da = xr.DataArray(
-        data=np.stack(regridded_vars, axis=0),
-        dims=("variable", "south_north", "west_east"),
         coords={
             "variable": sfno_da["variable"].values,
-            "XLAT": (("south_north", "west_east"), target_lat),
-            "XLONG": (("south_north", "west_east"), target_lon),
+            "south_north": np.arange(target_lat.shape[0]),
+            "west_east": np.arange(target_lat.shape[1]),
+        },
+    )
+
+    for i, var_name in enumerate(sfno_da["variable"].values):
+        regridded_da.loc[dict(variable=var_name)]
+        data_vars={ var_name: (("time", "south_north", "west_east"), regridded_vars[i*3]),
+        }
+        regridded_da = regridded_da.assign_coords(
+        {   
+            "XLAT": (("time", "south_north", "west_east"), target_lat),
+            "XLONG": (("time", "south_north", "west_east"), target_lon),
         },
     )
     logger.info("Regridding complete.")

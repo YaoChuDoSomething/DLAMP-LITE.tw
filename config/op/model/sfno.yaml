@@ -46,7 +46,7 @@ share:
     prefix: "SFNO_GFS"
     init_tsfmt: "%Y%m%d_%H%M"
 
-rwrf:
+rwrf:   # Global -> BBOX(get from Global) -> RWRF
   output_dir: "/wk2/yaochu/CASE_DATA/Pool/"
   target_grid_path: "assets/target_grid.nc" # Dummy grid for regridding
   bbox: # Bounding box for final crop

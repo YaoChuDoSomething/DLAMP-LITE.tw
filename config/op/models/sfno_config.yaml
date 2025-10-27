@@ -39,11 +39,8 @@ rwrf:
     lon_max: 125.0
     lon_min: 115.0
   output_dir: outputs/rwrf_processed
-  target_grid_path: assets/target_grid.nc
+  target_grid_path: assets/target.nc
 share:
-  io_control:
-    output_dir: outputs/raw_sfno
-    prefix: SFNO_GFS_RAW
   time_control:
     end: '2023-01-01 12:00:00'
     format: '%Y-%m-%d %H:%M:%S'

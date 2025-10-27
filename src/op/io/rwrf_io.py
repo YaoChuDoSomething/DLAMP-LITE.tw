@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 def save_hourly_rwrf_series(
     ds6h: xr.Dataset,
-    var_map: Dict[str, str],
     gattrs: Dict[str, str],
     outdir: str,
     bbox: Dict[str, float],
@@ -28,8 +27,6 @@ def save_hourly_rwrf_series(
 
     Args:
         ds6h (xr.Dataset): Dataset with 6-hourly data points.
-        var_map (Dict[str, str]): Not directly used here but essential for
-                                   the writing function's interface.
         gattrs (Dict[str, str]): Global attributes for the output files.
         outdir (str): The output directory to save files.
         bbox (Dict[str, float]): Dictionary with keys 'lat_min', 'lat_max',
@@ -107,23 +104,41 @@ def _write_rwrf_file(
         global_attrs (Dict[str, str]): Global attributes for the file.
         path (str): The full path for the output file.
     """
-    # WRF requires a 'Times' character variable
-    time_str = np.datetime_as_string(ds.time.values, unit="s").replace("T", "_")
+    time_val = ds["time"].item() if ds["time"].ndim == 0 else ds["time"].values
+    time_str = np.datetime_as_string(time_val, unit="s").replace("T", "_")
     times_char_array = np.array([list(time_str)], dtype="S1")
 
     ds_to_write = ds.copy()
+    # Guarantee Time dimension for all variables
+    if "Time" not in ds_to_write.dims:
+        ds_to_write = ds_to_write.expand_dims(Time=[0])
+
+    new_vars = {}
+    for v in ds_to_write.data_vars:
+        da = ds_to_write[v]
+        if "Time" not in da.dims:
+            da = da.expand_dims(Time=[0])
+            desired = ["Time"]
+            if "pres_bottom_top" in da.dims:
+                desired += ["pres_bottom_top"]
+            if "south_north" in da.dims:
+                desired += ["south_north"]
+            if "west_east" in da.dims:
+                desired += ["west_east"]
+            remaining = [d for d in da.dims if d not in desired]
+            da = da.transpose(*(desired + remaining))
+        new_vars[v] = da
+    ds_to_write = ds_to_write.assign(**new_vars)
+
     ds_to_write["Times"] = (("Time", "DateStrLen"), times_char_array)
     ds_to_write.attrs.update(global_attrs)
 
-    # Define encoding for compression and data types
     encoding = {}
     for var in ds_to_write.data_vars:
-        if ds_to_write[var].dtype in [np.float32, np.float64]:
+        if ds_to_write[var].dtype in (np.float32, np.float64):
             encoding[var] = {"dtype": "float32", "_FillValue": -9999.0}
 
-    ds_to_write.to_netcdf(
-        path, engine="netcdf4", format="NETCDF4", encoding=encoding
-    )
+    ds_to_write.to_netcdf(path, engine="netcdf4", format="NETCDF4", encoding=encoding)
     logger.info(f"Successfully wrote RWRF file: {path}")
 
 

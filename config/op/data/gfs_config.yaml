@@ -13,6 +13,6 @@ registry:
     z: GHT
 share:
   global_attrs:
-    history: Created by coupled_forecast.py workflow.
     initial_condition_source: NOAA/NCEP GFS
     model_name: NVIDIA SFNO via Earth2Studio
+    processing_history: Created by coupled_forecast.py workflow.
