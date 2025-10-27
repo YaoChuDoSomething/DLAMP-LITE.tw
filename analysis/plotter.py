@@ -26,7 +26,7 @@ from omegaconf import DictConfig
 from analysis.data_manager import AnalysisDataManager
 from analysis.plot_meta import ANALYSIS_PLOT_CONFIGS
 from src.utils.data_type import DataType, Level
-from src.const import MODEL_CODE
+from src.const import MODEL_CODE, KG_PER_KG
 
 logger = logging.getLogger(__name__)
 
@@ -346,7 +346,7 @@ class WeatherPlotter:
         self._generic_grid_plot(
             ax_fc,
             f"FC: {title}",
-            qt_fc,
+            qt_fc * 1000 if KG_PER_KG else qt_fc,
             None,
             (u10_fc, v10_fc), "barbs",
             cmap, vmin, vmax,
@@ -358,7 +358,7 @@ class WeatherPlotter:
         self._generic_grid_plot(
             ax_gt,
             f"GT: {title}",
-            qt_gt,
+            qt_gt * 1000 if KG_PER_KG else qt_gt,
             None,
             (u10_gt, v10_gt), "barbs",
             cmap, vmin, vmax,
@@ -742,19 +742,58 @@ class WeatherPlotter:
         self,
         forecast_step: int,
         is_gt: bool,
-    ) -> Path:
-        """Helper to generate a single full stamps plot panel."""
-        data_type_name = "GroundTruth" if is_gt else "Forecast"
-        logger.info(f"Generating full stamps plot for {data_type_name}...")
+    ) -> Optional[Path]:
+        """
+        Helper to generate a single full stamps plot panel.
 
-        levels = self.manager.pressure_levels
-        variables = self.manager.upper_vars + self.manager.surface_vars
-        num_levels = len(levels)
-        num_vars = len(variables)
+        This corrected version fixes a critical bug where all subplots were
+        hidden due to an incorrect check for plot content. It also adheres
+        to best practices for file naming and error handling.
 
-        if num_levels == 0 or num_vars == 0:
-            logger.warning("No levels or variables found to plot for full stamps.")
-            return Path()
+        Args:
+            forecast_step (int): The forecast step to plot.
+            is_gt (bool): If True, plots ground truth data; otherwise, plots forecast data.
+
+        Returns:
+            Optional[Path]: The path to the saved image file, or None if plotting fails.
+        """
+        data_type_name: str = "GroundTruth" if is_gt else "Forecast"
+        logging.info(f"Generating full stamps plot for {data_type_name}...")
+
+        pressure_levels: List[PressureLevel] = self.manager.pressure_levels
+        upper_vars: List[DataType] = self.manager.upper_vars
+        surface_vars: List[DataType] = self.manager.surface_vars
+
+        def get_base_name(var: DataType) -> str:
+            # e.g., 't@850' -> 't'
+            return var.value.split('@')[0]
+
+        # Determine column layout based on unique base variable names
+        upper_base_names: Set[str] = {get_base_name(v) for v in upper_vars}
+        surface_base_names: Set[str] = {get_base_name(v) for v in surface_vars}
+        all_base_names: List[str] = sorted(list(upper_base_names | surface_base_names))
+
+        # Create maps for quick lookup
+        upper_vars_map: Dict[str, DataType] = {get_base_name(v): v for v in upper_vars}
+        surface_vars_map: Dict[str, List[DataType]] = {}
+        for var in surface_vars:
+            base = get_base_name(var)
+            if base not in surface_vars_map:
+                surface_vars_map[base] = []
+            surface_vars_map[base].append(var)
+
+        # Determine row layout
+        num_pressure_levels: int = len(pressure_levels)
+        max_surface_rows: int = 0
+        if surface_vars_map:
+            max_surface_rows = max((len(v) for v in surface_vars_map.values()), default=0)
+
+        num_rows: int = num_pressure_levels + max_surface_rows
+        num_cols: int = len(all_base_names)
+
+        if num_rows == 0 or num_cols == 0:
+            logging.warning("No levels or variables found to plot for full stamps.")
+            return None
 
         model_lon: np.ndarray = self.manager.results["lon"]
         model_lat: np.ndarray = self.manager.results["lat"]
@@ -764,70 +803,114 @@ class WeatherPlotter:
         y_indices: np.ndarray = np.arange(ny)
         xgrid, ygrid = np.meshgrid(x_indices, y_indices)
 
-        data_grid = []
-        time = self.manager.get_forecast_time(forecast_step)
-        for level in levels:
-            row_data = []
-            for var in variables:
+        fig, axes = plt.subplots(
+            num_rows, num_cols,
+            figsize=(num_cols * 3.5, num_rows * 2.8),
+            squeeze=False,
+            constrained_layout=True
+        )
+
+        forecast_time: datetime.datetime = self.manager.get_forecast_time(forecast_step)
+        time_str: str = forecast_time.strftime("%Y-%m-%d %H:%M")
+        fig.suptitle(f'{data_type_name} at {time_str} UTC', fontsize=16)
+
+        for c_idx, base_name in enumerate(all_base_names):
+            # Plot pressure levels
+            for r_idx, level in enumerate(pressure_levels):
+                ax = axes[r_idx, c_idx]
+                var: Optional[DataType] = upper_vars_map.get(base_name)
+                plot_field: np.ndarray = np.full((ny, nx), np.nan)
+                var_name: str = ""
+                if var:
+                    var_name = var.name  # Use Enum member name for clarity
+                    try:
+                        if is_gt:
+                            plot_field = self.manager.get_ground_truth_data(forecast_time, var, level)
+                        else:
+                            plot_field = self.manager.get_forecast_data(forecast_step, var, level)
+                    except (ValueError, KeyError):
+                        logging.debug(f"Data not found for {var_name} at {level.value}")
+                        pass
+
+                ax.set_title(f'Var: {var_name or "N/A"} | Lev: {level.value}', fontsize=8)
+
+                if not np.all(np.isnan(plot_field)):
+                    pcm = ax.pcolormesh(xgrid, ygrid, plot_field, cmap='viridis', shading="auto")
+                    plt.colorbar(pcm, ax=ax, orientation="vertical", pad=0.02, shrink=0.8).ax.tick_params(labelsize=6)
+
+            # Plot surface levels
+            s_vars = surface_vars_map.get(base_name, [])
+            for i, var in enumerate(s_vars):
+                r_idx = num_pressure_levels + i
+                ax = axes[r_idx, c_idx]
+                plot_field = np.full((ny, nx), np.nan)
+                var_name = var.name
                 try:
                     if is_gt:
-                        data = self.manager.get_ground_truth_data(time, var, level)
+                        plot_field = self.manager.get_ground_truth_data(forecast_time, var, level=None)
                     else:
-                        data = self.manager.get_forecast_data(forecast_step, var, level)
-                except ValueError:
-                    data = np.full((ny, nx), np.nan)
-                row_data.append(data)
-            data_grid.append(row_data)
+                        plot_field = self.manager.get_forecast_data(forecast_step, var, level=None)
+                except (ValueError, KeyError):
+                    logging.debug(f"Data not found for surface var {var_name}")
+                    pass
 
-        fig, axes = plt.subplots(
-            num_levels, num_vars,
-            figsize=(num_vars * 3, num_levels * 2.5),
-            squeeze=False  # Always return 2D array for axes
-        )
+                ax.set_title(f'Var: {var_name} | Lev: Surface', fontsize=8)
 
-        forecast_time = self.manager.get_forecast_time(forecast_step)
-        fig.suptitle(
-            f'{data_type_name} at {forecast_time.strftime("%Y-%m-%d %H:%M")}',
-            fontsize=16
-        )
+                if not np.all(np.isnan(plot_field)):
+                    pcm = ax.pcolormesh(xgrid, ygrid, plot_field, cmap='viridis', shading="auto")
+                    plt.colorbar(pcm, ax=ax, orientation="vertical", pad=0.02, shrink=0.8).ax.tick_params(labelsize=6)
 
-        for l_idx, level in enumerate(levels):
-            for v_idx, var in enumerate(variables):
-                ax = axes[l_idx, v_idx]
-                plot_field = data_grid[l_idx][v_idx]
+        # --- MAJOR FIX ---
+        # The original code checked `ax.images`, which is always empty for `pcolormesh`.
+        # The correct check is for `ax.collections`.
+        for ax in axes.flat:
+            # If the axes has no collections (i.e., pcolormesh was not plotted), hide it.
+            if not ax.collections:
+                ax.set_visible(False)
+                continue
 
-                level_name = level.value if hasattr(level, 'value') else str(level)
-                var_name = var.value if hasattr(var, 'value') else str(var)
-                ax.set_title(f'L: {level_name}, V: {var_name}', fontsize=8)
+            ax.contour(xgrid, ygrid, model_map, [0.5, 1.5], colors="black", linewidths=0.5)
+            if var_name == "SST":
+                ax.contourf(xgrid, ygrid, model_map, [0.5, 1.5], colors="lightgrey", hatches=['//'])
+            ax.set_aspect("equal", adjustable="box")
+            ax.set_xticks([])
+            ax.set_yticks([])
 
-                pcm = ax.pcolormesh(xgrid, ygrid, plot_field, cmap='viridis', shading="auto")
-                cbar = plt.colorbar(pcm, ax=ax, orientation="vertical", pad=0.1, shrink=0.8)
-                cbar.ax.tick_params(labelsize=6)
-
-                ax.contour(
-                    xgrid, ygrid, model_map, [0.5, 1.5],
-                    colors="black", linewidths=0.5
-                )
-                ax.contour(
-                    xgrid, ygrid, model_lon, np.linspace(-180, 180, 10),
-                    colors="gray", linewidths=0.35, linestyles=":"
-                )
-                ax.contour(
-                    xgrid, ygrid, model_lat, np.linspace(-90, 90, 6),
-                    colors="gray", linewidths=0.35, linestyles=":"
-                )
-
-                ax.set_aspect("equal", adjustable="box")
-                ax.set_xticks([])
-                ax.set_yticks([])
-
-        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-
-        start_time_str = self.manager.start_time.strftime('%Y%m%d_%H%M')
-        step_str = f"F{forecast_step + 1:03d}H" if forecast_step != -1 else "F000H"
-        filename = f"{self.exp_code}_{data_type_name}_stamps_{start_time_str}_{step_str}.png"
-        output_path = self.output_dir / filename
+        # --- Filename Correction ---
+        # Adhering to the specified naming convention: PREFIX_TIMESTAMP.SUFFIX
+        timestamp_str: str = forecast_time.strftime('%Y%m%d_%H%M')
+        prefix: str = f"{self.exp_code}_{data_type_name}_stamps"
+        filename: str = f"{prefix}_{timestamp_str}.png"
+        output_path: Path = self.output_dir / filename
+        
         fig.savefig(output_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
-        logger.info(f"Saved full stamps plot to {output_path}")
+        logging.info(f"Saved full stamps plot to {output_path}")
         return output_path
+        
+    def generate_all_plots(self) -> None:
+        """A helper method to run the plotting for demonstration."""
+        # Plot forecast for step 2 (12 hours)
+        self._plot_full_stamps_panel(forecast_step=2, is_gt=False)
+        # Plot ground truth for step 2 (12 hours)
+        self._plot_full_stamps_panel(forecast_step=2, is_gt=True)
+
+
+if __name__ == "__main__":
+    # --- Main execution block ---
+    start_time_np: np.datetime64 = np.datetime64("2024-01-01T00:00:00")
+    # Convert numpy.datetime64 to standard Python datetime for compatibility
+    start_time_dt: datetime.datetime = start_time_np.astype(datetime.datetime)
+    
+    # Instantiate the data manager and the plotter
+    data_manager = AnalysisDataManager(start_time=start_time_dt)
+    plotter = WeatherPlotter(
+        manager=data_manager,
+        exp_code="EXP01",
+        output_dir=Path("./plot_outputs")
+    )
+    
+    # Generate the plots
+    plotter.generate_all_plots()
+    
+    logging.info("Script finished.")

@@ -19,6 +19,7 @@ import cftime
 from analysis.data_manager import AnalysisDataManager
 from analysis.netcdf_meta import GLOBAL_ATTRIBUTES, VARIABLE_ATTRIBUTES
 from src.utils.data_type import DataType, Level
+from src.const import KG_PER_KG
 
 logger = logging.getLogger(__name__)
 
@@ -250,6 +251,20 @@ class ForecastSaver:
                 key = key_map.get(dc.combined_key, dc.combined_key)
 
             if dc.level.is_surface():
+                # Ensure arr is 2D (H, W) for surface variables
+                if arr.ndim > 2:
+                    logger.warning(
+                        f"Surface data for {key} has unexpected shape {arr.shape}. "
+                        "Squeezing extra dimensions to ensure (H, W) shape."
+                    )
+                    arr = np.squeeze(arr)
+                elif arr.ndim == 1: # Handle case where it might be (H,) or (W,)
+                    logger.warning(
+                        f"Surface data for {key} has unexpected shape {arr.shape}. "
+                        "Attempting to reshape to (H, W)."
+                    )
+                    arr = arr.reshape(H, W) # Reshape to (H, W) if it's 1D
+                
                 data_vars[key] = (
                     ("Time", "south_north", "west_east"),
                     arr[None, ...],
@@ -271,7 +286,7 @@ class ForecastSaver:
             key = var_type.nc_key
             data_vars[key] = (
                 ("Time", "pres_bottom_top", "south_north", "west_east"),
-                cube / 1000 if var_name == "Qt" else cube,
+                cube / 1000 if var_name == "Qt" and not KG_PER_KG else cube,
             )
 
         dataset: xr.Dataset = xr.Dataset(data_vars, coords=coords)

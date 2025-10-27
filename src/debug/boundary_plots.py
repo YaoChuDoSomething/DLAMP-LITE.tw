@@ -113,7 +113,7 @@ def plot_bdy_blending_debug(p: BoundaryPlotData):
         if ax.images or ax.lines or ax.patches or ax.texts:
             plotted_axes_count += 1
     if plotted_axes_count == axes.size:
-        logger.info(
+        logger.debug(
             f"All {axes.size}/{axes.size} subplots for boundary blending debug "
             "figure seem to be correctly plotted."
         )
@@ -327,7 +327,7 @@ def plot_fft_blending_debug(p: FFTPlotData):
         if ax.images or ax.lines or ax.patches or ax.texts:
             plotted_axes_count += 1
     if plotted_axes_count == axes_fft.size:
-        logger.info(
+        logger.debug(
             f"All {axes_fft.size}/{axes_fft.size} subplots for FFT blending debug "
             "figure seem to be correctly plotted."
         )

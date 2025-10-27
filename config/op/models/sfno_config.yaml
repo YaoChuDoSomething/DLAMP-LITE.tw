@@ -1,0 +1,50 @@
+diagnostics:
+  enable: true
+  set: rwrf_default
+model:
+  name: SFNO
+  pressure_levels:
+  - 50
+  - 100
+  - 150
+  - 200
+  - 250
+  - 300
+  - 400
+  - 500
+  - 600
+  - 700
+  - 850
+  - 925
+  - 1000
+  variable_2d:
+  - u10m
+  - v10m
+  - u100m
+  - v100m
+  - t2m
+  - sp
+  - msl
+  - tcwv
+  variable_3d:
+  - u
+  - v
+  - t
+  - z
+  - q
+rwrf:
+  bbox:
+    lat_max: 30.0
+    lat_min: 20.0
+    lon_max: 125.0
+    lon_min: 115.0
+  output_dir: outputs/rwrf_processed
+  target_grid_path: assets/target_grid.nc
+share:
+  io_control:
+    output_dir: outputs/raw_sfno
+    prefix: SFNO_GFS_RAW
+  time_control:
+    end: '2023-01-01 12:00:00'
+    format: '%Y-%m-%d %H:%M:%S'
+    start: '2023-01-01 00:00:00'

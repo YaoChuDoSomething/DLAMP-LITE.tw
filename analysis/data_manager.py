@@ -18,12 +18,12 @@ import logging
 import re  # NEW: robust pressure parsing with regex
 from datetime import datetime, timedelta
 from functools import lru_cache
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from omegaconf import DictConfig
 
-from src.const import DATA_PATH
+from src.const import DATA_PATH, KG_PER_KG
 from src.utils import DataCompose, DataType, Level
 from src.utils import DataGenerator
 
@@ -112,7 +112,7 @@ class AnalysisDataManager:
 
     @lru_cache(maxsize=128)
     def get_forecast_data(
-        self, forecast_step: int, variable: DataType, level: Level
+        self, forecast_step: int, variable: DataType, level: Optional[Level]
     ) -> np.ndarray:
         """Retrieves a specific forecast variable grid.
 
@@ -122,7 +122,8 @@ class AnalysisDataManager:
         Args:
             forecast_step (int): The 0-indexed forecast step (-1 for F000H).
             variable (DataType): The meteorological variable to retrieve.
-            level (Level): The pressure or surface level to retrieve.
+            level (Optional[Level]): The pressure or surface level. For
+                surface variables, this can be None.
 
         Returns:
             np.ndarray: A 2D NumPy array (height, width) of forecast data.
@@ -141,7 +142,7 @@ class AnalysisDataManager:
                 f"forecast_step {forecast_step} out of range (0..{seq_len-1})."
             )
 
-        if level.is_surface():
+        if level is None or level.is_surface():
             try:
                 var_idx: int = self.surface_vars.index(variable)
                 data: np.ndarray = self.results["output_surface"][
@@ -171,14 +172,15 @@ class AnalysisDataManager:
         return data.astype(np.float32)
 
     def get_ground_truth_data(
-        self, time: datetime, variable: DataType, level: Level
+        self, time: datetime, variable: DataType, level: Optional[Level]
     ) -> np.ndarray:
         """Retrieves the corresponding ground truth data for a given time.
 
         Args:
             time (datetime): The timestamp for which to retrieve GT data.
             variable (DataType): The meteorological variable.
-            level (Level): The pressure or surface level.
+            level (Optional[Level]): The pressure or surface level. Can be
+                None for surface variables.
 
         Returns:
             np.ndarray: A 2D NumPy array of ground truth data.
@@ -308,7 +310,7 @@ class AnalysisDataManager:
 
         all_qt_layers: List[np.ndarray] = []
         time: datetime = self.get_forecast_time(forecast_step)
-        for level in qw_levels:
+        for level in qt_levels:
             data: np.ndarray
             if is_gt:
                 data = self.get_ground_truth_data(

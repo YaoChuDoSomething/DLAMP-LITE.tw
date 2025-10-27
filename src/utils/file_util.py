@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from ..const import DATA_PATH, DATA_SOURCE
+from ..const import DATA_PATH, DATA_SOURCE, KG_PER_KG
 from .data_compose import DataCompose, DataType
 
 
@@ -97,11 +97,14 @@ def read_cwa_ncfile(
                 for q in components
             )  # (1, Z, H, W)
             #data = dataset[dc.combined_key].value
-            data *= 1000  # kg/kg -> g/kg
+            if not KG_PER_KG:
+                data *= 1000  # kg/kg -> g/kg
 
         elif dc.var_name == DataType.SST:
             ## To-Do: Fine interpolate the mask area. Using the ERA5 (grid-size: 0.25 deg) LANDMASK now. 
             data = dataset[dc.combined_key].values
+            mask = np.squeeze(dataset["LANDMASK"].values)
+
             data[np.isnan(data)] = 298.60870361328125 # SST mean
             #mask = dataset[DataCompose(getattr(DataType, MASK), dc.level).combined_key].values
 

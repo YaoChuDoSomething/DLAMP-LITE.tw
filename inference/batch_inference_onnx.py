@@ -93,6 +93,8 @@ class BatchInferenceOnnx(InferenceBase):
                         curr_time, inp_surface.shape[2:4]
                     )  # (H, W, 4)
                     time_features = np.expand_dims(time_features, axis=(0, 1))
+                    print(f"Shape of inp_surface before concat: {inp_surface.shape}")
+                    print(f"Shape of time_features before concat: {time_features.shape}")
                     inp_surface = np.concatenate((inp_surface, time_features), axis=-1)
 
                 if bdy_swap_method:

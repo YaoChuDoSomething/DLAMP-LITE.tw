@@ -1,0 +1,62 @@
+# config/op/model/sfno.yaml
+# File: config/op/models/sfno_config.yaml
+# Description: Main configuration for the SFNO model and workflow orchestration.
+
+model:
+  name: "SFNO"
+  # EARTH2STUDIO_CACHE environment variable is used for model weights path.
+  # This path is set within the script.
+  variable_2d:
+    - "u10m"
+    - "v10m"
+    - "u100m"
+    - "v100m"
+    - "t2m"
+    - "sp"
+    - "msl"
+    - "tcwv"
+  variable_3d:
+    - "u"
+    - "v"
+    - "t"
+    - "z"
+    - "q"
+  pressure_levels:
+    - 50
+    - 100
+    - 150
+    - 200
+    - 250
+    - 300
+    - 400
+    - 500
+    - 600
+    - 700
+    - 850
+    - 925
+    - 1000
+
+share:
+  time_control:
+    start: "2022-09-11 00:00:00"
+    end: "2022-09-12 00:00:00" # Run for 4 steps (6 hours)
+    format: "%Y-%m-%d %H:%M:%S"
+  io_control:
+    output_dir: "/wk2/yaochu/CASE_DATA/Pool/" # For raw model output
+    prefix: "SFNO_GFS"
+    init_tsfmt: "%Y%m%d_%H%M"
+
+rwrf:
+  output_dir: "/wk2/yaochu/CASE_DATA/Pool/"
+  target_grid_path: "assets/target_grid.nc" # Dummy grid for regridding
+  bbox: # Bounding box for final crop
+    lat_min: 17.0
+    lat_max: 31.0
+    lon_min: 114.0
+    lon_max: 128.0
+
+diagnostics:
+  enable: true
+  set: "rwrf_default"
+
+

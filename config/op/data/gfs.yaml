@@ -1,0 +1,39 @@
+# File: config/op/data/gfs_config.yaml
+# Description: Configuration for the GFS data source and RWRF variable mapping.
+
+# This section defines mappings from SFNO variable names to RWRF variable names.
+
+
+registry:
+  mappings:
+    # 2D Surface Variables
+    "u10m": "umet10"
+    "v10m": "vmet10"
+    "u100m": "umet100"
+    "v100m": "vmet100"
+    "t2m": "T2"
+    "sp": "PSFC"
+    "msl": "slp"
+    "tcwv": "pw"
+    "sst": "SST"
+    "ssrd": "SWDOWN"
+    "ttr": "OLR"
+    # 3D Pressure Level Variables
+    "u": "umet_p"
+    "v": "vmet_p"
+    "t": "tk_p"
+    "z": "z_p"
+    "q": "QVAPOR_p"
+    "w": "wa_p"
+    "qt": "QTOTAL_p"
+
+# This section defines global attributes to be written into the final NetCDF files.
+share:
+  global_attrs:
+    model_name: "NVIDIA SFNO via Earth2Studio"
+    initial_condition_source: "NOAA/NCEP GFS"
+    history: "Created by coupled_forecast.py workflow."
+
+
+
+

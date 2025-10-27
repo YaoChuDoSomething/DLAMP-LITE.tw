@@ -11,11 +11,15 @@ DATA_SOURCE = "OP_ERA5"
 #DATA_SOURCE = "OP_E2S"
 VAR_SUFFIX = "WE01H0202500"
 
-MODEL_CODE = os.environ.get("DLAMP_EXP_CODE", "20250627")
+MODEL_CODE = os.environ.get("DLAMP_MODEL_CODE", "20250729")
 DATA_SOURCE = os.environ.get("DLAMP_DATA_SOURCE", "OP_ERA5")
 DATA_PATH = os.environ.get("DLAMP_DATA_PATH", "/wk2/yaochu/CASE_DATA/Pool/")
 
-STANDARDIZATION_PATH = f"./assets/standardization/z_score_3h_{MODEL_CODE}.json"
+KG_PER_KG = True
+if KG_PER_KG:
+    STANDARDIZATION_PATH = f"./assets/standardization/z_score_3h_kg_per_kg.json"
+else:
+    STANDARDIZATION_PATH = f"./assets/standardization/z_score_3h_{MODEL_CODE}.json"
 DATA_CONFIG_PATH = f"./config/data/rwrf_{MODEL_CODE}.yaml"
 
 print(MODEL_CODE, DATA_SOURCE, DATA_PATH, STANDARDIZATION_PATH)

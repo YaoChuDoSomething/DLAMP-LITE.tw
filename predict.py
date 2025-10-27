@@ -26,15 +26,18 @@ from analysis.forecast_saver import ForecastSaver
 from analysis.plotter import WeatherPlotter
 from analysis.prediction import PredictionRunner
 from analysis.video_creator import create_animation 
+
 log = logging.getLogger(__name__)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="predict")
-def main(cfg: DictConfig) -> None:
-    """Runs the full prediction, saving, and plotting workflow.
+def run_workflow(cfg: DictConfig, exp_code_prefix: str, start_time: str, end_time: str) -> None:
+    """Runs the full prediction, saving, and plotting workflow for a single experiment.
 
     Args:
-        cfg (DictConfig): The configuration object loaded by Hydra.
+        cfg (DictConfig): The configuration object.
+        exp_code_prefix (str): The prefix for the experiment code (e.g., "FANAPI").
+        start_time (str): The start time for the case in "YYYY-MM-DD HH:MM" format.
+        end_time (str): The end time for the case in "YYYY-MM-DD HH:MM" format.
 
     Raises:
         IOError: If there's an error creating output directories or files.
@@ -48,17 +51,9 @@ def main(cfg: DictConfig) -> None:
         )
         log.info("Start workflow -> %s", out_dir)
 
-        EXP_CODE = f"FANAPI_{cfg.inference.bdy_swap_method.name}"
-        cfg.data.start_time = "2010-09-18 18:00"
-        cfg.data.end_time = "2010-09-18 20:00"
-
-        #EXP_CODE = f"MY2020_{cfg.inference.bdy_swap_method.name}"
-        #cfg.data.start_time = "2020-05-21 12:00"
-        #cfg.data.end_time = "2020-05-22 12:00"
-
-        #EXP_CODE = f"MUIFA_{cfg.inference.bdy_swap_method.name}"
-        #cfg.data.start_time = "2022-09-11 00:00"
-        #cfg.data.end_time = "2022-09-12 00:00"
+        EXP_CODE = f"{exp_code_prefix}_{cfg.inference.bdy_swap_method.name}"
+        cfg.data.start_time = start_time
+        cfg.data.end_time = end_time
 
         case_end = datetime.strptime(cfg.data.end_time, cfg.data.format)
         case_start = datetime.strptime(cfg.data.start_time, cfg.data.format)
@@ -151,6 +146,26 @@ def main(cfg: DictConfig) -> None:
     except (IOError, ValueError, ModuleNotFoundError) as e:
         log.error("Workflow failed due to a critical error: %s", e)
         raise
+
+
+@hydra.main(version_base=None, config_path="config", config_name="predict")
+def main(cfg: DictConfig) -> None:
+    """Runs the full prediction, saving, and plotting workflow.
+
+    Args:
+        cfg (DictConfig): The configuration object loaded by Hydra.
+
+    Raises:
+        IOError: If there's an error creating output directories or files.
+        ValueError: If the configuration is invalid.
+        ModuleNotFoundError: If a specified module for inference is not found.
+    """
+    # Default experiment
+    exp_code_prefix = "FANAPI"
+    start_time = "2010-09-18 18:00"
+    end_time = "2010-09-18 20:00"
+    run_workflow(cfg, exp_code_prefix, start_time, end_time)
+
 
 
 if __name__ == "__main__":

@@ -1,0 +1,18 @@
+registry:
+  mappings:
+    msl: MSLP
+    q: Q
+    sp: PSFC
+    t: T
+    t2m: T2
+    tcwv: PWAT
+    u: U
+    u10m: U10
+    v: V
+    v10m: V10
+    z: GHT
+share:
+  global_attrs:
+    history: Created by coupled_forecast.py workflow.
+    initial_condition_source: NOAA/NCEP GFS
+    model_name: NVIDIA SFNO via Earth2Studio
