@@ -28,6 +28,7 @@ dependencies = [
     "rasterio>=1.4.3",
     "xarray>=2025.10.1",
     "netcdf4>=1.7.3",
+    "cdo>=1.6.1",
 ]
 
 [tool.uv.sources]
