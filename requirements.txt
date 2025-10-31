@@ -37,3 +37,4 @@ netCDF4
 hydra-core
 onnxruntime-gpu
 ffmpeg
+ollama

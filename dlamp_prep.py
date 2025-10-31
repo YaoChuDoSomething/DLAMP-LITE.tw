@@ -1,18 +1,16 @@
 #!/bin/python
 
-#!/bin/python
-
 ###===== Workflow Control ===========================================###
 #
 ###==================================================================###
 from src.preproc.cds_downloader import CDSDataDownloader
 from src.preproc.dlamp_regridder import DataRegridder
 
-do_cds_downloader = 1
-do_dlamp_regridder = 1
+do_cds_downloader = False
+do_dlamp_regridder = True
 
 DLAMP_DATA_DIR = "./"
-yaml_config = f"{DLAMP_DATA_DIR}/config/era5.yaml"
+yaml_config = f"config/sfno_gfs.yaml"
 
 
 ###===== ERA5 Dataset Downloading ===================================###
@@ -20,8 +18,9 @@ yaml_config = f"{DLAMP_DATA_DIR}/config/era5.yaml"
 ###==================================================================###
 
 
-downloader = CDSDataDownloader(yaml_config)
-timeline = downloader.create_timeline()
+if do_cds_downloader True: 
+    downloader = CDSDataDownloader(yaml_config)
+    timeline = downloader.create_timeline()
     
 for curr in timeline:
     downloader.process_download(curr)

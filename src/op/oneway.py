@@ -28,10 +28,10 @@ import os
 from collections import OrderedDict
 from datetime import datetime
 
-import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import xarray as xr
 from dotenv import load_dotenv
 from loguru import logger
 from tqdm import tqdm
@@ -67,7 +67,7 @@ io = NetCDF4Backend(file_name="outputs/sfno_oneway.nc", backend_kwargs={"mode": 
 # 20 forecast steps which is 5 days.
 
 # %%
-nsteps = 8
+nsteps = 4
 init_time_str = "2022-09-11 00:00"
 timefmt = "%Y-%m-%d %H:%M"
 init_time = [datetime.strptime(init_time_str, timefmt)]
@@ -154,14 +154,39 @@ logger.info("Inference starting!")
 with tqdm(total=nsteps + 1, desc="Running inference", position=1) as pbar:
     for step, (x, coords) in enumerate(model):
         # Subselect domain/variables as indicated in output_coords
+        print("coords shape and coords = ", np.shape(coords), coords)
         x, coords = map_coords(x, coords, output_coords)
         io.write(*split_coords(x, coords))
+        print("coords shape and coords = ", np.shape(coords), coords)
         pbar.update(1)
         if step == nsteps:
             break
 
 logger.success("Inference complete")
 
+output_file = "outputs/sfno_oneway.nc"
+with xr.open_dataset(output_file) as ds:
+    init_time = ds["time"].values[0]
+    lead_times = ds["lead_time"].values
+
+    for i, lead_time in enumerate(lead_times):
+        print(i, lead_time)
+        ds_step = ds.isel(lead_time=i)
+        print("ds_step = ", ds_step)
+
+        # Calculate valid time
+        valid_time = init_time + lead_time
+        timestamp_str = (
+            np.datetime_as_string(valid_time, unit="m")
+            .replace("-", "")
+            .replace("T", "_")
+            .replace(":", "")
+        )
+
+        output_filename = f"outputs/sfno_gfs_{timestamp_str}.nc"
+
+        ds_step.to_netcdf(output_filename)
+        logger.success(f"Saved {output_filename}")
 
 
 #print(io.root.tree())
@@ -176,35 +201,31 @@ logger.success("Inference complete")
 # Notice that the NetCDF4Backend IO function has additional APIs to interact with the stored data.
 
 # %%
-import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 
 forecast = "2024-01-01"
-variable = "t2m"
+variablelist = ["t2m", "tcwv"]
 for step in range(nsteps):
-    #step = 4  # lead time = 24 hrs
+    for var in variablelist:
+        #step = 4  # lead time = 24 hrs
 
-    plt.close("all")
-    # Create a Robinson projection
-    projection = ccrs.Robinson()
+        plt.close("all")
 
-    # Create a figure and axes with the specified projection
-    fig, ax = plt.subplots(subplot_kw={"projection": projection}, figsize=(10, 6))
+        # Create a figure and axes with the specified projection
+        fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Plot the field using pcolormesh
-    im = ax.pcolormesh(
-        io["lon"][:],
-        io["lat"][:],
-        io[variable][0, step],
-        transform=ccrs.PlateCarree(),
-        cmap="Spectral_r",
-    )
+        # Plot the field using pcolormesh
+        im = ax.pcolormesh(
+            io["lon"][:],
+            io["lat"][:],
+            io[var][0, step],
+            cmap="Spectral_r",
+        )
+        ax.axis([114, 128, 17, 31])
 
-    # Set title
-    ax.set_title(f"{forecast} - Lead time: {6*step}hrs")
+        # Set title
+        ax.set_title(f"{forecast} - Lead time: {6*step}hrs")
 
-    # Add coastlines and gridlines
-    ax.coastlines()
-    ax.gridlines()
-    plt.savefig(f"outputs/t2m_f{step:03d}H.jpg")
-
+        # Add coastlines and gridlines
+    
+        plt.savefig(f"outputs/{var}_f{step:03d}H.png")
