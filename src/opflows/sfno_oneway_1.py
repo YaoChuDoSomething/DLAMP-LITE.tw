@@ -375,7 +375,7 @@ def main():
     logger.remove()
     logger.add(lambda msg: tqdm.write(msg, end=""), colorize=True)
 
-    config_path = "config/sfno.yaml"
+    config_path = "config/opflows/sfno.yaml"
     try:
         # Step 1: Load config
         logger.info(f"Loading configuration from {config_path}")
