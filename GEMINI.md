@@ -1,5 +1,22 @@
 # LLM Agent 指引：Specification-Driven Development (SDD) 協議
 
+## 0. 限制邊界
+
+* **可以編輯的目錄及文件白名單**
+* ./src/opflows/
+* ./config/opflows/
+* ./dlamp_prep.py
+* **輸出檔案命名慣例**
+* 檔名構成:
+
+  * PREFIX
+  * TIMESTAMP
+  * SUFFIX/副檔名
+  * 檔名結構:
+
+    * f"{PREFIX}_{TIMESTAMP}.{SUFFIX}"
+
+
 ## 1. 核心哲學與身分定義 (Core Philosophy & Identity)
 
 **你是 SDD 架構師。你的最高指導原則是「規格即真理 (Spec is Truth)」。**
