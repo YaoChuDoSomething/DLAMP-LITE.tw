@@ -10,21 +10,13 @@ from src.opflows.manager import OpFlowsManager
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Define configuration paths
-ERA5_CONFIG_PATH = "config/era5.yaml"
-DOWNLOAD_CONFIG_PATH = "config/opflows/download.yaml"
-REGRID_CONFIG_PATH = "config/opflows/regrid.yaml"
-REGISTRY_CONFIG_PATH = "config/registry.yaml" # This was previously config/era5.yaml, but now it's a separate file
+# Define the base directory for all workflow configuration files
+OPFLOWS_CONFIG_DIR = "config/opflows"
 
 # Initialize and run the OpFlowsManager
 if __name__ == "__main__":
-    logger.info("Initializing OpFlowsManager...")
-    manager = OpFlowsManager(
-        era5_config_path=ERA5_CONFIG_PATH,
-        download_config_path=DOWNLOAD_CONFIG_PATH,
-        regrid_config_path=REGRID_CONFIG_PATH,
-        registry_config_path=REGISTRY_CONFIG_PATH,
-    )
-    logger.info("OpFlowsManager initialized. Running full pipeline...")
-    manager.run_full_pipeline()
-    logger.info("Full pipeline execution completed.")
+    logger.info("Initializing OpFlowsManager for Regional Preprocessing Workflow...")
+    manager = OpFlowsManager(config_dir=OPFLOWS_CONFIG_DIR) # Pass config_dir directly
+    logger.info("OpFlowsManager initialized. Running regional preprocessing pipeline...")
+    manager.run_regional_preprocessing_pipeline() # Call the specific pipeline
+    logger.info("Regional preprocessing pipeline execution completed.")

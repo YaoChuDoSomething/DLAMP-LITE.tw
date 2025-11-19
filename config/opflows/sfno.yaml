@@ -1,18 +1,3 @@
-share:
-  exp_code: "E5_FANAPI"                   # EXP_CODE
-  data_path: ${DATA_PATH}                 # DATA_PATH: (AbsPath)
-  time_control:                           # Time Control =====
-    start: "2024-09-30_00:00"             # start time
-    end: "2024-09-30_01:00"               # end time
-    format: "%Y-%m-%d_%H:%M"              # the format to describe time
-    base_step_hours: 1                    # a single time step in hour 
-  io_control:                             # I/O Control =====
-    base_dir: "/wk2/yaochu/CASE_DATA/"
-    prefix:                           
-      global: "sfno_gfs"                     # prefix for upper data
-      regional: "sfno_gfs"                   # prefix for output data
-      timestr_fmt: "%Y%m%d_%H%M"          # time string format
-
 download: 
   area:                                   # Domain Control =====
     north: 31                             # north bounds in latitudes
@@ -22,12 +7,12 @@ download:
   dataset_upper:
     title: "reanalysis-era5-pressure-levels"
     levels: [1000, 975, 950, 925, 900,
-              875, 850, 825, 800, 775,
-              750, 700, 650, 600, 550,
-              500, 450, 400, 350, 300,
-              250, 225, 200, 175, 150,
-              125, 100,  70,  50,  30,
-               20,]
+            875, 850, 825, 800, 775,
+            750, 700, 650, 600, 550,
+            500, 450, 400, 350, 300,
+            250, 225, 200, 175, 150,
+            125, 100,  70,  50,  30,
+             20,]
     variables:                                 # RWRF = ERA5 * magic numbers
       - 'geopotential'                         # z_p = z / 9.81
       - 'temperature'                          # tk_p = t 

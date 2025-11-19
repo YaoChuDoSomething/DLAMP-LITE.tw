@@ -1,0 +1,14 @@
+share:
+  exp_code: "E5_FANAPI"                   # EXP_CODE
+  data_path: ${DATA_PATH}                 # DATA_PATH: (AbsPath)
+  time_control:                           # Time Control =====
+    start: "2024-09-30_00:00"             # start time
+    end: "2024-09-30_01:00"               # end time
+    format: "%Y-%m-%d_%H:%M"              # the format to describe time
+    base_step_hours: 1                    # a single time step in hour 
+  io_control:                             # I/O Control =====
+    base_dir: "/wk2/yaochu/CASE_DATA/"
+    prefix:                           
+      global: "sfno_gfs"                     # prefix for upper data
+      regional: "sfno_gfs"                   # prefix for output data
+      timestr_fmt: "%Y%m%d_%H%M"          # time string format

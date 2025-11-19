@@ -121,16 +121,25 @@ class OpFlowsManager:
             logger.error(f"Error parsing YAML file {yaml_path}: {e}")
             raise e
 
-    def run_download_pipeline(self) -> None:
+    def run_regional_preprocessing_pipeline(self) -> None: # New method
         """
-        Executes the data download pipeline.
+        Executes the regional model data preprocessing pipeline.
+        This pipeline involves downloading data, regridding, and calculating diagnostics.
         """
-        logger.info("Starting data download pipeline.")
+        logger.info("Starting regional model data preprocessing pipeline.")
+        # Download data
+        logger.info("Initiating data download...")
         timeline = self.downloader.create_timeline()
         for curr_time in timeline:
             logger.info(f"Downloading data for: {curr_time}")
             self.downloader.process_download(curr_time)
-        logger.info("Data download pipeline completed.")
+        logger.info("Data download completed.")
+
+        # Regrid and calculate diagnostics
+        logger.info("Initiating data regridding and diagnostic calculation...")
+        self.regridder.main_process()
+        logger.info("Data regridding and diagnostic calculation completed.")
+        logger.info("Regional model data preprocessing pipeline completed.")
 
     def run_regridding_pipeline(self) -> None:
         """

@@ -38,3 +38,4 @@ hydra-core
 onnxruntime-gpu
 ffmpeg
 ollama
+pytest # Added for testing

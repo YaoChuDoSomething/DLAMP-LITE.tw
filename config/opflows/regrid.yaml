@@ -14,3 +14,6 @@ levels: [1000, 975, 950, 925, 900,
            20,]
 adopted_varlist: ["XLONG", "XLAT", "pres_levels", "HGT", "LANDMASK"]
 write_regrid: False                           # save regrid data as nc or not
+regrid_output_dir: "src/opflows/outputs/"     # Directory to save regridded NetCDF files
+regrid_output_prefix: "regrid_"               # Prefix for regridded NetCDF filenames
+diagnostic_output_dir: "src/opflows/outputs/" # Directory to save diagnostic NetCDF files
