@@ -31,11 +31,13 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **[ ] I. SDD**: Does this plan originate from a clear, approved `spec.md`?
-- **[ ] II. Library-First**: Is the proposed feature structured as a self-contained library?
-- **[ ] III. CLI Mandate**: Does the library expose a CLI for testing and observability?
-- **[ ] IV. Test-First**: Does the plan include the creation of failing tests before implementation?
-- **[ ] V. Simplicity & Integration**: Does the plan avoid premature abstraction and favor real integration tests?
+- **[ ] I. Code Quality**: Does the plan adhere to specified style, documentation, and simplicity standards?
+- **[ ] II. Rigorous Testing Standards**: Does the plan include the creation of failing tests before implementation and aim for high test coverage?
+- **[ ] III. User Experience (UX) Consistency**: If applicable, does the plan respect the project's design system and interaction patterns?
+- **[ ] IV. Performance Requirements**: If applicable, are performance budgets defined and is performance testing included?
+- **[ ] V. Specification-Driven Development (SDD)**: Does this plan originate from a clear, approved `spec.md`?
+- **[ ] VI. Modular Architecture**: Is the proposed feature structured as a self-contained library with a CLI?
+- **[ ] VII. Security by Design**: Does the plan account for security principles like input validation and least privilege?
 
 ## Project Structure
 
