@@ -3,41 +3,28 @@
 ###===== Workflow Control ===========================================###
 #
 ###==================================================================###
-from src.preproc.cds_downloader import CDSDataDownloader
-from src.preproc.dlamp_regridder import DataRegridder
+import logging
+from src.opflows.manager import OpFlowsManager
 
-do_cds_downloader = False
-do_dlamp_regridder = True
+# Configure logging for the script
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-DLAMP_DATA_DIR = "./"
-yaml_config = f"config/sfno_gfs.yaml"
+# Define configuration paths
+ERA5_CONFIG_PATH = "config/era5.yaml"
+DOWNLOAD_CONFIG_PATH = "config/opflows/download.yaml"
+REGRID_CONFIG_PATH = "config/opflows/regrid.yaml"
+REGISTRY_CONFIG_PATH = "config/registry.yaml" # This was previously config/era5.yaml, but now it's a separate file
 
-
-###===== ERA5 Dataset Downloading ===================================###
-#   Downloading process is fully controled by YAML configure file
-###==================================================================###
-
-
-if do_cds_downloader True: 
-    downloader = CDSDataDownloader(yaml_config)
-    timeline = downloader.create_timeline()
-    
-for curr in timeline:
-    downloader.process_download(curr)
-
-
-###===== DataRegridder and Variables Registry =======================###
-#   Data Regridding can be controled by YAML configure file
-#   Variables Registry can be controled by YAML configure file
-#   Variables Diagnostics can be controled by module script:
-#       src/registry/diagnostics_functions
-###==================================================================###
-
-
-yaml_config = f"{DLAMP_DATA_DIR}/config/era5.yaml"
-regridder = DataRegridder(yaml_config)
-    #regridder.process_single_time(curr)
-    
-regridder.main_process()
-
-
+# Initialize and run the OpFlowsManager
+if __name__ == "__main__":
+    logger.info("Initializing OpFlowsManager...")
+    manager = OpFlowsManager(
+        era5_config_path=ERA5_CONFIG_PATH,
+        download_config_path=DOWNLOAD_CONFIG_PATH,
+        regrid_config_path=REGRID_CONFIG_PATH,
+        registry_config_path=REGISTRY_CONFIG_PATH,
+    )
+    logger.info("OpFlowsManager initialized. Running full pipeline...")
+    manager.run_full_pipeline()
+    logger.info("Full pipeline execution completed.")

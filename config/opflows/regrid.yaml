@@ -1,0 +1,16 @@
+target_nc: "./assets/target.nc"         
+target_lat: "XLAT"
+target_lon: "XLONG"
+target_pres: "pres_levels"
+source_lat: "lat"
+source_lon: "lon"
+source_pres: "plev"
+levels: [1000, 975, 950, 925, 900,
+          875, 850, 825, 800, 775,
+          750, 700, 650, 600, 550,
+          500, 450, 400, 350, 300,
+          250, 225, 200, 175, 150,
+          125, 100,  70,  50,  30,
+           20,]
+adopted_varlist: ["XLONG", "XLAT", "pres_levels", "HGT", "LANDMASK"]
+write_regrid: False                           # save regrid data as nc or not

@@ -6,6 +6,12 @@ __pycache__/
 # Hydra logs
 outputs/
 
+.DLAMP.tw
+.specify/
+.gemini/
+.venv/
+.cdo_temp/
+
 lat.npy
 lon.npy
 predict_yaochu.py

@@ -1,0 +1,114 @@
+registry:
+  source_dataset: "ERA5"
+  varname:
+    z_p:
+      requires: ['z']
+      function: diag_z_p
+
+    tk_p:
+      requires: ['t']
+      function: diag_tk_p
+
+    umet_p:
+      requires: ['u']
+      function: diag_umet_p
+
+    vmet_p:
+      requires: ['v']
+      function: diag_vmet_p
+
+    QVAPOR_p:
+      requires: ['q']
+      function: diag_QVAPOR_p
+
+    wa_p:
+      requires: ['w', 't', 'q', 'pres_levels']
+      function: diag_wa_p
+
+    QRAIN_p:
+      requires: ['crwc']
+      function: diag_QRAIN_p
+      
+    QSNOW_p:
+      requires: ['cswc']
+      function: diag_QSNOW_p
+
+    QGRAUP_p:
+      requires: ['q']
+      function: diag_QGRAUP_p
+
+    QCLOUD_p: 
+      requires: ['clwc']
+      function: diag_QCLOUD_p
+
+    QICE_p:
+      requires: ['ciwc']
+      function: diag_QICE_p
+      
+    QTOTAL_p:
+      requires: ['clwc', 'crwc', 'cswc', 'ciwc']
+      function: diag_QTOTAL_p
+
+    T2:
+      requires: ['2t']
+      function: diag_T2
+
+    Q2:
+      requires: ['2d']
+      function: diag_Q2
+
+    rh2:
+      requires: ['2t', '2d']
+      function: diag_rh2
+
+    td2:
+      requires: ['2d']
+      function: diag_td2
+
+    umet10:
+      requires: ['10u']
+      function: diag_umet10
+
+    vmet10:
+      requires: ['10v']
+      function: diag_vmet10
+
+    slp:
+      requires: ['msl']
+      function: diag_slp
+
+    SST:
+      requires: ['sst']
+      function: diag_SST
+
+    PSFC:
+      requires: ['sp']
+      function: diag_PSFC
+
+    pw:
+      requires: ['tcwv']
+      function: diag_pw
+
+    PBLH:
+      requires: ['blh']
+      function: diag_PBLH
+
+    RAINNC:
+      requires: ['tp']
+      function: diag_RAINNC
+
+    SWDOWN:
+      requires: ['ssrd']
+      function: diag_SWDOWN
+
+    OLR:
+      requires: ['ttr']
+      function: diag_OLR
+
+    REFL_p:
+      requires: ['t', 'pres_levels', 'q', 'crwc', 'cswc']
+      function: diag_REFL_p
+
+    REFL:
+      requires: ['t', 'pres_levels', 'q', 'crwc', 'cswc']
+      function: diag_REFL
