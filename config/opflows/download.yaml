@@ -45,3 +45,8 @@ dataset_surface:
     - 'surface_solar_radiation_downwards'    # SWDOWN
     - 'toa_incident_solar_radiation'         # S0
     - 'top_net_thermal_radiation'            # OLR
+
+output_control:
+  output_dir: "src/opflows/outputs/" # New output directory
+  filename_prefix: "era5_merged"     # Prefix for the merged NetCDF file
+  timestr_format: "%Y%m%d_%H%M"      # Time string format for output filename

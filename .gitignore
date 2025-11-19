@@ -6,16 +6,18 @@ __pycache__/
 # Hydra logs
 outputs/
 
-.DLAMP.tw
-.specify/
+.DLAMP.tw/*
 .gemini/
 .venv/
 .cdo_temp/
-
+inference/*
+src/utils/*
+src/datasets/*
+src/managers/*
+src/models/*
 lat.npy
 lon.npy
 predict_yaochu.py
-predict_yaochu.v0.1.0.py
 std_analysis.py
 std_test.py
 run_prediction_analysis.py

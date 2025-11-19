@@ -4,8 +4,9 @@ import xarray as xr
 import numpy as np
 from datetime import datetime, timedelta
 from tqdm import tqdm
-from cdo import Cdo
+# from cdo import Cdo # Removed
 import os
+import tempfile # New import
 
 
 class CDSDataDownloader:
@@ -26,14 +27,16 @@ class CDSDataDownloader:
         )
         self.total_steps = ((self.end_t - self.start_t) // self.a_timestep) + 1
 
-        self.io = self.cfg["share"]["io_control"]
-        self.base_dir = self.io["base_dir"]
-        self.grib_dir = os.path.join(self.base_dir, self.io["grib_subdir"])
-        self.netcdf_dir = os.path.join(self.base_dir, self.io["netcdf_subdir"])
-        self.prefix = self.io["prefix"]
-        self.timestr_fmt = self.prefix['timestr_fmt']
-        os.makedirs(self.grib_dir, exist_ok=True)
-        os.makedirs(self.netcdf_dir, exist_ok=True)
+        # Updated I/O Control logic from download.yaml
+        self.output_control = self.cfg["output_control"]
+        self.output_dir = self.output_control["output_dir"]
+        self.output_filename_prefix = self.output_control["filename_prefix"]
+        self.output_timestr_fmt = self.output_control["timestr_format"]
+        os.makedirs(self.output_dir, exist_ok=True) # Ensure output directory exists
+
+        # Prefix for temporary GRIB files (if needed, otherwise can be simplified)
+        self.prefix_grib = self.cfg["share"]["io_control"]["prefix"]
+        self.timestr_fmt_grib = self.prefix_grib['timestr_fmt']
 
         self.area = self.cfg["download"]["area"]
         self.area_list = [
@@ -44,8 +47,10 @@ class CDSDataDownloader:
         ]
 
         self.client = cdsapi.Client()
-        self.cdo = Cdo(tempdir="./.cdo_tmp")
-        self.cdo.debug = True
+        # cdo is no longer used for invertlat, as xarray handles it.
+        # Keeping Cdo instance just in case it's used elsewhere or for future features.
+        # self.cdo = Cdo(tempdir="./.cdo_tmp") # Removed
+        # self.cdo.debug = True # Removed
 
     def _load_config(self, yaml_path):
         with open(yaml_path, "r") as f:
@@ -73,64 +78,60 @@ class CDSDataDownloader:
             req["area"] = self.area_list
         return req
 
-    def invertlat_to_netcdf(self, input_grib: str, output_netcdf: str):
-        """
-        Using xarray to read grib data, and invert latitude and the data depend on, then
-        save the data in netcdf format.
-        """
-        try:
-            ds = xr.open_dataset(input_grib, engine="cfgrib")
-            for lat_name in ["latitude", "lat"]:
-                if lat_name in ds.dims:
-                    ds = ds.sortby(lat_name, ascending=True)
-                    break
-
-            ds.to_netcdf(output_netcdf, format="netcdf4")
-            ds.close()
-        except Exception as e:
-            print(f"[ERROR] GRIB failed converting: {input_grib}\n{e}")
+    # The invertlat_to_netcdf function is no longer needed as its logic
+    # is integrated directly into process_download.
+    # def invertlat_to_netcdf(self, input_grib: str, output_netcdf: str):
+    #    ...
 
     def process_download(self, curr_time):
-        self.pl = self.cfg["download"]["dataset_upper"]
-        self.sl = self.cfg["download"]["dataset_surface"]
-        #for i in tqdm(range(self.total_steps), desc="Downloading ERA5", unit="step"):
-            #curr_time = self.start_t + i * self.a_timestep
-        timestamp = curr_time.strftime(self.timestr_fmt)
+        self.pl_cfg = self.cfg["download"]["dataset_upper"]
+        self.sl_cfg = self.cfg["download"]["dataset_surface"]
 
-        pl_grb = os.path.join(
-            self.grib_dir,
-            f"{self.prefix['upper']}_{timestamp}.grib"
-        )
-        pl_nc = os.path.join(
-            self.netcdf_dir,
-            f"{self.prefix['upper']}_{timestamp}.nc"
-        )
-        sl_grb = os.path.join(
-            self.grib_dir,
-            f"{self.prefix['surface']}_{timestamp}.grib"
-        )
-        sl_nc = os.path.join(
-            self.netcdf_dir,
-            f"{self.prefix['surface']}_{timestamp}.nc"
-        )
+        # Use temporary files for grib data
+        with tempfile.NamedTemporaryFile(suffix=".grib", delete=True) as pl_grb_file, \
+             tempfile.NamedTemporaryFile(suffix=".grib", delete=True) as sl_grb_file:
+            
+            pl_grb_path = pl_grb_file.name
+            sl_grb_path = sl_grb_file.name
 
-        if not os.path.exists(pl_grb):
-            req = self._build_request(self.pl['title'], self.pl['variables'], curr_time, self.pl.get('levels'))
-            self.client.retrieve(self.pl['title'], req).download(pl_grb)
-        if not os.path.exists(pl_nc):
-            #self.invertlat_to_netcdf(input_grib=pl_grb, output_netcdf=pl_nc)
-            self.cdo.invertlat(
-                input=pl_grb,
-                options="-f nc4 --eccodes",
-                output=pl_nc,
+            # Download pressure level data
+            req_pl = self._build_request(self.pl_cfg['title'], self.pl_cfg['variables'], curr_time, self.pl_cfg.get('levels'))
+            print(f"Downloading upper-level data for {curr_time.strftime(self.timestr_fmt_grib)} to {pl_grb_path}")
+            self.client.retrieve(self.pl_cfg['title'], req_pl).download(pl_grb_path)
+            
+            # Download surface level data
+            req_sl = self._build_request(self.sl_cfg['title'], self.sl_cfg['variables'], curr_time)
+            print(f"Downloading surface-level data for {curr_time.strftime(self.timestr_fmt_grib)} to {sl_grb_path}")
+            self.client.retrieve(self.sl_cfg['title'], req_sl).download(sl_grb_path)
+
+            # Load grib files into xarray datasets
+            print(f"Loading {pl_grb_path} into xarray")
+            ds_pl = xr.open_dataset(pl_grb_path, engine="cfgrib")
+            print(f"Loading {sl_grb_path} into xarray")
+            ds_sl = xr.open_dataset(sl_grb_path, engine="cfgrib")
+
+            # Merge datasets
+            # Use compat='override' to handle cases where attributes or coordinates might differ
+            print("Merging pressure-level and surface-level datasets")
+            merged_ds = xr.merge([ds_pl, ds_sl], compat='override')
+
+            # Invert latitude and sort if necessary
+            print("Sorting merged dataset by latitude")
+            for lat_name in ["latitude", "lat"]:
+                if lat_name in merged_ds.dims:
+                    merged_ds = merged_ds.sortby(lat_name, ascending=True)
+                    break
+            
+            # Construct output filename
+            output_filename = os.path.join(
+                self.output_dir,
+                f"{self.output_filename_prefix}_{curr_time.strftime(self.output_timestr_fmt)}.nc"
             )
-        if not os.path.exists(sl_grb):
-            req = self._build_request(self.sl['title'], self.sl['variables'], curr_time)
-            self.client.retrieve(self.sl['title'], req).download(sl_grb)
-        if not os.path.exists(sl_nc):
-            #self.invertlat_to_netcdf(input_grib=sl_grb, output_netcdf=sl_nc)
-            self.cdo.invertlat(
-                input=sl_grb,
-                options="-f nc4 --eccodes",
-                output=sl_nc,
-            )
+
+            # Save to NetCDF4
+            print(f"Saving merged dataset to {output_filename}")
+            merged_ds.to_netcdf(output_filename, format="netcdf4")
+            print(f"Successfully saved merged NetCDF to {output_filename}")
+
+            # Temporary grib files are automatically deleted when 'with' block exits.
+            # xarray datasets are automatically closed when they go out of scope.
