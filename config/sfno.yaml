@@ -75,6 +75,18 @@ regrid:
   adopted_varlist: ["XLONG", "XLAT", "pres_levels", "HGT", "LANDMASK"]
   write_regrid: False                           # save regrid data as nc or not
 
+workflow:
+  model_step_hours: 6               # SFNO model step in hours
+  datasource: "CDS"                 # Data source for initial conditions (e.g., GFS, CDS)
+  output_directory: "outputs"       # Directory for saving forecast outputs
+  hourly_interpolation: true        # Enable/disable interpolation to hourly data
+
+plotting:
+  enabled: false                    # Enable/disable plotting of forecast results
+  variables: []                     # List of variables to plot (e.g., ['z', 't'])
+  roi: []                           # Region of Interest for plots [west, east, south, north]
+  colormap: "Spectral_r"            # Colormap for generated plots
+
 ### output netcdf design
 registry:
   source_dataset: "SFNO"
@@ -190,4 +202,3 @@ registry:
     REFL:
       requires: ['t', 'pres_levels', 'q', 'crwc', 'cswc']
       function: diag_REFL
-
