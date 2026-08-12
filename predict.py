@@ -20,15 +20,20 @@ from typing import List
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from analysis.data_manager import AnalysisDataManager
-from analysis.forecast_saver import ForecastSaver
-from analysis.plotter import WeatherPlotter
-from analysis.prediction import PredictionRunner
+from dlamp.analysis.data_manager import AnalysisDataManager
+from dlamp.analysis.forecast_saver import ForecastSaver
+from dlamp.analysis.plotter import WeatherPlotter
+from dlamp.analysis.prediction import PredictionRunner
+from dlamp.runtime_config import RuntimeConfig
+from dlamp.standardizer import get_standardizer
 
 log = logging.getLogger(__name__)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="predict")
+_HYDRA_CONFIG_DIR = str(Path(__file__).resolve().parent / "config")
+
+
+@hydra.main(version_base=None, config_path=_HYDRA_CONFIG_DIR, config_name="predict")
 def main(cfg: DictConfig) -> None:
     """Runs the full prediction, saving, and plotting workflow.
 
@@ -47,6 +52,12 @@ def main(cfg: DictConfig) -> None:
         )
         log.info("Start workflow -> %s", out_dir)
         print("cfg = ", cfg)
+
+        # Build runtime config eagerly (validates model code paths)
+        runtime_config = RuntimeConfig.from_env()
+        # Construct standardizer to load stats + data_list once
+        get_standardizer(runtime_config)
+        log.info("Runtime config and standardizer initialized.")
 
         # Step 1: Execute the model inference
         predictor: PredictionRunner = PredictionRunner(cfg)

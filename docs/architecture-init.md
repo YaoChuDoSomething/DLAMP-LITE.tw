@@ -46,6 +46,7 @@
 ---
 
 ### 1.1 訓練工作流程管線 (Training Pipeline)
+
 * **入口點**：[`train.py`](file:///wk2/yaochu/main/dlamp/train.py) (預設使用 `train_pangu` config，亦可切換 `train_diffusion`)。
 * **執行流程**：
   1. **配置加載與驗證**：Hydra 加載與強類型驗證 (`OmegaConf.set_struct(cfg, True)`)。
@@ -56,6 +57,7 @@
 ---
 
 ### 1.2 推論工作流程管線 (Inference Pipeline)
+
 * **入口點**：[`predict.py`](file:///wk2/yaochu/main/dlamp/predict.py) & [`src/export_onnx.py`](file:///wk2/yaochu/main/dlamp/src/export_onnx.py)。
 * **執行流程**：
   1. **Inference Engine 選擇**：支援 `ONNX` (`export/*.onnx`) 與 `Checkpoint` (`checkpoints/*.ckpt`) 雙引擎推論。
@@ -66,6 +68,7 @@
 ---
 
 ### 1.3 核心模型模組 (Core Model Architecture)
+
 * **架構路徑**：[`src/models/architectures/`](file:///wk2/yaochu/main/dlamp/src/models/architectures/)
 * **模型模組分流**：
   * **Pangu-Weather 類神經網路** ([`pangu_model.py`](file:///wk2/yaochu/main/dlamp/src/models/architectures/pangu_model.py))：3D/2D 氣象場 Autoencoder 結構，包含 Patch Embedding、3D Swin Transformer Block 以及 Downsample / Upsample 操作。
@@ -75,6 +78,7 @@
 ---
 
 ### 1.4 資料特徵與處理管線 (Data & Feature Pipeline)
+
 * **資料來源**：`DLAMP_DATA_PATH` 下之 ERA5 / OP_ERA5 逐時 NetCDF 檔案。
 * **特徵組裝與處理**：
   * **Standardization** ([`src/standardization.py`](file:///wk2/yaochu/main/dlamp/src/standardization.py))：根據 `DLAMP_EXP_CODE` 加載 3小時/6小時的 `z_score_*.json` 進行動態均值與標準差標準化。
@@ -84,6 +88,7 @@
 ---
 
 ### 1.5 資料流分類與模型介面
+
 * **Upper-Air (高空大氣場)**：3D 張量 ($B, C, Z, H, W$)，包含多層位勢高度 (Z)、風速 ($U, V$)、溫度 ($T$)、相對濕度 ($Q$)。
 * **Surface (地面氣象場)**：2D 張量 ($B, C, H, W$)，包含海平面氣壓 (MSL)、10m風速 ($U_{10}, V_{10}$)、2m溫度 ($T_{2m}$) 等。
 
@@ -112,4 +117,3 @@ including Geopotential (Z), Temperature (T), U/V Wind components, and Specific H
 The calculated per-variable mean and standard deviation mapped by lead time (e.g., 3-hour window)
 used to normalize raw NetCDF physical quantities prior to neural network forward pass.
 ```
-

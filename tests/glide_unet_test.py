@@ -1,8 +1,6 @@
 """Architecture tests for GlideUnet model."""
 
 import torch
-from omegaconf import OmegaConf
-
 from dlamp.models.glide_unet import GlideUnetModel
 
 

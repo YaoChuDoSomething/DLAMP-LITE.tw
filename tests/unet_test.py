@@ -1,11 +1,9 @@
 """Architecture tests for Unet model."""
 
 import torch
-from omegaconf import OmegaConf
-
-from dlamp.models.unet import UnetModel
-from dlamp.models.glide_unet import GlideUnetModel
 from dlamp.models.earth_3d_specifics import Earth3DSpecificsModel
+from dlamp.models.glide_unet import GlideUnetModel
+from dlamp.models.unet import UnetModel
 
 
 def test_unet_forward_pass() -> None:

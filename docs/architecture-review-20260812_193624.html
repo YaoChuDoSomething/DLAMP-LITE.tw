@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Architecture review — dlamp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; stroke-width: 2px; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .shallow { background: linear-gradient(135deg, #f1f5f9, #e2e8f0); }
+      .arrow { fill: none; stroke: #475569; stroke-width: 1.5; }
+      .arrow-thick { fill: none; stroke: #0d9488; stroke-width: 2.5; }
+      .box-mod { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 6; }
+      .box-deep { fill: #0f172a; stroke: #0d9488; stroke-width: 2; rx: 8; }
+      .box-shallow { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1; stroke-dasharray: 2 2; rx: 6; }
+      .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+      body { scroll-padding-top: 2rem; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+      <header class="space-y-3">
+        <h1 class="text-3xl font-serif text-slate-900">Architecture review — dlamp</h1>
+        <p class="text-sm text-slate-600">Weather-forecasting ML pipeline (PyTorch + Hydra + ONNX)</p>
+        <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs text-slate-500 mt-3">
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-stone-400"></span> Module</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-0 border-t-2 border-dashed border-slate-400"></span> Seam</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded deep"></span> Deep module</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded shallow border border-slate-300"></span> Shallow module</span>
+          <span class="flex items-center gap-1"><svg class="w-3 h-3"><line x1="0" y1="0" x2="12" y2="0" class="leak"></line></svg> Leakage</span>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-12">
+
+        <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif text-slate-900">Collapse the Config Seam</h2>
+            <span class="px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800 rounded">Strong</span>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-0.5 bg-slate-100 rounded">in-process</span>
+            <span class="px-2 py-0.5 bg-slate-100 rounded">central seam</span>
+          </div>
+          <div class="mt-3 font-mono text-xs text-slate-600 break-all">
+            src/const.py &nbsp;|&nbsp; src/standardization.py
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">Before — scattered global state</h3>
+              <div class="space-y-3">
+                <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                  <div class="text-xs font-medium text-slate-700">const.py</div>
+                  <div class="text-xs text-slate-600 mt-1">Env vars read at import time to 6 derived constants</div>
+                  <div class="text-xs text-slate-600">Every downstream module implicitly coupled</div>
+                  <div class="text-xs text-red-600 mt-1">print() at import body violates GEMINI.md</div>
+                </div>
+                <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                  <div class="text-xs font-medium text-slate-700">standardization.py</div>
+                  <div class="text-xs text-slate-600 mt-1">stat_dict loaded at module import</div>
+                  <div class="text-xs text-slate-600">destandardization re-reads YAML on every call</div>
+                  <div class="text-xs text-slate-600">Two paths derived from same env var can disagree</div>
+                </div>
+              </div>
+              <div class="mt-4 overflow-x-auto">
+                <pre class="mermaid">
+flowchart TD
+    E["env: DLAMP_EXP_CODE"] --> C["const.py imports<br/>MODEL_CODE STANDARDIZATION_PATH DATA_CONFIG_PATH"]
+    C --> S["standardization.py<br/>mod-level stat_dict"]
+    C --> F["file_util.py"]
+    C --> P["pangu_model.py"]
+    C --> M["data_manager.py"]
+    C --> D["callbacks/"]
+    S --> I["infer_onnx.py"]
+    S --> CB["log_prediction_samples_callback.py"]
+    S --> CDB["log_diffusion_pred_samples_callback.py"]
+    S --> AD["analysis/data_manager.py"]
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class S,I,CB,CDB,AD leak
+                </pre>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">After — explicit validated config</h3>
+              <div class="space-y-3">
+                <div class="p-3 bg-emerald-50 rounded border border-emerald-200">
+                  <div class="text-xs font-medium text-slate-700">const.py to Config dataclass</div>
+                  <div class="text-xs text-slate-600 mt-1">One explicit seam: RuntimeConfig passed by caller</div>
+                  <div class="text-xs text-slate-600">No import-time side effects or print</div>
+                  <div class="text-xs text-slate-600">Env-var mismatch validated eagerly</div>
+                </div>
+                <div class="p-3 bg-emerald-50 rounded border border-emerald-200">
+                  <div class="text-xs font-medium text-slate-700">standardizer.py (new)</div>
+                  <div class="text-xs text-slate-600 mt-1">Takes RuntimeConfig loads stats once in init</div>
+                  <div class="text-xs text-slate-600">shared standardize/destandardize seam</div>
+                  <div class="text-xs text-slate-600">Testable with fake config and in-memory stats</div>
+                </div>
+              </div>
+              <div class="mt-4 overflow-x-auto">
+                <pre class="mermaid">
+flowchart TD
+    E["env: DLAMP_EXP_CODE"] --> B["build_runtime_config()<br/>validate + return Config"]
+    B --> C["Config dataclass"]
+    C --> S["Standardizer<br/>init loads once shared seam"]
+    C --> F["file_util.py"]
+    C --> P["pangu_model.py"]
+    S --> I["infer_onnx.py"]
+    S --> CB["callbacks/"]
+    S --> CCB["diffusion_callbacks/"]
+    S --> AD["analysis/"]
+    classDef ok stroke:#0d9488,stroke-width:1px;
+    class S,I,CB,CCB,AD ok
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8 text-sm">
+            <div>
+              <p class="font-medium text-slate-700">Problem</p>
+              <p class="mt-1 text-slate-600">The config seam is the shallowest point in the dependency graph. Import-time env-var reads create invisible coupling. Module-level state in standardization makes the API asymmetric: standardization uses cached stats while destandardization re-reads YAML on every call. Silent mismatch risk when DLAMP_EXP_CODE does not match the model version.</p>
+            </div>
+            <div>
+              <p class="font-medium text-slate-700">Solution</p>
+              <p class="mt-1 text-slate-600">Replace import-time globals with an explicit RuntimeConfig object constructed once and passed to consumers. Standardizer class loads stats in init and exposes both directions through one shared seam. Env-var mismatch validated eagerly instead of silently applying wrong standardization.</p>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <p class="font-medium text-slate-700">Wins</p>
+            <ul class="mt-1 space-y-0.5 text-sm text-slate-600">
+              <li>locality: bugs in config propagation concentrate in one seaming module</li>
+              <li>leverage: one Standardizer interface across 4 call sites</li>
+              <li>interface shrinks: no implicit import-time state</li>
+              <li>testability: Standardizer testable with fake config and in-memory stats</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif text-slate-900">Unify the Backend Adapter Seam</h2>
+            <span class="px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded">Worth exploring</span>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-0.5 bg-slate-100 rounded">strategy</span>
+            <span class="px-2 py-0.5 bg-slate-100 rounded">shallow duplicate</span>
+          </div>
+          <div class="mt-3 font-mono text-xs text-slate-600 break-all">
+            inference/batch_inference_onnx.py &nbsp;|&nbsp; inference/batch_inference_ckpt.py
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">Before — twin inference loops</h3>
+              <div class="overflow-x-auto">
+                <pre class="mermaid">
+flowchart LR
+    A["BatchInferenceONNX<br/>infer()"] --> B["auto-regressive loop<br/>lines 60-96"]
+    B --> C["ort_sess.run()"]
+    B --> D["time feature injection<br/>numpy concat"]
+    B --> E["_boundary_swapping"]
+    B --> F["prediction_postprocess"]
+
+    G["BatchInferenceCkpt<br/>infer()"] --> H["auto-regressive loop<br/>lines 74-105"]
+    H --> I["pl_module() forward<br/>torch GPU then cpu.numpy()"]
+    H --> J["time feature injection<br/>numpy concat"]
+    H --> K["_boundary_swapping"]
+    H --> L["prediction_postprocess"]
+
+    classDef same fill:#f1f5f9;
+    class B,H same
+                </pre>
+              </div>
+              <div class="mt-3 text-xs text-slate-500">Lines 60-96 (ONNX) and 74-105 (ckpt) are structurally identical. Only the model call differs: ort_sess.run vs pl_module forward.</div>
+            </div>
+
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">After — one loop, adapter seam</h3>
+              <div class="overflow-x-auto">
+                <pre class="mermaid">
+flowchart LR
+    A["BatchInference<br/>infer()"] --> B["auto-regressive loop<br/>once"]
+    B --> C["backend.predict_step()<br/>adapter seam"]
+    B --> D["time feature injection"]
+    B --> E["_boundary_swapping"]
+    B --> F["prediction_postprocess"]
+
+    C --> G["ONNXBackend<br/>ort_sess.run()"]
+    C --> H["CkptBackend<br/>pl_module forward"]
+
+    classDef adapter fill:#dcfce7;
+    class G,H adapter
+                </pre>
+              </div>
+              <div class="mt-3 text-xs text-slate-500">Two adapters justify the seam: ONNXBackend for CPU inference, CkptBackend for GPU. Loop tested once against a fake backend.</div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8 text-sm">
+            <div>
+              <p class="font-medium text-slate-700">Problem</p>
+              <p class="mt-1 text-slate-600">The ONNX and ckpt inference classes duplicate the entire auto-regressive loop, boundary swapping, and post-processing. Only the model-call differs. The deletion test: removing one leaves an if-else on the backend — they are already shallow enough to be one class.</p>
+            </div>
+            <div>
+              <p class="font-medium text-slate-700">Solution</p>
+              <p class="mt-1 text-slate-600">Extract a single BatchInference class with the shared loop. Introduce a PredictBackend adapter seam with two adapters: ONNXBackend (CPU numpy) and CkptBackend (GPU torch). Tests use a fake backend to exercise the loop without either runtime.</p>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <p class="font-medium text-slate-700">Wins</p>
+            <ul class="mt-1 space-y-0.5 text-sm text-slate-600">
+              <li>locality: loop logic lives in one module not two</li>
+              <li>leverage: one loop tested against 3 backends (onnx, ckpt, fake)</li>
+              <li>interface shrinks: one infer method replaces two classes</li>
+              <li>testability: auto-regressive loop testable without GPU or ONNX runtime</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif text-slate-900">Unify the Variable Naming Seam</h2>
+            <span class="px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800 rounded">Strong</span>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-0.5 bg-slate-100 rounded">data integrity</span>
+            <span class="px-2 py-0.5 bg-slate-100 rounded">leaky seam</span>
+          </div>
+          <div class="mt-3 font-mono text-xs text-slate-600 break-all">
+            analysis/forecast_saver.py &nbsp;|&nbsp; src/utils/file_util.py &nbsp;|&nbsp; src/utils/data_type.py
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">Before — three naming systems</h3>
+              <div class="overflow-x-auto">
+                <pre class="mermaid">
+flowchart LR
+    subgraph READING["Reading side (file_util.py)"]
+        A["DataCompose.combined_key<br/>e.g. PH@Hpa500"] --> A2["dataset[combined_key]"]
+    end
+    subgraph WRITING["Writing side (forecast_saver.py)"]
+        B["DataType.nc_key<br/>e.g. umet10"] --> B2["data_vars[nc_key]"]
+        C["key_map dict<br/>t2m to T2 q2m to Q2"] --> C2["data_vars[key_map]"]
+    end
+    subgraph META["Metadata (netcdf_meta.py)"]
+        D["DataType.nc_key<br/>same enum third field"]
+    end
+
+    A -.->|"str(dc) must match JSON"| S["standardization stat_dict"]
+    B2 -->|"key_map overrides nc_key<br/>for surface only"| X["NetCDF output"]
+    A2 -->|"combined_key lookup"| D2["NetCDF input"]
+
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class A,B,C,S leak
+                </pre>
+              </div>
+              <div class="mt-3 text-xs text-slate-500">Qt is multiplied by 1000 on read (kg/kg to g/kg) and divided by 1000 on write (g/kg to kg/kg) in two different files. Surface variables use key_map; upper vars use nc_key. A variable that reads correctly can write to the wrong key.</div>
+            </div>
+
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">After — canonical naming + unit registry</h3>
+              <div class="overflow-x-auto">
+                <pre class="mermaid">
+flowchart LR
+    A["VariableRegistry<br/>canonical name per var"] --> B["file_util.py<br/>reads via registry"]
+    A --> C["forecast_saver.py<br/>writes via registry"]
+    A --> D["standardization.py<br/>keys via registry"]
+
+    E["UnitConverter<br/>Qt: kg/kg to g/kg<br/>registered per var"]
+    B --> E
+    C --> E
+    A --> F["netcdf_meta<br/>attributes via registry"]
+
+    classDef deep fill:#0f172a,stroke:#0d9488;
+    class A,E deep
+                </pre>
+              </div>
+              <div class="mt-3 text-xs text-slate-500">One VariableRegistry as the single seam. Unit conversions live alongside the variable definition, applied in one place at the read/write boundary.</div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8 text-sm">
+            <div>
+              <p class="font-medium text-slate-700">Problem</p>
+              <p class="mt-1 text-slate-600">Three independent naming systems coexist: DataType.nc_key for metadata, DataCompose.combined_key for data reading, and a hardcoded key_map dict for writing. Unit conversions for Qt (kg/kg to g/kg) appear in both file_util.py and forecast_saver.py. A variable that reads correctly can silently write to the wrong NetCDF key.</p>
+            </div>
+            <div>
+              <p class="font-medium text-slate-700">Solution</p>
+              <p class="mt-1 text-slate-600">Introduce a VariableRegistry as the single naming seam. All read, write, and standardization code resolves variable names through it. Move unit conversions to a UnitConverter registered per variable, applied at the read/write boundary in one place.</p>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <p class="font-medium text-slate-700">Wins</p>
+            <ul class="mt-1 space-y-0.5 text-sm text-slate-600">
+              <li>locality: naming and units defined in one registry not three files</li>
+              <li>leverage: one registry consumed by read, write, stats, and metadata</li>
+              <li>interface shrinks: key_map dict deleted entirely</li>
+              <li>data integrity: no silent key mismatches between read and write</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif text-slate-900">Deepen the Trainer Builder</h2>
+            <span class="px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800 rounded">Strong</span>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-0.5 bg-slate-100 rounded">in-process</span>
+            <span class="px-2 py-0.5 bg-slate-100 rounded">shallow interface</span>
+          </div>
+          <div class="mt-3 font-mono text-xs text-slate-600 break-all">
+            src/models/builders/base_builder.py &nbsp;|&nbsp; pangu_builder.py &nbsp;|&nbsp; glide_builder.py
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">Before — abstract mismatch</h3>
+              <div class="space-y-2">
+                <div class="text-xs">
+                  <div class="font-medium text-slate-700">BaseBuilder</div>
+                  <div class="text-slate-600">def build_model(self)</div>
+                  <div class="text-slate-600">def build_trainer(self)</div>
+                </div>
+                <div class="text-xs">
+                  <div class="font-medium text-slate-700">PanguBuilder</div>
+                  <div class="text-slate-600">def build_model(self, test_dataloader, predict_iters)</div>
+                  <div class="text-slate-600">def build_trainer(self, logger)</div>
+                </div>
+                <div class="text-xs">
+                  <div class="font-medium text-slate-700">GlideBuilder</div>
+                  <div class="text-slate-600">def build_model(self, test_dataloader)</div>
+                  <div class="text-slate-600">def build_trainer(self, logger)</div>
+                </div>
+              </div>
+              <div class="mt-4 text-xs text-slate-500">Both builders duplicate 40 lines of Trainer construction. PanguBuilder hardcodes accelerator="gpu"; GlideBuilder does not. Neither abstract method signature matches.</div>
+            </div>
+
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">After — shared Trainer factory</h3>
+              <div class="overflow-x-auto">
+                <pre class="mermaid">
+flowchart TD
+    A["TrainerFactory<br/>build(cfg, logger)"]
+    A --> B["trainer_config.py<br/>shared construction"]
+    A --> C["PanguBuilder<br/>build_model + build_trainer"]
+    A --> D["GlideBuilder<br/>build_model + build_trainer"]
+    B --> E["callbacks, strategy<br/>precision, devices"]
+
+    classDef deep fill:#0f172a,stroke:#0d9488;
+    class A,B deep
+                </pre>
+              </div>
+              <div class="mt-4 text-xs text-slate-500">TrainerFactory absorbs the 40 duplicated lines. Builders delegate. Abstract interface signature matches implementations.</div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8 text-sm">
+            <div>
+              <p class="font-medium text-slate-700">Problem</p>
+              <p class="mt-1 text-slate-600">BaseBuilder declares build_model and build_trainer with no arguments, but both PanguBuilder and GlideBuilder take different arguments. Trainer construction is duplicated 40 lines in each. PanguBuilder hardcodes accelerator="gpu" while GlideBuilder omits it. Understanding the build flow requires reading all three files.</p>
+            </div>
+            <div>
+              <p class="font-medium text-slate-700">Solution</p>
+              <p class="mt-1 text-slate-600">Extract TrainerFactory as its own module with a single build interface. Builders delegate to it, passing their specific config. Align abstract signatures with concrete implementations by adding logger as a parameter.</p>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <p class="font-medium text-slate-700">Wins</p>
+            <ul class="mt-1 space-y-0.5 text-sm text-slate-600">
+              <li>locality: Trainer construction in one module not two</li>
+              <li>interface shrinks: 40 duplicated lines deleted</li>
+              <li>leverage: one TrainerFactory tested independently of model type</li>
+              <li>testability: builder tests focus on model construction not Trainer kwargs</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif text-slate-900">Flatten the Diffusion Module</h2>
+            <span class="px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded">Worth exploring</span>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-0.5 bg-slate-100 rounded">mixin</span>
+            <span class="px-2 py-0.5 bg-slate-100 rounded">scattered</span>
+          </div>
+          <div class="mt-3 font-mono text-xs text-slate-600 break-all">
+            src/models/lightning_modules/diffusion_lightning_module.py &nbsp;|&nbsp; diffusion_process.py &nbsp;|&nbsp; ddpm_process.py &nbsp;|&nbsp; ddim_process.py
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">Before — factory-created mixin</h3>
+              <div class="overflow-x-auto">
+                <pre class="mermaid">
+flowchart LR
+    A["create_diffusion_module<br/>factory: DDPMProcess or DDIMProcess"] --> B["DiffusionLightningModule<br/>LightningModule + mixin"]
+    B --> C["training_step<br/>denoising<br/>inference_regression"]
+    C --> D["DDPMProcess<br/>q_xt_x0, q_xt_xtminus1<br/>sampling, beta schedule"]
+    B --> E["DDIMProcess<br/>overrides sampling"]
+    B --> F["isinstance checks on<br/>__class__.__bases__ are fragile"]
+
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class A,F leak
+                </pre>
+              </div>
+              <div class="mt-4 text-xs text-slate-500">DiffusionLightningModule is created by a factory that mixes in DDPMProcess or DDIMProcess. isinstance checks on __class__.__bases__ are fragile. Understanding full behavior requires bouncing across 3 files.</div>
+            </div>
+
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">After — composition over mixin</h3>
+              <div class="overflow-x-auto">
+                <pre class="mermaid">
+flowchart LR
+    A["DiffusionLightningModule<br/>compose DDPMProcess or DDIMProcess"]
+    A --> B["process: DiffusionProcess protocol"]
+    B --> C["DDPMProcess<br/>impl"]
+    B --> D["DDIMProcess<br/>impl"]
+    A --> E["denoising, training_step,<br/>inference_regression"]
+
+    classDef deep fill:#0f172a,stroke:#0d9488;
+    class A,E deep
+                </pre>
+              </div>
+              <div class="mt-4 text-xs text-slate-500">DiffusionLightningModule holds a DiffusionProcess instance instead of inheriting. Protocol makes the seam explicit. isinstance checks replaced with method dispatch.</div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8 text-sm">
+            <div>
+              <p class="font-medium text-slate-700">Problem</p>
+              <p class="mt-1 text-slate-600">DiffusionLightningModule is created by a factory that dynamically mixes LightningModule with DDPMProcess or DDIMProcess. The isinstance checks on __class__.__bases__ are fragile to MRO changes. Understanding the full training/inference behavior requires reading across 3 files.</p>
+            </div>
+            <div>
+              <p class="font-medium text-slate-700">Solution</p>
+              <p class="mt-1 text-slate-600">Replace mixin inheritance with composition: DiffusionLightningModule holds a DiffusionProcess instance. Define a protocol for the process interface. Replace fragile isinstance checks with method dispatch on the composed instance.</p>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <p class="font-medium text-slate-700">Wins</p>
+            <ul class="mt-1 space-y-0.5 text-sm text-slate-600">
+              <li>locality: mixin methods visible on the class not scattered</li>
+              <li>leverage: one LightningModule tested against 2 process adapters</li>
+              <li>testability: process seam testable without LightningModule</li>
+              <li>interface shrinks: no factory function needed</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-xl font-serif text-slate-900">Fix and Deepen the Plotter</h2>
+            <span class="px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800 rounded">Strong</span>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-0.5 bg-slate-100 rounded">latent bug</span>
+            <span class="px-2 py-0.5 bg-slate-100 rounded">monolith</span>
+          </div>
+          <div class="mt-3 font-mono text-xs text-slate-600 break-all">
+            analysis/plotter.py
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">Before — 150-line monolith + NameError</h3>
+              <div class="overflow-x-auto">
+                <pre class="mermaid">
+flowchart TD
+    A["WeatherPlotter.create_analysis_figure"] --> B["_generic_grid_plot<br/>150 lines"]
+    B --> C["colormap normalization<br/>LogNorm, PowerNorm, etc"]
+    B --> D["pcolormesh rendering"]
+    B --> E["contour rendering"]
+    B --> F["wind visualization"]
+    B --> G["coastline/landmask"]
+    B --> H["axis formatting"]
+    B --> I["create_cross_section_figure<br/>calls great_circle"]
+    I --> J["great_circle<br/>never imported"]
+
+    classDef leak stroke:#dc2626,stroke-width:2px;
+    class I,J,B leak
+                </pre>
+              </div>
+              <div class="mt-4 text-xs text-slate-500">great_circle is used on line 628 but never imported — NameError at runtime. _generic_grid_plot handles 5 concerns in 150 lines. Understanding one concern requires reading all others.</div>
+            </div>
+
+            <div>
+              <h3 class="font-serif text-sm text-slate-500 mb-3">After — split by render strategy</h3>
+              <div class="overflow-x-auto">
+                <pre class="mermaid">
+flowchart TD
+    A["WeatherPlotter.create_analysis_figure"]
+    A --> B["GridRenderer<br/>colormap + pcolormesh + contours"]
+    A --> C["WindRenderer<br/>barbs or streamplot"]
+    A --> D["BoundaryRenderer<br/>coastline + landmask"]
+    A --> E["CrossSectionRenderer<br/>great_circle injected"]
+
+    classDef deep fill:#0f172a,stroke:#0d9486;
+    class B,C,D,E deep
+                </pre>
+              </div>
+              <div class="mt-4 text-xs text-slate-500">Each renderer handles one visualization concern. great_circle becomes a dependency of CrossSectionRenderer, injected rather than implicit.</div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8 text-sm">
+            <div>
+              <p class="font-medium text-slate-700">Problem</p>
+              <p class="mt-1 text-slate-600">Analysis/plotter.py line 628 calls great_circle which is never imported — a latent NameError that will crash at runtime. _generic_grid_plot is a 150-line method handling colormap normalization, pcolormesh, contours, wind visualization, and boundary rendering. A bug in one concern is hidden among unrelated code.</p>
+            </div>
+            <div>
+              <p class="font-medium text-slate-700">Solution</p>
+              <p class="mt-1 text-slate-600">Add the missing import as part of a broader split. Extract renderers per visualization concern: GridRenderer, WindRenderer, BoundaryRenderer, CrossSectionRenderer. Each renderer takes only what it needs. great_circle becomes an injectable dependency of CrossSectionRenderer.</p>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <p class="font-medium text-slate-700">Wins</p>
+            <ul class="mt-1 space-y-0.5 text-sm text-slate-600">
+              <li>locality: each render concern in its own module</li>
+              <li>interface shrinks: 150-line method split into 4 small interfaces</li>
+              <li>leverage: render pipeline tested with fake renderers</li>
+              <li>testability: colormap logic testable without matplotlib figures</li>
+            </ul>
+          </div>
+        </article>
+
+      </section>
+
+      <section id="top-recommendation" class="bg-white rounded-xl border-2 border-emerald-300 p-6">
+        <h2 class="text-xl font-serif text-slate-900 mb-3">Top recommendation</h2>
+        <p class="text-sm text-slate-600">Start with <a href="#candidates" class="text-emerald-700 hover:text-emerald-900 font-medium">Collapse the Config Seam</a>. It is the deepest root cause: the shallowest module in the dependency graph, imported by nearly every file. Import-time side effects, module-level state, and the asymmetric standardization API propagate through the entire codebase. Fixing this one seam would make the backend adapter (Candidate 2) and trainer builder (Candidate 4) candidates easier to test, because both depend on the config being explicit and injectable.</p>
+        <p class="text-sm text-slate-600 mt-2">After the config seam, tackle <a href="#candidates" class="text-emerald-700 hover:text-emerald-900 font-medium">Unify the Variable Naming Seam</a> (Strong) to address the data-integrity risk, then <a href="#candidates" class="text-emerald-700 hover:text-emerald-900 font-medium">Unify the Backend Adapter Seam</a> to cut the duplicated inference loops.</p>
+      </section>
+
+    </main>
+  </body>
+</html>

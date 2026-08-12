@@ -1,8 +1,8 @@
 """Tests for CDS Downloader module."""
 
-import torch
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
+import torch
 from dlamp.downloader import CDSDownloader
 
 

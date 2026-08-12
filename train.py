@@ -5,14 +5,18 @@ import hydra
 from lightning.pytorch import seed_everything
 from omegaconf import DictConfig, OmegaConf
 
-from src.managers import DataManager
-from src.models import get_builder
-from src.utils import DataCompose
+from dlamp.managers import DataManager
+from dlamp.models import get_builder
+from dlamp.runtime_config import RuntimeConfig, get_standardizer
+from dlamp.utils import DataCompose
 
 log = logging.getLogger(__name__)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="train_pangu")
+_HYDRA_CONFIG_DIR = str(Path(__file__).resolve().parent / "config")
+
+
+@hydra.main(version_base=None, config_path=_HYDRA_CONFIG_DIR, config_name="train_pangu")
 def main(cfg: DictConfig) -> None:
     hydra_oup_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
     log.info(f"Working directory: {Path.cwd()}")
@@ -21,6 +25,12 @@ def main(cfg: DictConfig) -> None:
     # lightning ddp strategy doesn't need manual seed
     # https://github.com/Lightning-AI/pytorch-lightning/issues/12986
     # seed_everything(1000)
+
+    # Build runtime config eagerly (validates model code paths)
+    runtime_config = RuntimeConfig.from_env()
+    # Construct standardizer to load stats + data_list once
+    get_standardizer(runtime_config)
+    log.info("Runtime config and standardizer initialized.")
 
     # prevent access to non-existing keys
     OmegaConf.set_struct(cfg, True)

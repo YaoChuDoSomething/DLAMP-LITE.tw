@@ -60,4 +60,3 @@ Use @antigravity-workflows to execute the "mattpocock-ts-testing-workflow" for T
 2. Execute @migrate-to-shoehorn to replace unsafe assertions with fromPartial() and fromAny().
 3. Verify type-checking with `tsc --noEmit` and run the unit test suite.
 ```
-

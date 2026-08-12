@@ -1,8 +1,7 @@
 """Tests for DLAMP Regridder module."""
 
-import torch
-from unittest.mock import Mock, patch
 
+import torch
 from dlamp.regridder import DLAMPRegenerator
 
 

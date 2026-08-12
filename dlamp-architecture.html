@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DLAMP.tw Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'JetBrains Mono', monospace; background: #020617; min-height: 100vh; padding: 2rem; color: #fff; }
+    .header { margin-bottom: 2rem; }
+    .pulse { width: 12px; height: 12px; background: #22d3ee; border-radius: 50%; animation: p 2s infinite; }
+    @keyframes p { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.5rem; font-weight: 700; }
+    .sub { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container { background: rgba(15,23,42,0.5); border-radius: 1rem; border: 1px solid #1e293b; padding: 1.5rem; overflow-x: auto; }
+    svg { width: 100%; min-width: 1100px; display: block; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .card { background: rgba(15,23,42,0.5); border-radius: .75rem; border: 1px solid #1e293b; padding: 1.25rem; }
+    .ch { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; }
+    .cd { width: 8px; height: 8px; border-radius: 50%; }
+    .cd.cy { background: #22d3ee; } .cd.em { background: #34d399; } .cd.vi { background: #a78bfa; }
+    .cd.am { background: #fbbf24; } .cd.sl { background: #94a3b8; }
+    .card h3 { font-size: .875rem; font-weight: 600; }
+    .card ul { list-style: none; color: #94a3b8; font-size: .75rem; }
+    .card li { margin-bottom: .375rem; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: .75rem; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:1rem"><div class="pulse"></div><h1>DLAMP.tw Architecture</h1></div>
+    <p class="sub">Data-driven Limited Area Mesoscale Prediction — dual Swin-Transformer + DDPM forecast pipeline</p>
+  </div>
+  <div class="diagram-container">
+    <svg viewBox="0 0 1200 760">
+      <defs>
+        <marker id="a0" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#64748b"/></marker>
+        <marker id="a1" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#22d3ee"/></marker>
+        <marker id="a2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#34d399"/></marker>
+        <marker id="a3" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#a78bfa"/></marker>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/></pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- Data Sources Region -->
+        <rect x="10" y="550" width="500" height="205" rx="12" fill="rgba(120,53,15,0.05)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="22" y="568" fill="#fbbf24" font-size="10" font-weight="600">Raw Data Sources</text>
+        <rect x="30" y="578" width="165" height="55" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="112" y="595" fill="white" font-size="11" font-weight="600" text-anchor="middle">OPERA/ERA5</text>
+        <text x="112" y="610" fill="#94a3b8" font-size="8" text-anchor="middle">Reanalysis NetCDF</text>
+        <text x="112" y="623" fill="#94a3b8" font-size="7" text-anchor="middle">OP_ERA5</text>
+        <rect x="30" y="643" width="165" height="55" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="112" y="660" fill="white" font-size="11" font-weight="600" text-anchor="middle">OPERA_E2S</text>
+        <text x="112" y="674" fill="#94a3b8" font-size="8" text-anchor="middle">Ensemble Forecast</text>
+        <text x="112" y="689" fill="#94a3b8" font-size="7" text-anchor="middle">OP_E2S</text>
+        <rect x="225" y="578" width="165" height="55" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="307" y="595" fill="white" font-size="11" font-weight="600" text-anchor="middle">CWA_RWRF</text>
+        <text x="307" y="610" fill="#94a3b8" font-size="8" text-anchor="middle">CWA WRF-BT NetCDF</text>
+        <text x="307" y="623" fill="#94a3b8" font-size="7" text-anchor="middle">CWA_RWRF</text>
+
+        <!-- Config & Assets -->
+        <rect x="520" y="525" width="180" height="95" rx="12" fill="rgba(76,29,149,0.05)" stroke="#a78bf2" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="532" y="543" fill="#a78bf2" font-size="10" font-weight="600">Config &amp; Assets</text>
+        <rect x="540" y="550" width="140" height="40" rx="6" fill="rgba(76,29,149,0.3)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="610" y="565" fill="white" font-size="10" font-weight="600" text-anchor="middle">Z-Score JSON</text>
+        <text x="610" y="576" fill="#94a3b8" font-size="7" text-anchor="middle">assets/standardization/</text>
+        <rect x="540" y="595" width="140" height="50" rx="6" fill="rgba(76,29,149,0.3)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="610" y="610" fill="white" font-size="10" font-weight="600" text-anchor="middle">Constant Masks</text>
+        <text x="610" y="621" fill="#94a3b8" font-size="7" text-anchor="middle">land/sea, topography</text>
+        <text x="610" y="634" fill="#94a3b8" font-size="7" text-anchor="middle">4km resolution</text>
+
+        <!-- Arrows -->
+        <line x1="112" y1="576" x2="112" y2="530" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a0)"/>
+        <line x1="307" y1="576" x2="315" y2="530" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a0)"/>
+        <line x1="307" y1="620" x2="420" y2="530" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a0)"/>
+        <line x1="610" y1="550" x2="120" y2="475" stroke="#a78bf2" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a0)"/>
+        <line x1="610" y1="600" x2="320" y2="475" stroke="#a78bf2" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a0)"/>
+
+        <!-- Data Pipeline -->
+        <rect x="40" y="375" width="470" height="100" rx="12" fill="rgba(8,51,68,0.05)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="52" y="393" fill="#22d3ee" font-size="10" font-weight="600">Data Pipeline</text>
+        <rect x="70" y="410" width="120" height="55" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="130" y="427" fill="white" font-size="10" font-weight="600" text-anchor="middle">DataManager</text>
+        <text x="130" y="441" fill="#94a3b8" font-size="7" text-anchor="middle">managers/data_manager.py</text>
+        <text x="130" y="454" fill="#94a3b8" font-size="7" text-anchor="middle">HydraDataModule</text>
+        <rect x="220" y="410" width="120" height="55" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="280" y="427" fill="white" font-size="10" font-weight="600" text-anchor="middle">DataCompose</text>
+        <text x="280" y="441" fill="#94a3b8" font-size="7" text-anchor="middle">utils/data_type.py</text>
+        <text x="280" y="454" fill="#94a3b8" font-size="7" text-anchor="middle">var/level config</text>
+        <rect x="370" y="410" width="120" height="55" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="430" y="427" fill="white" font-size="10" font-weight="600" text-anchor="middle">CustomDataset</text>
+        <text x="430" y="441" fill="#94a3b8" font-size="7" text-anchor="middle">datasets/custom_dataset.py</text>
+        <text x="430" y="454" fill="#94a3b8" font-size="7" text-anchor="middle">NetCDF to tensor</text>
+
+        <!-- Arrows: Pipeline -> Training & Inference -->
+        <line x1="130" y1="465" x2="540" y2="220" stroke="#34d399" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="315" y1="465" x2="690" y2="275" stroke="#34d399" stroke-width="1.5" marker-end="url(#a2)"/>
+        <text x="400" y="230" fill="#34d399" font-size="8" text-anchor="middle">train.py</text>
+
+        <!-- Training Region (Backend/Emerald) -->
+        <rect x="520" y="140" width="320" height="250" rx="12" fill="rgba(6,78,59,0.05)" stroke="#34d399" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="532" y="158" fill="#34d399" font-size="10" font-weight="600">Training Region</text>
+
+        <!-- Pangu Model -->
+        <rect x="540" y="175" width="280" height="55" rx="6" fill="rgba(6,78,59,0.35)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="680" y="192" fill="white" font-size="11" font-weight="600" text-anchor="middle">PanguLightningModule</text>
+        <text x="680" y="205" fill="#94a3b8" font-size="8" text-anchor="middle">lightning/pangu_lightning_module.py</text>
+        <text x="680" y="218" fill="#94a3b8" font-size="8" text-anchor="middle">Swin-Transformer * 29M params * L1 Loss</text>
+
+        <!-- Builders -->
+        <rect x="540" y="245" width="130" height="40" rx="6" fill="rgba(6,78,59,0.25)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="605" y="262" fill="white" font-size="9" font-weight="600" text-anchor="middle">PanguBuilder</text>
+        <text x="605" y="273" fill="#94a3b8" font-size="6" text-anchor="middle">builders/pangu_builder.py</text>
+        <rect x="690" y="245" width="130" height="40" rx="6" fill="rgba(6,78,59,0.25)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="755" y="262" fill="white" font-size="9" font-weight="600" text-anchor="middle">DiffusionBuilder</text>
+        <text x="755" y="273" fill="#94a3b8" font-size="6" text-anchor="middle">builders/glide_builder.py</text>
+
+        <!-- Diffusion -->
+        <rect x="690" y="295" width="130" height="40" rx="6" fill="rgba(6,78,59,0.35)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="755" y="312" fill="white" font-size="9" font-weight="600" text-anchor="middle">DiffusionModule</text>
+        <text x="755" y="323" fill="#94a3b8" font-size="6" text-anchor="middle">DDPM + Glide U-Net</text>
+
+        <!-- PanguModel & GlideUNet architectures -->
+        <rect x="540" y="345" width="280" height="40" rx="6" fill="rgba(6,78,59,0.35)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="680" y="360" fill="white" font-size="10" font-weight="600" text-anchor="middle">PanguModel</text>
+        <text x="680" y="372" fill="#94a3b8" font-size="7" text-anchor="middle">Swin-Transformer architectures/pangu_model.py</text>
+        <rect x="540" y="390" width="280" height="40" rx="6" fill="rgba(6,78,59,0.35)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="680" y="405" fill="white" font-size="10" font-weight="600" text-anchor="middle">GlideUNet / DiffusionModel</text>
+        <text x="680" y="417" fill="#94a3b8" font-size="7" text-anchor="middle">ResUNet + Attention architectures/glide_unet.py</text>
+
+        <!-- Checkpoints -->
+        <rect x="840" y="140" width="140" height="50" rx="6" fill="rgba(76,29,149,0.25)" stroke="#a78bf2" stroke-width="1.5"/>
+        <text x="910" y="155" fill="white" font-size="10" font-weight="600" text-anchor="middle">Checkpoints</text>
+        <text x="910" y="170" fill="#94a3b8" font-size="8" text-anchor="middle">checkpoints/*.ckpt</text>
+
+        <!-- ONNX Export -->
+        <rect x="840" y="205" width="140" height="45" rx="6" fill="rgba(76,29,149,0.25)" stroke="#a78bf2" stroke-width="1.5"/>
+        <text x="910" y="220" fill="white" font-size="10" font-weight="600" text-anchor="middle">ONNX Export</text>
+        <text x="910" y="235" fill="#94a3b8" font-size="8" text-anchor="middle">export/*.onnx</text>
+
+        <!-- Inference Region (Backend/Emerald) -->
+        <rect x="520" y="445" width="320" height="100" rx="12" fill="rgba(6,78,59,0.05)" stroke="#34d399" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="532" y="463" fill="#34d399" font-size="10" font-weight="600">Inference Region</text>
+        <rect x="540" y="475" width="280" height="50" rx="6" fill="rgba(6,78,59,0.35)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="680" y="490" fill="white" font-size="11" font-weight="600" text-anchor="middle">ONNX Runtime</text>
+        <text x="680" y="502" fill="#94a3b8" font-size="8" text-anchor="middle">batch_inference_onnx.py CUDAExecutionProvider</text>
+
+        <!-- Checkpoint Inference -->
+        <rect x="840" y="475" width="140" height="50" rx="6" fill="rgba(76,29,149,0.25)" stroke="#a78bf2" stroke-width="1.5"/>
+        <text x="910" y="490" fill="white" font-size="10" font-weight="600" text-anchor="middle">Checkpoint Inf.</text>
+        <text x="910" y="505" fill="#94a3b8" font-size="8" text-anchor="middle">batch_inference_ckpt.py</text>
+
+        <!-- Arrows: Training -> Checkpoints/ONNX -->
+        <line x1="820" y1="190" x2="840" y2="190" stroke="#34d399" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="820" y1="220" x2="840" y2="228" stroke="#34d399" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <!-- Arrows: Artifacts -> Inference -->
+        <line x1="910" y1="195" x2="810" y2="490" stroke="#a78bf2" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#a3)"/>
+        <line x1="910" y1="228" x2="810" y2="500" stroke="#a78bf2" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#a3)"/>
+
+        <!-- Arrows: Pipeline -> Inference -->
+        <line x1="315" y1="465" x2="540" y2="500" stroke="#34d399" stroke-width="1.5" marker-end="url(#a2)"/>
+        <text x="400" y="475" fill="#34d399" font-size="8" text-anchor="middle">predict.py</text>
+
+        <!-- Analysis Region (Frontend/Cyan) -->
+        <rect x="840" y="375" width="340" height="215" rx="12" fill="rgba(8,51,68,0.05)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="852" y="393" fill="#22d3ee" font-size="10" font-weight="600">Analysis &amp; Visualization</text>
+        <rect x="855" y="408" width="120" height="40" rx="6" fill="rgba(8,51,68,0.35)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="915" y="423" fill="white" font-size="9" font-weight="600" text-anchor="middle">predict.py</text>
+        <text x="915" y="435" fill="#94a3b8" font-size="6" text-anchor="middle">entrypoint</text>
+        <rect x="855" y="458" width="120" height="40" rx="6" fill="rgba(8,51,68,0.35)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="915" y="473" fill="white" font-size="9" font-weight="600" text-anchor="middle">PredictionRunner</text>
+        <text x="915" y="485" fill="#94a3b8" font-size="6" text-anchor="middle">analysis/prediction.py</text>
+        <rect x="855" y="508" width="120" height="40" rx="6" fill="rgba(8,51,68,0.35)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="915" y="523" fill="white" font-size="9" font-weight="600" text-anchor="middle">ForecastSaver</text>
+        <text x="915" y="535" fill="#94a3b8" font-size="6" text-anchor="middle">NetCDF output</text>
+        <rect x="995" y="408" width="120" height="40" rx="6" fill="rgba(8,51,68,0.35)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="1055" y="423" fill="white" font-size="9" font-weight="600" text-anchor="middle">AnalysisDataManager</text>
+        <text x="1055" y="435" fill="#94a3b8" font-size="6" text-anchor="middle">analysis/data_manager.py</text>
+        <rect x="995" y="458" width="120" height="40" rx="6" fill="rgba(8,51,68,0.35)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="1055" y="473" fill="white" font-size="9" font-weight="600" text-anchor="middle">WeatherPlotter</text>
+        <text x="1055" y="485" fill="#94a3b8" font-size="6" text-anchor="middle">analysis/plotter.py</text>
+        <rect x="995" y="508" width="120" height="40" rx="6" fill="rgba(8,51,68,0.35)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="1055" y="523" fill="white" font-size="9" font-weight="600" text-anchor="middle">VideoCreator</text>
+        <text x="1055" y="535" fill="#94a3b8" font-size="6" text-anchor="middle">analysis/video_creator.py</text>
+
+        <!-- Arrow: Inference -> Analysis -->
+        <line x1="820" y1="490" x2="855" y2="423" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#a1)"/>
+
+        <!-- Legend -->
+        <rect x="840" y="600" width="320" height="95" rx="8" fill="rgba(15, 23, 42, 0.5)" stroke="#1e293b" stroke-width="1"/>
+        <text x="852" y="615" fill="white" font-size="10" font-weight="600">Legend</text>
+        <rect x="852" y="627" width="14" height="10" rx="2" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="872" y="635" fill="#94a3b8" font-size="8">Frontend / Analysis</text>
+        <rect x="852" y="643" width="14" height="10" rx="2" fill="rgba(6,78,59,0.35)" stroke="#34d399" stroke-width="1"/>
+        <text x="872" y="651" fill="#94a3b8" font-size="8">Backend / Training / Inference</text>
+        <rect x="852" y="659" width="14" height="10" rx="2" fill="rgba(76,29,149,0.25)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="872" y="667" fill="#94a3b8" font-size="8">Storage / Models</text>
+        <rect x="852" y="675" width="14" height="10" rx="2" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1"/>
+        <text x="872" y="683" fill="#94a3b8" font-size="8">External Data</text>
+        <line x1="990" y1="627" x2="1004" y2="627" stroke="#34d399" stroke-width="1.5" marker-end="url(#a2)"/>
+        <text x="1008" y="631" fill="#94a3b8" font-size="8">solid: data flow</text>
+        <line x1="990" y1="643" x2="1004" y2="643" stroke="#a78bf2" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#a3)"/>
+        <text x="1008" y="647" fill="#94a3b8" font-size="8">dashed: artifacts</text>
+        <line x1="990" y1="659" x2="1004" y2="659" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a0)"/>
+        <text x="1008" y="663" fill="#94a3b8" font-size="8">dotted: config/masks</text>
+      </svg>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="cards">
+      <div class="card">
+        <div class="ch"><div class="cd em"></div><h3>Models</h3></div>
+        <ul>
+          <li>• PanguModel: Swin-Transformer, 29M params</li>
+          <li>• GlideUNet: ResUNet+Attention, 672M params</li>
+          <li>• Dual backbone: deterministic mean + stochastic convection</li>
+          <li>• Input: upper-air (Z,H,W,C) + surface (H,W,C)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="cd vi"></div><h3>Workflow</h3></div>
+        <ul>
+          <li>• train.py → Hydra configs + PyTorch Lightning</li>
+          <li>• predict.py → ONNX inference (CUDAExecutionProvider)</li>
+          <li>• Multi-step iterative forecasting with boundary swap</li>
+          <li>• Export to WRF-compatible NetCDF, matplotlib plots, GIFs</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="cd am"></div><h3>Data</h3></div>
+        <ul>
+          <li>• Sources: OPERA/ERA5, OPERA_E2S, CWA_RWRF NetCDF</li>
+          <li>• 4km resolution, 21 vertical levels for Taiwan region</li>
+          <li>• Z-score standardization per model version</li>
+          <li>• Env vars: DLAMP_EXP_CODE, DLAMP_DATA_SOURCE, DLAMP_DATA_PATH</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="footer">DLAMP.tw - Data-driven Limited Area Mesoscale Prediction</p>
+  </div>
+</body>
+</html>

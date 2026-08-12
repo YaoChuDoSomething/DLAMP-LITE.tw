@@ -1,8 +1,6 @@
 """Architecture tests for Earth 3D Specifics model."""
 
 import torch
-from omegaconf import OmegaConf
-
 from dlamp.models.earth_3d_specifics import Earth3DSpecificsModel
 
 

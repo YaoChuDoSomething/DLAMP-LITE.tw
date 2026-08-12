@@ -40,4 +40,3 @@ Use @antigravity-workflows to run the "Continuous Ponytail Clean Code & Debt Cyc
 3. Execute /ponytail-gain to display productivity and efficiency benchmarks.
 4. Execute /tech-debt-tracker to score and prioritize debt paydown.
 ```
-

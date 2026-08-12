@@ -71,5 +71,3 @@ Use @antigravity-workflows to execute the "superpowers-sdlc-workflow" for reposi
 3. Follow @tdd for vertical Red-Green-Refactor implementation.
 4. Verify with @ponytail-review before branch completion.
 ```
-
-

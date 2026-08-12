@@ -1,9 +1,8 @@
 """Tests for Diagnostic modules."""
 
-import torch
-from unittest.mock import Mock, patch
 
-from dlamp.diagnostics import DataQualityChecker, AnomalyDetection
+import torch
+from dlamp.diagnostics import AnomalyDetection, DataQualityChecker
 
 
 def test_data_quality_checker() -> None:
