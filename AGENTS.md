@@ -10,6 +10,10 @@ No package manager. Plain Python 3.11 repo (`.python-version`); deps pinned in `
 | --------- | --------- |
 | `python train.py` | Train Pangu model (`train_pangu` config); use `python train.py --config-name train_diffusion` for the DDPM/Glide model |
 | `python predict.py` | Full pipeline: inference → NetCDF forecasts → analysis plots (`predict` config, ONNX engine by default) |
+| `python predict_dscale.py` | One-way downscaling inference (no boundary feedback); `bdy_swap_method` forced null |
+| `python predict_feedback.py` | Two-way boundary-feedback inference; re-injects observations at every model step |
+| `python data_prep.py` | Generate constant masks (land-sea, topography) required before first training/inference |
+| `python data_stats.py` | Compute z-score standardization stats and write to `assets/standardization/` |
 | `python -m dlamp.export_onnx` | Export a checkpoint to `export/<model>_model_<date>.onnx` |
 
 All are `@hydra.main`; logs/artifacts go to `outputs/<YYYY-MM-DD>/<HH:MM:SS>/`.
@@ -23,7 +27,9 @@ All are `@hydra.main`; logs/artifacts go to `outputs/<YYYY-MM-DD>/<HH:MM:SS>/`.
 
 ## Config Layout
 
-`config/` splits into `data/`, `lightning/`, `model/`, `inference/`, `plot/`, wired together in `predict.yaml`, `train_pangu.yaml`, `train_diffusion.yaml`. Dated names (`rwrf_YYYYMMDD`) are model versions. `config/inference/*` picks the engine: `onnx` needs `export/*.onnx` (gitignored — export first), `ckpt` needs `checkpoints/*.ckpt` (gitignored).
+`config/` splits into `data/`, `lightning/`, `model/`, `inference/`, `plot/`, wired together in `predict.yaml`, `predict_dscale.yaml`, `predict_feedback.yaml`, `data_prep.yaml`, `data_stats.yaml`, `train_pangu.yaml`, `train_diffusion.yaml`. Dated names (`rwrf_YYYYMMDD`) are model versions. `config/inference/*` picks the engine: `onnx` needs `export/*.onnx` (gitignored — export first), `ckpt` needs `checkpoints/*.ckpt` (gitignored).
+
+Workflow runner classes live in `src/dlamp/workflows/` — one runner per entrypoint. Entrypoints are thin Hydra shells (≤80 lines); business logic lives in the runners.
 
 ## Models
 

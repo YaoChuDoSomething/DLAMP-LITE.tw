@@ -1,0 +1,28 @@
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H:%M:%S}
+  job:
+    chdir: False
+  output_subdir: .hydra
+  job_logging:
+    root:
+      level: DEBUG
+    handlers:
+      console:
+        level: INFO
+      file:
+        level: DEBUG
+
+# Sampling window for z-score statistics computation.
+# All four parameters are exposed so they can be overridden via CLI:
+#   python data_stats.py stats.start_time="2020-01-01 00:00"
+stats:
+  start_time: "2021-01-01 00:00"   # inclusive, format: YYYY-MM-DD HH:MM
+  end_time: "2022-12-31 00:00"     # inclusive
+  sample_size: 100                  # random pixels sampled per grid cell
+  num_criteria: 1000                # min samples to keep a variable's stats
+
+defaults:
+  - data: rwrf_20250729
+  - _self_
+  - override hydra/job_logging: default

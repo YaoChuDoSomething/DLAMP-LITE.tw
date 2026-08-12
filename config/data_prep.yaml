@@ -1,0 +1,27 @@
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H:%M:%S}
+  job:
+    chdir: False
+  output_subdir: .hydra
+  job_logging:
+    root:
+      level: DEBUG
+    handlers:
+      console:
+        level: INFO
+      file:
+        level: DEBUG
+
+# Method used to generate constant masks.
+# Options:
+#   extract_from_nc    — from existing WRF NetCDF (requires DLAMP_DATA_PATH)
+#   gen_tw_cn_terrain  — from GeoTIFF raster (assets/terrain_shp/gt30e100n40.tif)
+#   gen_tw_only_terrain — from shapefile    (assets/terrain_shp/GIS_terrain.shp)
+data_prep:
+  method: extract_from_nc
+
+defaults:
+  - data: rwrf_20250729
+  - _self_
+  - override hydra/job_logging: default

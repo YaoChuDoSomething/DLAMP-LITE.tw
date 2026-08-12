@@ -8,6 +8,7 @@ import torch
 import yaml
 from torch import nn
 
+from dlamp.const import REPO_ROOT
 from dlamp.models.builders.pangu_builder import PanguBuilder
 from dlamp.standardizer import get_standardizer
 from dlamp.utils import DataCompose
@@ -112,9 +113,27 @@ def init_ort_instance(gpu_id: int, onnx_path: str) -> ort.InferenceSession:
 def load_pangu_model(
     ckpt_path: str, data_list: list[DataCompose], image_shape: list[int, int]
 ) -> Callable[[torch.device], nn.Module]:
-    with open("./config/model/pangu_rwrf.yaml") as stream:
+    """Load a Pangu model from a PyTorch Lightning checkpoint.
+
+    Args:
+        ckpt_path (str): Absolute path to the ``.ckpt`` file.
+        data_list (list[DataCompose]): Variable composition list used at
+            training time.
+        image_shape (list[int, int]): Spatial dimensions ``[H, W]``.
+
+    Returns:
+        Callable[[torch.device], nn.Module]: A closure that moves the
+            loaded model to ``device`` when called.
+
+    Raises:
+        FileNotFoundError: If either the model or lightning YAML config
+            cannot be found under ``REPO_ROOT / 'config'``.
+    """
+    model_cfg_path = REPO_ROOT / "config" / "model" / "pangu_rwrf.yaml"
+    lightning_cfg_path = REPO_ROOT / "config" / "lightning" / "pangu_rwrf.yaml"
+    with open(model_cfg_path) as stream:
         cfg_model = yaml.safe_load(stream)
-    with open("./config/lightning/pangu_rwrf.yaml") as stream:
+    with open(lightning_cfg_path) as stream:
         cfg_lightning = yaml.safe_load(stream)
 
     # build model
