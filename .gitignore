@@ -46,3 +46,4 @@ debug_plots/**png
 # Figures
 *.png
 *.gif
+.worktrees/
