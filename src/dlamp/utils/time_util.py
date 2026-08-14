@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 
@@ -10,7 +10,7 @@ class TimeUtil:
         month: int,
         day: int,
         hour: int | None = None,
-        interval: dict[str, int] | timedelta = {"minutes": 1},
+        interval: dict[str, int] | timedelta | None = None,
     ) -> list[datetime]:
         """
         Generate a list of datetime objects representing the entire period for a given date and time interval.
@@ -29,14 +29,16 @@ class TimeUtil:
         """
         if isinstance(interval, dict):
             interval = timedelta(**interval)
+        if interval is None:
+            interval = timedelta(minutes=1)
         time_list = []
         if hour:
-            dt = datetime(year, month, day, hour)
+            dt = datetime(year, month, day, hour, tzinfo=UTC)
             while dt.hour == hour:
                 time_list.append(dt)
                 dt += interval
         else:
-            dt = datetime(year, month, day)
+            dt = datetime(year, month, day, tzinfo=UTC)
             while dt.day == day:
                 time_list.append(dt)
                 dt += interval
@@ -69,24 +71,15 @@ class TimeUtil:
         start = -half_range if n_days > 1 else 0
         end = half_range + 1 if n_days % 2 == 1 else half_range
 
-        target_t = [
-            datetime(year, month, day) + i * timedelta(days=1)
-            for i in range(start, end)
-        ]
+        target_t = [datetime(year, month, day, tzinfo=UTC) + i * timedelta(days=1) for i in range(start, end)]
 
         time_list = []
         for calendar in target_t:
-            time_list.extend(
-                TimeUtil.entire_period(
-                    calendar.year, calendar.month, calendar.day, interval=interval
-                )
-            )
+            time_list.extend(TimeUtil.entire_period(calendar.year, calendar.month, calendar.day, interval=interval))
         return time_list
 
     @staticmethod
-    def create_time_features(
-        curr_dt: datetime, array_shape: tuple[int, int]
-    ) -> np.ndarray:
+    def create_time_features(curr_dt: datetime, array_shape: tuple[int, int]) -> np.ndarray:
         """
         Computes the sine and cosine transformations of the Day of Year (DoY) and Time
         of Day (ToD) from the provided datetime object and returns arrays of the specified
@@ -123,8 +116,6 @@ class TimeUtil:
         tod_cos_array = np.full(array_shape, tod_cos, dtype=np.float32)
 
         # stack the arrays (H, W, 4)
-        time_features = np.stack(
-            [doy_sin_array, doy_cos_array, tod_sin_array, tod_cos_array], axis=-1
-        )
+        time_features = np.stack([doy_sin_array, doy_cos_array, tod_sin_array, tod_cos_array], axis=-1)
 
         return time_features

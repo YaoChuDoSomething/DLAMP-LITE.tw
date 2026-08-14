@@ -57,9 +57,7 @@ class UpBlock(nn.Module):
         # The input has `in_channels + out_channels` because we concatenate the output of the same resolution
         # from the first half of the U-Net
         self.has_attn = has_attn
-        self.res = ResidualBlock(
-            in_channels + out_channels, out_channels, time_channels
-        )
+        self.res = ResidualBlock(in_channels + out_channels, out_channels, time_channels)
         if has_attn:
             self.attn = AttentionBlock(out_channels)
             self.cond_proj = nn.Conv2d(orig_channels, out_channels, kernel_size=(1, 1))
@@ -164,9 +162,7 @@ class GlideUNet(nn.Module):
         n_resolutions = len(ch_mults)
 
         # Project image into feature map
-        self.image_proj = nn.Conv2d(
-            image_channels, hidden_dim, kernel_size=(3, 3), padding=(1, 1)
-        )
+        self.image_proj = nn.Conv2d(image_channels, hidden_dim, kernel_size=(3, 3), padding=(1, 1))
 
         # Time embedding layer. Time embedding has `n_channels * 4` channels
         time_channels = hidden_dim * 4
@@ -182,11 +178,7 @@ class GlideUNet(nn.Module):
             out_channels = in_channels * ch_mults[i]
             # Add `n_blocks`
             for _ in range(n_blocks):
-                down.append(
-                    DownBlock(
-                        in_channels, out_channels, time_channels, is_attn[i], hidden_dim
-                    )
-                )
+                down.append(DownBlock(in_channels, out_channels, time_channels, is_attn[i], hidden_dim))
                 in_channels = out_channels
             # Down sample at all resolutions except the last
             if i < n_resolutions - 1:
@@ -206,18 +198,10 @@ class GlideUNet(nn.Module):
         for i in reversed(range(n_resolutions)):
             # `n_blocks` at the same resolution
             for _ in range(n_blocks):
-                up.append(
-                    UpBlock(
-                        in_channels, out_channels, time_channels, is_attn[i], hidden_dim
-                    )
-                )
+                up.append(UpBlock(in_channels, out_channels, time_channels, is_attn[i], hidden_dim))
             # Final block to reduce the number of channels
             out_channels = in_channels // ch_mults[i]
-            up.append(
-                UpBlock(
-                    in_channels, out_channels, time_channels, is_attn[i], hidden_dim
-                )
-            )
+            up.append(UpBlock(in_channels, out_channels, time_channels, is_attn[i], hidden_dim))
             in_channels = out_channels
             # Up sample at all resolutions except last
             if i > 0:
@@ -229,9 +213,7 @@ class GlideUNet(nn.Module):
         # Final normalization and convolution layer
         self.norm = nn.GroupNorm(8, hidden_dim)
         self.act = Swish()
-        self.final = nn.Conv2d(
-            in_channels, image_channels, kernel_size=(3, 3), padding=(1, 1)
-        )
+        self.final = nn.Conv2d(in_channels, image_channels, kernel_size=(3, 3), padding=(1, 1))
 
     def forward(self, x: Tensor, t: Tensor, cond: Tensor) -> Tensor:
         """

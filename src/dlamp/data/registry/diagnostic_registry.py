@@ -1,11 +1,13 @@
 import importlib
+
 import yaml
+
 
 def load_diagnostics(yaml_path):
     with open(yaml_path, "r") as f:
         cfg = yaml.safe_load(f)
-    
-    reg_cfg = cfg["registry"]["varname"] #.get("varname", "")
+
+    reg_cfg = cfg["registry"]["varname"]  # .get("varname", "")
     diagnostics = {}
 
     for name, item in reg_cfg.items():
@@ -17,6 +19,7 @@ def load_diagnostics(yaml_path):
             "function": func,
         }
     return diagnostics
+
 
 def sort_diagnostics_by_dependencies(diagnostics):
     sorted_list = []
@@ -35,4 +38,3 @@ def sort_diagnostics_by_dependencies(diagnostics):
         visit(var)
 
     return sorted_list
-

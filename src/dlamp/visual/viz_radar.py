@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,7 +24,7 @@ class VizRadar(TwBackground):
         lat: np.ndarray,
         ground_truth: np.ndarray,
         prediction: np.ndarray,
-        all_init_times: list[datetime] = [],
+        all_init_times: list[datetime] | None = None,
         grid_on: bool = False,
     ) -> tuple[Figure, Axes]:
         """
@@ -36,6 +36,8 @@ class VizRadar(TwBackground):
             all_init_times (list[datetime]): A list of all initial times in length S.
             grid_on (bool, optional): Whether to show grid. Defaults to False.
         """
+        if all_init_times is None:
+            all_init_times = []
         assert len(ground_truth.shape) == 3
         assert ground_truth.shape[-2:] == lat.shape
 
@@ -53,24 +55,16 @@ class VizRadar(TwBackground):
         # ground truth
         for j in range(columns):
             tmp_ax = ax[0, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax, grid_on)
-            fig, tmp_ax = self._plot_radar(
-                fig, tmp_ax, lon, lat, ground_truth[j], time_title
-            )
+            fig, tmp_ax = self._plot_radar(fig, tmp_ax, lon, lat, ground_truth[j], time_title)
 
         # prediction
         for j in range(columns):
             tmp_ax = ax[1, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax, grid_on)
-            fig, tmp_ax = self._plot_radar(
-                fig, tmp_ax, lon, lat, prediction[j], time_title
-            )
+            fig, tmp_ax = self._plot_radar(fig, tmp_ax, lon, lat, prediction[j], time_title)
 
         return fig, ax
 
@@ -103,7 +97,7 @@ class VizRadar(TwBackground):
         data: np.ndarray,
         title: str = "",
     ) -> tuple[Figure, Axes]:
-        pc = ax.pcolormesh(
+        ax.pcolormesh(
             lon,
             lat,
             data,
@@ -139,9 +133,11 @@ class VizRadar(TwBackground):
         lon: np.ndarray,
         lat: np.ndarray,
         data: list[np.ndarray],
-        titles: list[str] = [],
+        titles: list[str] | None = None,
         grid_on: bool = False,
     ):
+        if titles is None:
+            titles = []
         if len(lat.shape) == 2 and len(lon.shape) == 2:
             lat = np.linspace(lat[0, 0], lat[-1, 0], lat.shape[0])
             lon = np.linspace(lon[0, 0], lon[0, -1], lon.shape[1])
@@ -160,7 +156,7 @@ class VizRadar(TwBackground):
 
 
 if __name__ == "__main__":
-    target_time = datetime(2022, 10, 16, 0)
+    target_time = datetime(2022, 10, 16, 0, tzinfo=UTC)
     data_radar = gen_data(target_time, DataCompose(DataType.Radar, Level.NoRule))
     data_lat = gen_data(target_time, DataCompose(DataType.Lat, Level.Surface))
     data_lon = gen_data(target_time, DataCompose(DataType.Lon, Level.Surface))

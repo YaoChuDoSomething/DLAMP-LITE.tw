@@ -31,9 +31,11 @@ class VizOmega(TwBackground):
         lon: np.ndarray,
         lat: np.ndarray,
         data: np.ndarray,
-        titles: list[str] = [],
+        titles: list[str] | None = None,
         grid_on: bool = False,
     ):
+        if titles is None:
+            titles = []
         cols = data.shape[0]
 
         plt.close()

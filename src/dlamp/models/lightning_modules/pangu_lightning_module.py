@@ -25,9 +25,7 @@ class PanguLightningModule(L.LightningModule):
         self.register_buffer("upper_var_weights", upper_var_weights_tensor)
         self.register_buffer("surface_var_weights", surface_var_weights_tensor)
 
-    def forward(
-        self, input_upper: torch.Tensor, input_surface: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, input_upper: torch.Tensor, input_surface: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return self.backbone_model(input_upper, input_surface)
 
     def configure_optimizers(self):
@@ -91,26 +89,16 @@ class PanguLightningModule(L.LightningModule):
         inp_data, target = batch
         loss, _, (mae_upper, mae_surface) = self.common_step(inp_data, target)
         self.log("train_loss", loss, on_step=True, prog_bar=True, sync_dist=True)
-        self.log_mae_for_each_element(
-            "train", self.hparams.pressure_levels, self.hparams.upper_vars, mae_upper
-        )
-        self.log_mae_for_each_element(
-            "train", ["Surface"], self.hparams.surface_vars, mae_surface
-        )
+        self.log_mae_for_each_element("train", self.hparams.pressure_levels, self.hparams.upper_vars, mae_upper)
+        self.log_mae_for_each_element("train", ["Surface"], self.hparams.surface_vars, mae_surface)
         return loss
 
     def validation_step(self, batch, batch_idx):
         inp_data, target = batch
         loss, _, (mae_upper, mae_surface) = self.common_step(inp_data, target)
-        self.log(
-            "val_loss", loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True
-        )
-        self.log_mae_for_each_element(
-            "val", self.hparams.pressure_levels, self.hparams.upper_vars, mae_upper
-        )
-        self.log_mae_for_each_element(
-            "val", ["Surface"], self.hparams.surface_vars, mae_surface
-        )
+        self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log_mae_for_each_element("val", self.hparams.pressure_levels, self.hparams.upper_vars, mae_upper)
+        self.log_mae_for_each_element("val", ["Surface"], self.hparams.surface_vars, mae_surface)
         return loss
 
     def predict_step(self, batch, batch_idx):
@@ -149,9 +137,7 @@ class PanguLightningModule(L.LightningModule):
     #     norms.pop("grad_2.0_norm_total")
     #     self.log_dict(norms, on_step=True)
 
-    def log_mae_for_each_element(
-        self, prefix: str, lv_names: list[str], var_names: list[str], mae: torch.Tensor
-    ):
+    def log_mae_for_each_element(self, prefix: str, lv_names: list[str], var_names: list[str], mae: torch.Tensor):
         for i, pl in enumerate(lv_names):
             for j, var in enumerate(var_names):
                 self.log(

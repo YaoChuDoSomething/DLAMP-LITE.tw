@@ -131,7 +131,7 @@ class PanguModel(nn.Module):
                     drop_path_ratio_list=drop_path_list[slice_range],
                     dropout_rate=dropout_rate,
                     window_size=window_size,
-                    skip_concat=False if i == 1 else True,
+                    skip_concat=(i != 1),
                 ),
             )
 
@@ -144,9 +144,7 @@ class PanguModel(nn.Module):
                     ),
                 )
 
-    def forward(
-        self, input_upper: torch.Tensor, input_surface: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, input_upper: torch.Tensor, input_surface: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Unet structure.
 
@@ -186,9 +184,7 @@ class PanguModel(nn.Module):
         # Recovery and smoothing
         x += skip
         output_upper, output_surface = self.patch_recover(x)
-        output_upper, output_surface = self.smoothing_layer(
-            output_upper, output_surface
-        )
+        output_upper, output_surface = self.smoothing_layer(output_upper, output_surface)
         return output_upper, output_surface
 
 
@@ -197,9 +193,7 @@ class Identity(nn.Module):
     Identity layer. Replace smoothing layer when smoothing_kernel_size is None.
     """
 
-    def forward(
-        self, x_upper: torch.Tensor, x_surface: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x_upper: torch.Tensor, x_surface: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return x_upper, x_surface
 
 
@@ -214,9 +208,7 @@ class SmoothingBlock(nn.Module):
         super().__init__()
         self.smoothing_func = smoothing_func
 
-    def forward(
-        self, x_upper: torch.Tensor, x_surface: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x_upper: torch.Tensor, x_surface: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         x_upper = rearrange(x_upper, "b z h w c -> b c z h w")
         x_surface = rearrange(x_surface, "b 1 h w c -> b c 1 h w")
 
@@ -257,9 +249,7 @@ class PatchEmbedding(nn.Module):
 
         if Path(LAND_SEA_MASK_PATH).exists() and Path(TOPOGRAPHY_MASK_PATH).exists():
             land_mask = torch.from_numpy(np.load(LAND_SEA_MASK_PATH).astype(np.float32))
-            topography_mask = torch.from_numpy(
-                np.load(TOPOGRAPHY_MASK_PATH).astype(np.float32)
-            )
+            topography_mask = torch.from_numpy(np.load(TOPOGRAPHY_MASK_PATH).astype(np.float32))
             # Scale and shift to the range of [0, 1]
             scaler = MinMaxScaler().fit(topography_mask.reshape(-1, 1))
             scale = scaler.scale_.astype(np.float32)
@@ -288,16 +278,11 @@ class PatchEmbedding(nn.Module):
         )
 
         if not is_divisible_elementwise(img_shape, patch_size):
-            log.warning(
-                f"Input shape {img_shape} is not divisible by patch "
-                f"shape {patch_size}, padding is applied."
-            )
+            log.warning(f"Input shape {img_shape} is not divisible by patch shape {patch_size}, padding is applied.")
         self.upper_pad = pad_3d(img_shape, patch_size)
         self.surface_pad = pad_2d(img_shape[1:], patch_size[1:])
 
-    def forward(
-        self, input_upper: torch.Tensor, input_surface: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, input_upper: torch.Tensor, input_surface: torch.Tensor) -> torch.Tensor:
         """
         Args:
             input_upper (torch.Tensor): Tensor of shape (B, img_Z, img_H, img_W, Ch_upper).
@@ -318,9 +303,7 @@ class PatchEmbedding(nn.Module):
 
         # Pad the input to make it divisible by patch_size
         input_upper = self.upper_pad(rearrange(input_upper, "b z h w c -> b c z h w"))
-        input_surface = self.surface_pad(
-            rearrange(input_surface, "b z h w c -> (b z) c h w")
-        )
+        input_surface = self.surface_pad(rearrange(input_surface, "b z h w c -> (b z) c h w"))
 
         # shape: (B, dim, inp_Z-1, inp_H, inp_W)
         embedding_upper = self.conv_upper(input_upper)
@@ -385,21 +368,15 @@ class PatchRecovery(nn.Module):
                 and surface data (B, 1, img_H, img_W, Ch_surface)
         """
         inp_Z, inp_H, inp_W = self.inp_shape
-        x = rearrange(
-            x, "b (z h w) c -> b c z h w", z=inp_Z, h=inp_H, w=inp_W
-        ).contiguous()
+        x = rearrange(x, "b (z h w) c -> b c z h w", z=inp_Z, h=inp_H, w=inp_W).contiguous()
 
         # Deconvolve to original size
         output_upper = self.conv_upper(x[:, :, :-1, :, :])
         output_surface = self.conv_surface(x[:, :, -1, :, :])
 
         # Crop the output to remove zero-paddings
-        output_upper = output_upper[
-            :, :, self.upper_crop[0], self.upper_crop[1], self.upper_crop[2]
-        ]
-        output_surface = output_surface[
-            :, :, self.surface_crop[0], self.surface_crop[1]
-        ]
+        output_upper = output_upper[:, :, self.upper_crop[0], self.upper_crop[1], self.upper_crop[2]]
+        output_surface = output_surface[:, :, self.surface_crop[0], self.surface_crop[1]]
 
         # shape: (B, img_Z, img_H, img_W, Ch)
         output_upper = rearrange(output_upper, "b c z h w -> b z h w c")

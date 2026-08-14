@@ -2,12 +2,13 @@ import hydra
 import onnx
 from omegaconf import DictConfig, OmegaConf
 
+from dlamp.const import REPO_ROOT
 from dlamp.managers import DataManager
 from dlamp.models import PanguLightningModule, get_builder
 from dlamp.utils import DataCompose
 
 
-@hydra.main(version_base=None, config_path="../config", config_name="predict")
+@hydra.main(version_base=None, config_path=str(REPO_ROOT / "config"), config_name="predict")
 def main(cfg: DictConfig) -> None:
     OmegaConf.set_struct(cfg, True)
 
@@ -18,7 +19,7 @@ def main(cfg: DictConfig) -> None:
 
     # sample data
     data_loader = data_manager.train_dataloader()
-    inp_data, oup_data = next(iter(data_loader))
+    inp_data, _oup_data = next(iter(data_loader))
     inp_data["upper_air"] = inp_data["upper_air"].to("cuda")
     inp_data["surface"] = inp_data["surface"].to("cuda")
 
@@ -66,7 +67,7 @@ def save_single_onnx():
         "./export/Pangu_model_250215_168.onnx",
         save_as_external_data=True,
         all_tensors_to_one_file=True,
-        location="Pangu_model_250215_168_external_data", # same dir "./export/"
+        location="Pangu_model_250215_168_external_data",  # same dir "./export/"
         size_threshold=10240,
         convert_attribute=False,
     )

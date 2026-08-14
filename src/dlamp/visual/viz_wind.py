@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,7 +26,7 @@ class VizWind(TwBackground):
         ground_truth_v: np.ndarray,
         prediction_u: np.ndarray,
         prediction_v: np.ndarray,
-        all_init_times: list[datetime] = [],
+        all_init_times: list[datetime] | None = None,
     ) -> tuple[Figure, Axes]:
         assert len(ground_truth_u.shape) == 3
         assert ground_truth_u.shape[-2:] == lat.shape
@@ -39,24 +39,16 @@ class VizWind(TwBackground):
         # ground truth
         for j in range(columns):
             tmp_ax = ax[0, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax)
-            fig, tmp_ax = self._plot_wind(
-                fig, tmp_ax, lon, lat, ground_truth_u[j], ground_truth_v[j], time_title
-            )
+            fig, tmp_ax = self._plot_wind(fig, tmp_ax, lon, lat, ground_truth_u[j], ground_truth_v[j], time_title)
 
         # prediction
         for j in range(columns):
             tmp_ax = ax[1, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax)
-            fig, tmp_ax = self._plot_wind(
-                fig, tmp_ax, lon, lat, prediction_u[j], prediction_v[j], time_title
-            )
+            fig, tmp_ax = self._plot_wind(fig, tmp_ax, lon, lat, prediction_u[j], prediction_v[j], time_title)
 
         return fig, ax
 
@@ -96,9 +88,7 @@ class VizWind(TwBackground):
         scalar = np.hypot(u_wind, v_wind)
 
         # plot data
-        ax.streamplot(
-            lon, lat, u_wind, v_wind, zorder=0, color="C0", linewidth=0.5, arrowsize=0.6
-        )
+        ax.streamplot(lon, lat, u_wind, v_wind, zorder=0, color="C0", linewidth=0.5, arrowsize=0.6)
 
         if title:
             ax.set_title(f"{title} {self.title_suffix}")
@@ -130,9 +120,11 @@ class VizWind(TwBackground):
         lat: np.ndarray,
         u_wind_list: np.ndarray,
         v_wind_list: np.ndarray,
-        titles: list[str] = [],
+        titles: list[str] | None = None,
         grid_on: bool = False,
     ):
+        if titles is None:
+            titles = []
         cols = u_wind_list.shape[0]
 
         plt.close()
@@ -141,15 +133,13 @@ class VizWind(TwBackground):
             tmp_ax = ax[j]
             title = titles[j] if titles else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax, grid_on)
-            fig, tmp_ax = self._plot_wind(
-                fig, tmp_ax, lon, lat, u_wind_list[j], v_wind_list[j], title
-            )
+            fig, tmp_ax = self._plot_wind(fig, tmp_ax, lon, lat, u_wind_list[j], v_wind_list[j], title)
 
         return fig, ax
 
 
 if __name__ == "__main__":
-    target_time = datetime(2022, 10, 16, 0)
+    target_time = datetime(2022, 10, 16, 0, tzinfo=UTC)
     u850 = gen_data(target_time, DataCompose(DataType.U, Level.Hpa850))
     v850 = gen_data(target_time, DataCompose(DataType.V, Level.Hpa850))
     data_lat = gen_data(target_time, DataCompose(DataType.Lat, Level.Surface))

@@ -14,7 +14,7 @@ Raises:
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from omegaconf import DictConfig
@@ -50,12 +50,10 @@ class DataStatsRunner:
         """
         self.cfg = cfg
         self.standardizer: Standardizer = get_standardizer(runtime_config)
-        self._start_time: datetime = datetime.strptime(
-            cfg.stats.start_time, "%Y-%m-%d %H:%M"
+        self._start_time: datetime = datetime.strptime(cfg.stats.start_time, "%Y-%m-%d %H:%M").replace(
+            tzinfo=UTC
         )
-        self._end_time: datetime = datetime.strptime(
-            cfg.stats.end_time, "%Y-%m-%d %H:%M"
-        )
+        self._end_time: datetime = datetime.strptime(cfg.stats.end_time, "%Y-%m-%d %H:%M").replace(tzinfo=UTC)
         self._sample_size: int = cfg.stats.sample_size
         self._num_criteria: int = cfg.stats.num_criteria
 
@@ -75,8 +73,7 @@ class DataStatsRunner:
                     a variable's statistics.
         """
         logger.info(
-            "DataStatsRunner: computing stats for %s → %s "
-            "(sample_size=%d, num_criteria=%d)",
+            "DataStatsRunner: computing stats for %s → %s (sample_size=%d, num_criteria=%d)",
             self._start_time.date(),
             self._end_time.date(),
             self._sample_size,

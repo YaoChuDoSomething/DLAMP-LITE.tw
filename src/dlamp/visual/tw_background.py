@@ -22,17 +22,13 @@ class TwBackground:
         mpl.rc("font", **font)  # pass in the font dict as kwargs
         mpl.rc("axes", **axes)
 
-    def plot_bg(
-        self, fig: Figure, ax: Axes, grid_on: bool = False
-    ) -> tuple[Figure, Axes]:
+    def plot_bg(self, fig: Figure, ax: Axes, grid_on: bool = False) -> tuple[Figure, Axes]:
         """
         Plots the county data on a figure
         """
         # fig.patch.set_visible(False)
         # ax.axis("off")
-        ax = self.county_data.plot(
-            ax=ax, color="none", edgecolor="k", linewidth=1, zorder=1
-        )
+        ax = self.county_data.plot(ax=ax, color="none", edgecolor="k", linewidth=1, zorder=1)
 
         # canvas setting
         # ax.set_xlim(118, 123.5) # QPESUMS

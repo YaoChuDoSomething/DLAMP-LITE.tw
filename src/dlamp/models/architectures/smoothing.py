@@ -28,18 +28,12 @@ class SegmentedSmoothing(nn.Module):
         x_h = x.shape[-1]
         x_elem_out = torch.zeros(x.shape[:-2], device=x.device, dtype=x.dtype)
 
-        in_h_0, in_h_1 = max(0, w_idx - self.half_kernel), min(
-            x_w, w_idx + self.half_kernel + 1
-        )
-        in_w_0, in_w_1 = max(0, h_idx - self.half_kernel), min(
-            x_h, h_idx + self.half_kernel + 1
-        )
+        in_h_0, in_h_1 = max(0, w_idx - self.half_kernel), min(x_w, w_idx + self.half_kernel + 1)
+        in_w_0, in_w_1 = max(0, h_idx - self.half_kernel), min(x_h, h_idx + self.half_kernel + 1)
         divide_factor = 0
         for i in range(in_h_0, in_h_1):
             for j in range(in_w_0, in_w_1):
-                if self._in_boundary(i, j, x_w, x_h) == self._in_boundary(
-                    w_idx, h_idx, x_w, x_h
-                ):
+                if self._in_boundary(i, j, x_w, x_h) == self._in_boundary(w_idx, h_idx, x_w, x_h):
                     x_elem_out += x[..., i, j]
                     divide_factor += 1
         x_elem_out /= divide_factor

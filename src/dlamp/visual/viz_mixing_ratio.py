@@ -18,9 +18,11 @@ class VizMixingRatio(TwBackground):
         lon: np.ndarray,
         lat: np.ndarray,
         data: list[np.ndarray],
-        titles: list[str] = [],
+        titles: list[str] | None = None,
         grid_on: bool = False,
     ):
+        if titles is None:
+            titles = []
         cols = len(data)
 
         plt.close()

@@ -41,11 +41,7 @@ class CustomDataset(Dataset):
         Returns the length of the `_init_time_list` attribute, which represents
         the number of items in the dataset.
         """
-        return (
-            len(self._init_time_list) // self._sr
-            if self._is_train_or_valid
-            else len(self._init_time_list)
-        )
+        return len(self._init_time_list) // self._sr if self._is_train_or_valid else len(self._init_time_list)
 
     def __getitem__(self, index):
         """
@@ -67,9 +63,7 @@ class CustomDataset(Dataset):
 
         return input, output
 
-    def _get_variables_from_dt(
-        self, dt: datetime, is_input: bool
-    ) -> dict[str, np.ndarray]:
+    def _get_variables_from_dt(self, dt: datetime, is_input: bool) -> dict[str, np.ndarray]:
         """
         Retrieves data from a given datetime object.
 
@@ -90,9 +84,7 @@ class CustomDataset(Dataset):
         pre_output = defaultdict(list)
         # via traversing data_list, the levels/vars are in the the same order as the
         # order in `config/data/data_config.yaml`
-        data_dict = self._data_gnrt.yield_data(
-            dt, self._data_list, use_Kth_hour_pred=self.use_Kth_hour_pred
-        )
+        data_dict = self._data_gnrt.yield_data(dt, self._data_list, use_Kth_hour_pred=self.use_Kth_hour_pred)
         standardizer = get_standardizer()
         for var_level_str, data in data_dict.items():
             data = standardizer.standardize(var_level_str, data)
@@ -143,9 +135,7 @@ class CustomDataset(Dataset):
         idx = self._init_time_list.index(dt)
         return idx // self._sr if self._is_train_or_valid else idx
 
-    def average_pooling(
-        self, data: np.ndarray, kernel_size: int = 9, stride: int = 1
-    ) -> np.ndarray:
+    def average_pooling(self, data: np.ndarray, kernel_size: int = 9, stride: int = 1) -> np.ndarray:
         """
         Applies average pooling to the input data.
 
@@ -162,9 +152,7 @@ class CustomDataset(Dataset):
 
         # Reshape to (lv*c, 1, h, w) for avg_pool2d
         lv, h, w, c = tensor_data.shape
-        tensor_data = (
-            tensor_data.permute(0, 3, 1, 2).contiguous().reshape(lv * c, 1, h, w)
-        )
+        tensor_data = tensor_data.permute(0, 3, 1, 2).contiguous().reshape(lv * c, 1, h, w)
 
         # Apply average pooling
         pooled_data = F.avg_pool2d(
@@ -176,8 +164,6 @@ class CustomDataset(Dataset):
         )
 
         # Reshape back to (lv, h, w, c)
-        pooled_data = (
-            torch.reshape(pooled_data, (lv, c, h, w)).permute(0, 2, 3, 1).contiguous()
-        )
+        pooled_data = torch.reshape(pooled_data, (lv, c, h, w)).permute(0, 2, 3, 1).contiguous()
 
         return pooled_data.numpy()

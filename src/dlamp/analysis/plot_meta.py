@@ -5,6 +5,7 @@ This module provides dictionary-based configurations that define the content,
 layout, and properties of each panel in the analysis figures, separating
 the plot design from the plotting logic.
 """
+
 from typing import Any
 
 from dlamp.utils.data_type import Level

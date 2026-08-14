@@ -1,5 +1,6 @@
 import unittest
 from math import prod
+from typing import ClassVar
 
 import numpy as np
 import torch
@@ -13,11 +14,11 @@ from .earth_3d_specifics import (
 
 
 class EarthAttention3DTest(unittest.TestCase):
-    input_shape = [8, 140, 180]
+    input_shape: ClassVar[list[int]] = [8, 140, 180]
     dim = 192
     heads = 6
     dropout_rate = 0.15
-    window_size = [2, 4, 4]
+    window_size: ClassVar[list[int]] = [2, 4, 4]
 
     def test_earth_specific_bias(self):
         earth_attn_3d = EarthAttention3D(
@@ -34,9 +35,7 @@ class EarthAttention3DTest(unittest.TestCase):
             * (2 * earth_attn_3d.win_W - 1)  # relative movement in W-axis
         )
 
-        self.assertEqual(
-            len(set([x.item() for x in earth_attn_3d.position_index])), total_movement
-        )
+        self.assertEqual(len({x.item() for x in earth_attn_3d.position_index}), total_movement)
 
     def test_earth_attn_output_shape(self):
 
@@ -50,21 +49,19 @@ class EarthAttention3DTest(unittest.TestCase):
 
         # input_tensor: shape of (B, img_Z, img_H, img_W, C)
         input_tensor = torch.randn([1] + self.input_shape + [self.dim])
-        input_window = window_partition_3d(
-            input_tensor, self.window_size, combine_img_dim=True
-        )
+        input_window = window_partition_3d(input_tensor, self.window_size, combine_img_dim=True)
         orig_shape = input_window.shape
         output_window = earth_attn_3d(input_window)
         self.assertEqual(output_window.shape, orig_shape)
 
 
 class EarthSpecificBlockTest(unittest.TestCase):
-    input_shape = [8, 140, 180]
+    input_shape: ClassVar[list[int]] = [8, 140, 180]
     dim = 192
     heads = 6
     drop_path_ratio = 0.1
     dropout_rate = 0.15
-    window_size = [2, 4, 4]
+    window_size: ClassVar[list[int]] = [2, 4, 4]
 
     def test_earth_specific_block_output_shape(self):
         for is_rolling in [True, False]:
@@ -97,13 +94,13 @@ class EarthSpecificBlockTest(unittest.TestCase):
 
 
 class EarthSpecificLayerTest(unittest.TestCase):
-    input_shape = [8, 140, 180]
+    input_shape: ClassVar[list[int]] = [8, 140, 180]
     dim = 192
     heads = 6
     depth = 2
     drop_path_ratio_list = np.linspace(0, 0.2, depth)
     dropout_rate = 0.15
-    window_size = [2, 4, 4]
+    window_size: ClassVar[list[int]] = [2, 4, 4]
 
     def test_earth_specific_layer_output_shape(self):
         earth_specific_layer = EarthSpecificLayer(

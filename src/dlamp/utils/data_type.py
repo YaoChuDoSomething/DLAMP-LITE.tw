@@ -4,43 +4,53 @@ from enum import Enum
 
 
 class DataType(Enum):
-    def __new__(cls, description: str, code: str, nc_key: str,):
+    def __new__(cls, short_name: str, description: str, nc_key: str):
         obj = object.__new__(cls)
-        obj._value_ = description
-        obj.code = code
-        obj.nc_key = nc_key
+        obj._value_ = (short_name, description, nc_key)
         return obj
 
-    # var_name = (description, code, nc_key)
-    PH = ("Geopotential Height", "000", "z_p")
-    P = ("Pressure Level", "010", "pres_levels")
-    TK = ("Temperature", "100", "tk_p")
-    UM = ("U-wind", "200", "umet_p")
-    VM = ("V-wind", "210", "vmet_p")
-    WA = ("W-wind", "", "wa_p")
-    Qv = ("Water Vapor Mixing Ratio", "", "QVAPOR_p")
-    Qr = ("Rain Water Mixing Ratio", "", "QRAIN_p")
-    Qs = ("Snow Mixing Ratio", "", "QSNOW_p")
-    Qg = ("Graupel Mixing Ratio", "", "QGRAUP_p")
-    Qc = ("Cloud Water Mixing Ratio", "", "QCLOUD_p")
-    Qi = ("Ice Mixing Ratio", "", "QICE_p")
-    Qt = ("Total Hydrometeors Mixing Ratio", "", "QTOTAL_p")
-    RH = ("Relative Humidity", "", "rh")
-    Td = ("Dew Point Temperature", "", "td")
-    SLP = ("Sea Level Pressure", "", "slp")
-    SST = ("SST", "", "SST")
-    PSFC = ("Surface Pressure", "", "PSFC")
-    PW = ("Precipitable Water", "", "pw")
-    PBLH = ("PBL Height", "", "PBLH")
-    RAINNC = ("Accumulated Precipitation", "", "RAINNC")
-    SWDOWN = ("Downward Shortwave Flux", "", "SWDOWN")
-    OLR = ("Outgoing Longwave Radiation", "", "OLR")
-    Lat = ("Latitude", "LAT", "XLAT")
-    Lon = ("Longitude", "LON", "XLONG")
-    MASK = ("Land-Sea Mask", "", "LANDMASK")
-    HGT = ("Terrain Height", "", "HGT")
-    Radar = ("Maximum Radar Reflectivity", "MOS", "MAX_REFL")
-    dBZ = ("Radar Reflectivity", "MOS", "REFL_p")
+    @property
+    def short_name(self):
+        return self.value[0]
+
+    @property
+    def description(self):
+        return self.value[1]
+
+    @property
+    def nc_key(self):
+        return self.value[2]
+
+    # var_name = (short_name, description, nc_key)
+    PH = ("PH", "Geopotential Height", "z_p")
+    P = ("P", "Pressure Level", "pres_levels")
+    TK = ("TK", "Temperature", "tk_p")
+    UM = ("UM", "U-wind", "umet_p")
+    VM = ("VM", "V-wind", "vmet_p")
+    WA = ("WA", "W-wind", "wa_p")
+    Qv = ("Qv", "Water Vapor Mixing Ratio", "QVAPOR_p")
+    Qr = ("Qr", "Rain Water Mixing Ratio", "QRAIN_p")
+    Qs = ("Qs", "Snow Mixing Ratio", "QSNOW_p")
+    Qg = ("Qg", "Graupel Mixing Ratio", "QGRAUP_p")
+    Qc = ("Qc", "Cloud Water Mixing Ratio", "QCLOUD_p")
+    Qi = ("Qi", "Ice Mixing Ratio", "QICE_p")
+    Qt = ("Qt", "Total Hydrometeors Mixing Ratio", "QTOTAL_p")
+    RH = ("RH", "Relative Humidity", "rh")
+    Td = ("Td", "Dew Point Temperature", "td")
+    SLP = ("SLP", "Sea Level Pressure", "slp")
+    SST = ("SST", "SST", "SST")
+    PSFC = ("PSFC", "Surface Pressure", "PSFC")
+    PW = ("PW", "Precipitable Water", "pw")
+    PBLH = ("PBLH", "PBL Height", "PBLH")
+    RAINNC = ("RAINNC", "Accumulated Precipitation", "RAINNC")
+    SWDOWN = ("SWDOWN", "Downward Shortwave Flux", "SWDOWN")
+    OLR = ("OLR", "Outgoing Longwave Radiation", "OLR")
+    Lat = ("Lat", "Latitude", "XLAT")
+    Lon = ("Lon", "Longitude", "XLONG")
+    MASK = ("MASK", "Land-Sea Mask", "LANDMASK")
+    HGT = ("HGT", "Terrain Height", "HGT")
+    Radar = ("Radar", "Maximum Radar Reflectivity", "MAX_REFL")
+    dBZ = ("dBZ", "Radar Reflectivity", "REFL_p")
 
 
 class Level(Enum):

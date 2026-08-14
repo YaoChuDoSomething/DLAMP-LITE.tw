@@ -35,7 +35,7 @@ class VizSwdown(TwBackground):
         lat: np.ndarray,
         ground_truth: np.ndarray,
         prediction: np.ndarray,
-        all_init_times: list[datetime] = [],
+        all_init_times: list[datetime] | None = None,
         grid_on: bool = False,
     ) -> tuple[Figure, Axes]:
         """
@@ -47,6 +47,8 @@ class VizSwdown(TwBackground):
             all_init_times (list[datetime]): A list of all initial times in length S.
             grid_on (bool, optional): Whether to show grid. Defaults to False.
         """
+        if all_init_times is None:
+            all_init_times = []
         assert len(ground_truth.shape) == 3
         assert ground_truth.shape[-2:] == lat.shape
 
@@ -59,24 +61,16 @@ class VizSwdown(TwBackground):
         # ground truth
         for j in range(columns):
             tmp_ax = ax[0, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax, grid_on)
-            fig, tmp_ax = self._plot_pressure(
-                fig, tmp_ax, lon, lat, ground_truth[j], time_title
-            )
+            fig, tmp_ax = self._plot_pressure(fig, tmp_ax, lon, lat, ground_truth[j], time_title)
 
         # prediction
         for j in range(columns):
             tmp_ax = ax[1, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax, grid_on)
-            fig, tmp_ax = self._plot_swdown(
-                fig, tmp_ax, lon, lat, prediction[j], time_title
-            )
+            fig, tmp_ax = self._plot_swdown(fig, tmp_ax, lon, lat, prediction[j], time_title)
 
         return fig, ax
 
@@ -85,9 +79,11 @@ class VizSwdown(TwBackground):
         lon: np.ndarray,
         lat: np.ndarray,
         data: np.ndarray,
-        titles: list[str] = [],
+        titles: list[str] | None = None,
         grid_on: bool = False,
     ):
+        if titles is None:
+            titles = []
         cols = data.shape[0]
 
         plt.close()
@@ -122,9 +118,7 @@ class VizSwdown(TwBackground):
         )
 
         # inline lables
-        clabels = ax.clabel(
-            conf, inline=True, colors="k", fontsize=10, use_clabeltext=False
-        )
+        clabels = ax.clabel(conf, inline=True, colors="k", fontsize=10, use_clabeltext=False)
         for label in clabels:
             label.set_path_effects(
                 [

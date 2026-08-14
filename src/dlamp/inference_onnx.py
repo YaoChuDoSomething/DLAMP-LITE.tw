@@ -1,11 +1,12 @@
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 import hydra
 import onnxruntime as ort
 import psutil
 from omegaconf import DictConfig, OmegaConf
 
+from dlamp.const import REPO_ROOT
 from dlamp.managers import DataManager
 from dlamp.standardizer import get_standardizer
 from dlamp.utils import DataCompose
@@ -15,19 +16,19 @@ This is a sample code for quickly inference onnx model.
 """
 
 
-@hydra.main(version_base=None, config_path="../config", config_name="predict")
+@hydra.main(version_base=None, config_path=str(REPO_ROOT / "config"), config_name="predict")
 def main(cfg: DictConfig) -> None:
     OmegaConf.set_struct(cfg, True)
 
     # prepare data
-    eval_cases = [datetime(2022, 9, 11)]
+    eval_cases = [datetime(2022, 9, 11, tzinfo=UTC)]
     data_list = DataCompose.from_config(cfg.data.train_data)
     data_manager = DataManager(data_list, eval_cases, **cfg.data, **cfg.lightning)
     data_manager.setup("predict")
 
     # sample data
     data_loader = data_manager.predict_dataloader()
-    inp_data, oup_data = next(iter(data_loader))
+    inp_data, _oup_data = next(iter(data_loader))
 
     # onnxruntime settings
     assert "CUDAExecutionProvider" in ort.get_available_providers()

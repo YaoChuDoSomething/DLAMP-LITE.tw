@@ -28,15 +28,9 @@ class InferenceBase(metaclass=abc.ABCMeta):
         self.data_itv = timedelta(**self.cfg.data.time_interval)
         self.output_itv = timedelta(**self.cfg.inference.output_itv)
         self.showcase_length = self.cfg.plot.figure_columns
-        self.pressure_lv: list[Level] = DataCompose.get_all_levels(
-            self.data_list, only_upper=True
-        )
-        self.upper_vars: list[DataType] = DataCompose.get_all_vars(
-            self.data_list, only_upper=True
-        )
-        self.surface_vars: list[DataType] = DataCompose.get_all_vars(
-            self.data_list, only_surface=True
-        )
+        self.pressure_lv: list[Level] = DataCompose.get_all_levels(self.data_list, only_upper=True)
+        self.upper_vars: list[DataType] = DataCompose.get_all_vars(self.data_list, only_upper=True)
+        self.surface_vars: list[DataType] = DataCompose.get_all_vars(self.data_list, only_surface=True)
 
         # data manager
         self.init_time_list = self.build_init_time_list()
@@ -157,6 +151,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
         Raises:
             ValueError: If batch size is not 1 or an unknown method is specified.
         """
+
         # --- Helper function for FFT filter mask generation (nested for self-containment) ---
         def _create_scale_filter_masks(shape, k_critical, transition_width_ratio):
             """
@@ -177,38 +172,38 @@ class InferenceBase(metaclass=abc.ABCMeta):
             r_inner = k_critical - transition_width / 2
             r_outer = k_critical + transition_width / 2
 
-            r_inner = max(0.0, float(r_inner)) # Ensure non-negative
-            max_possible_radius = np.sqrt((w/2)**2 + (h/2)**2)
-            r_outer = min(float(max_possible_radius), float(r_outer)) # Cap at max possible frequency
+            r_inner = max(0.0, float(r_inner))  # Ensure non-negative
+            max_possible_radius = np.sqrt((w / 2) ** 2 + (h / 2) ** 2)
+            r_outer = min(float(max_possible_radius), float(r_outer))  # Cap at max possible frequency
 
             low_pass_mask = np.zeros(shape, dtype=np.float32)
 
-            low_pass_mask[radius_map <= r_inner] = 1.0 # Fully pass region
+            low_pass_mask[radius_map <= r_inner] = 1.0  # Fully pass region
 
             # Transition region (Tukey window application)
             transition_indices = (radius_map > r_inner) & (radius_map < r_outer)
-            if np.any(transition_indices) and (r_outer - r_inner) > 1e-9: # Avoid division by zero
+            if np.any(transition_indices) and (r_outer - r_inner) > 1e-9:  # Avoid division by zero
                 normalized_distance = (radius_map[transition_indices] - r_inner) / (r_outer - r_inner)
                 low_pass_mask[transition_indices] = 0.5 * (1 + np.cos(np.pi * normalized_distance))
 
             high_pass_mask = 1.0 - low_pass_mask
 
             return low_pass_mask, high_pass_mask
+
         # --- End of FFT filter helper function ---
 
-
         # --- Read debug settings from the config object ---
-        plot_cfg = self.cfg.plot.get('test_bdy', {})
-        plot_verification = plot_cfg.get('plot_verification', True)
-        plot_fft_debug = plot_cfg.get('plot_fft_debug', True)
-        debug_level_idx = plot_cfg.get('debug_level_idx', 0)
-        debug_channel_idx = plot_cfg.get('debug_channel_idx', 1)
+        plot_cfg = self.cfg.plot.get("test_bdy", {})
+        plot_verification = plot_cfg.get("plot_verification", True)
+        plot_fft_debug = plot_cfg.get("plot_fft_debug", True)
+        debug_level_idx = plot_cfg.get("debug_level_idx", 0)
+        debug_channel_idx = plot_cfg.get("debug_channel_idx", 1)
 
         batch, level, width, height, channel = data.shape
         if batch != 1:
             raise ValueError(f"Only 1 eval case at a time, but got {batch}")
 
-        pd_data = np.copy(data) # Make a copy of the input predicted data
+        pd_data = np.copy(data)  # Make a copy of the input predicted data
 
         dataset: CustomDataset = self.data_manager._predict_dataset
         data_dict = dataset._get_variables_from_dt(dt, is_input=True)
@@ -220,10 +215,10 @@ class InferenceBase(metaclass=abc.ABCMeta):
                 f"prediction {pd_data[0].shape}. Boundary swapping may fail "
                 f"and data will not be modified for this call."
             )
-            return data # Return original data if shapes don't match
+            return data  # Return original data if shapes don't match
 
         # --- Spatial Blending Methods ---
-        #if method in ["override", "linear", "exp_decay"]:
+        # if method in ["override", "linear", "exp_decay"]:
         gt_mask = np.zeros((width, height), dtype=np.float32)
 
         if method == "override":
@@ -254,7 +249,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
 
         elif method == "exp_decay":
             interior_mask = np.zeros((width, height), dtype=bool)
-            interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
+            interior_mask[1:-1, 1:-1] = True  # Consider outer boundary for distance
             dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
             gt_mask = np.exp(-dist_from_true_boundary / bdy_grid)
             gt_mask = np.clip(gt_mask, 0.0, 1.0)
@@ -268,16 +263,14 @@ class InferenceBase(metaclass=abc.ABCMeta):
 
         elif method == "fft_tukey":
             interior_mask = np.zeros((width, height), dtype=bool)
-            interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
+            interior_mask[1:-1, 1:-1] = True  # Consider outer boundary for distance
             dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
             gt_mask = np.exp(-dist_from_true_boundary / bdy_grid)
             gt_mask = np.clip(gt_mask, 0.0, 1.0)
             gt_mask[gt_mask < 0.01] = 0.0
 
             fft_blended_initial = np.zeros_like(pd_data[0], dtype=np.float32)
-            lpf_mask, hpf_mask = _create_scale_filter_masks(
-                (width, height), fft_k_critical, fft_transition_ratio
-            )
+            lpf_mask, hpf_mask = _create_scale_filter_masks((width, height), fft_k_critical, fft_transition_ratio)
 
             pd_fft = np.zeros(pd_data.shape)
             for lv in range(level):
@@ -291,7 +284,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
                     pd_fft[0, lv, :, :, ch] = (lwn_gt_slice * gt_mask) + (lwn_pd_slice * (1 - gt_mask)) + hwn_pd_slice
 
             interior_mask = np.zeros((width, height), dtype=bool)
-            interior_mask[1:-1, 1:-1] = True # Consider outer boundary for distance
+            interior_mask[1:-1, 1:-1] = True  # Consider outer boundary for distance
             dist_from_true_boundary = distance_transform_cdt(interior_mask, metric="chessboard")
             gt_mask = np.exp(-dist_from_true_boundary / bdy_grid)
             gt_mask = np.clip(gt_mask, 0.0, 1.0)
@@ -303,14 +296,11 @@ class InferenceBase(metaclass=abc.ABCMeta):
 
             data[0] = (pd_fft[0] * pd_mask_b) + (gt_data * gt_mask_b)
 
-
         # --- FFT-based Blending Methods (Pure or Combined) ---
         elif method == "fft_tukey0":
             fft_blended_initial = np.zeros_like(pd_data[0], dtype=np.float32)
 
-            lpf_mask, hpf_mask = _create_scale_filter_masks(
-                (width, height), fft_k_critical, fft_transition_ratio
-            )
+            lpf_mask, hpf_mask = _create_scale_filter_masks((width, height), fft_k_critical, fft_transition_ratio)
 
             l = debug_level_idx
             c = debug_channel_idx
@@ -320,8 +310,8 @@ class InferenceBase(metaclass=abc.ABCMeta):
                     pd_slice = pd_data[0, l_idx, :, :, c_idx]
                     gt_slice = gt_data[l_idx, :, :, c_idx]
 
-                    fft_pd_slice = fftshift(fft2(pd_slice)) # pd_data in wavenumber domain
-                    fft_gt_slice = fftshift(fft2(gt_slice)) # gt_data in wavenumber domain
+                    fft_pd_slice = fftshift(fft2(pd_slice))  # pd_data in wavenumber domain
+                    fft_gt_slice = fftshift(fft2(gt_slice))  # gt_data in wavenumber domain
 
                     combined_fft_slice = (fft_gt_slice * lpf_mask) + (fft_pd_slice * hpf_mask)
 
@@ -330,12 +320,17 @@ class InferenceBase(metaclass=abc.ABCMeta):
 
                     if plot_fft_debug and l_idx == l and c_idx == c:
                         plot_fft_blending_debug(
-                            pd_slice=pd_slice, gt_slice=gt_slice,
-                            fft_pd_slice=fft_pd_slice, fft_gt_slice=fft_gt_slice,
-                            lpf_mask=lpf_mask, hpf_mask=hpf_mask,
+                            pd_slice=pd_slice,
+                            gt_slice=gt_slice,
+                            fft_pd_slice=fft_pd_slice,
+                            fft_gt_slice=fft_gt_slice,
+                            lpf_mask=lpf_mask,
+                            hpf_mask=hpf_mask,
                             blended_spatial_slice=blended_spatial_slice,
-                            level_idx=l, channel_idx=c,
-                            dt=dt, method=method,
+                            level_idx=l,
+                            channel_idx=c,
+                            dt=dt,
+                            method=method,
                         )
 
             gt_mask_linear = np.zeros((width, height), dtype=np.float32)
@@ -371,10 +366,11 @@ class InferenceBase(metaclass=abc.ABCMeta):
             pass
 
         else:
-            raise ValueError(f"Unknown Method: {method}. Supported methods are: 'override', 'linear', 'exp_decay', 'fft_tukey_linear_boundary', 'None'.")
+            raise ValueError(
+                f"Unknown Method: {method}. Supported methods are: 'override', 'linear', 'exp_decay', 'fft_tukey_linear_boundary', 'None'."
+            )
 
         return data
-
 
     def get_figure_materials(self, case_dt: datetime, data_compose: DataCompose):
         """Get ground truth and prediction data for plotting figures.
@@ -402,9 +398,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
 
         return gt_data, output_plot_data
 
-    def get_infer_results_from_dt(
-        self, dt: datetime, phase: str, data_compose: DataCompose
-    ) -> np.ndarray:
+    def get_infer_results_from_dt(self, dt: datetime, phase: str, data_compose: DataCompose) -> np.ndarray:
         """Get inference input/output data for a specific datetime and variable.
 
         Args:
@@ -427,11 +421,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
         if data_compose.level.is_surface():
             data = getattr(self, f"{phase}_surface")
             var_idx = self.surface_vars.index(data_compose.var_name)
-            return (
-                data[time_idx, :, :, :, var_idx]
-                if phase == "input"
-                else data[time_idx, :, 0, :, :, var_idx]
-            )
+            return data[time_idx, :, :, :, var_idx] if phase == "input" else data[time_idx, :, 0, :, :, var_idx]
         else:
             data = getattr(self, f"{phase}_upper")
             level_idx = self.pressure_lv.index(data_compose.level)

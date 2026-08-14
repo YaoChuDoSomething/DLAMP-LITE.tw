@@ -21,9 +21,7 @@ def create_diffusion_module(diffusion_type: DDIMProcess | DDPMProcess):
     """
 
     class DiffusionLightningModule(L.LightningModule, diffusion_type):
-        def __init__(
-            self, *, test_dataloader, backbone_model_fn, regression_model_fn, **kwargs
-        ):
+        def __init__(self, *, test_dataloader, backbone_model_fn, regression_model_fn, **kwargs):
             super().__init__()
             diffusion_type.__init__(
                 self,
@@ -32,9 +30,7 @@ def create_diffusion_module(diffusion_type: DDIMProcess | DDPMProcess):
                 max_beta=kwargs["beta_end"],
             )
 
-            self.save_hyperparameters(
-                ignore=["test_dataloader", "backbone_model_fn", "regression_model_fn"]
-            )
+            self.save_hyperparameters(ignore=["test_dataloader", "backbone_model_fn", "regression_model_fn"])
 
             self._test_dataloader: DataLoader = test_dataloader
             self.backbone_model_fn = backbone_model_fn
@@ -112,9 +108,7 @@ def create_diffusion_module(diffusion_type: DDIMProcess | DDPMProcess):
             Returns:
                 loss: the CRPS loss
             """
-            first_guess = self.inference_regression(
-                inp_data["upper_air"], inp_data["surface"], self.device
-            )
+            first_guess = self.inference_regression(inp_data["upper_air"], inp_data["surface"], self.device)
             target = restruct_dimension(target["upper_air"], target["surface"])
             B = target.shape[0]
 
@@ -126,12 +120,8 @@ def create_diffusion_module(diffusion_type: DDIMProcess | DDPMProcess):
             if torch.rand(1) < 0.5:
                 kernel_size = 7
                 padding = (kernel_size - 1) // 2
-                padded_target = F.pad(
-                    target, (padding, padding, padding, padding), mode="reflect"
-                )
-                first_guess = F.avg_pool2d(
-                    padded_target, kernel_size=kernel_size, stride=1
-                )
+                padded_target = F.pad(target, (padding, padding, padding, padding), mode="reflect")
+                first_guess = F.avg_pool2d(padded_target, kernel_size=kernel_size, stride=1)
 
             # DDPM
             x_0 = target - first_guess  # (B, C, H, W)
@@ -179,9 +169,7 @@ def create_diffusion_module(diffusion_type: DDIMProcess | DDPMProcess):
         # ============== the following functions are not coherent w/ LightningModule ==============
         # ============== however they are critical for training DDPM models          ==============
 
-        def denoising(
-            self, cond: torch.Tensor, device: torch.device
-        ) -> dict[int, torch.Tensor]:
+        def denoising(self, cond: torch.Tensor, device: torch.device) -> dict[int, torch.Tensor]:
             """
             Reverse process to get the image from noise. Log 6 images in a list.
 
@@ -200,9 +188,7 @@ def create_diffusion_module(diffusion_type: DDIMProcess | DDPMProcess):
             x = torch.randn(B, C, H, W).to(device)  # Start with random noise
             ims = {self.hparams.timesteps: x}
             if DDPMProcess in self.__class__.__bases__:
-                steps = trange(
-                    self.hparams.timesteps - 1, -1, -1, desc="DDPM Denoising"
-                )
+                steps = trange(self.hparams.timesteps - 1, -1, -1, desc="DDPM Denoising")
                 for step in steps:
                     t = torch.full((B,), step, dtype=torch.long).to(device)
                     with torch.no_grad():
@@ -212,9 +198,7 @@ def create_diffusion_module(diffusion_type: DDIMProcess | DDPMProcess):
                         ims[step] = x
             elif DDIMProcess in self.__class__.__bases__:
                 ddim_steps = self.hparams.timesteps // 5
-                skipped_steps = torch.linspace(
-                    self.hparams.timesteps, 0, (ddim_steps + 1), dtype=torch.long
-                )
+                skipped_steps = torch.linspace(self.hparams.timesteps, 0, (ddim_steps + 1), dtype=torch.long)
                 steps = trange(1, ddim_steps + 1, desc="DDIM Denoising")
                 for step in steps:
                     curr_t = skipped_steps[step - 1] - 1  # t large
@@ -222,9 +206,7 @@ def create_diffusion_module(diffusion_type: DDIMProcess | DDPMProcess):
                     t = torch.full((B,), curr_t, dtype=torch.long).to(device)
                     with torch.no_grad():
                         pred_noise = self(x, t, cond)
-                        x = self.sampling(
-                            x, pred_noise, curr_t, prev_t, eta=0, simple_var=False
-                        )
+                        x = self.sampling(x, pred_noise, curr_t, prev_t, eta=0, simple_var=False)
                     if step % (ddim_steps // 5) == 0:
                         key = int(prev_t + 1)
                         ims[key] = x
@@ -253,14 +235,10 @@ def create_diffusion_module(diffusion_type: DDIMProcess | DDPMProcess):
                     self.regress_model.get_inputs()[0].name: input_upa.cpu().numpy(),
                     self.regress_model.get_inputs()[1].name: input_sfc.cpu().numpy(),
                 }
-                first_guess_upper, first_guess_surface = self.regress_model.run(
-                    None, ort_inputs
-                )
+                first_guess_upper, first_guess_surface = self.regress_model.run(None, ort_inputs)
             elif isinstance(self.regress_model, torch.nn.Module):
                 with torch.inference_mode():
-                    first_guess_upper, first_guess_surface = self.regress_model(
-                        input_upa, input_sfc
-                    )
+                    first_guess_upper, first_guess_surface = self.regress_model(input_upa, input_sfc)
                 first_guess_surface = torch.clone(first_guess_surface).detach_()
                 first_guess_upper = torch.clone(first_guess_upper).detach_()
             else:

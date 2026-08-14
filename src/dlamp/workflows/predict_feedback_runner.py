@@ -100,8 +100,7 @@ class PredictFeedbackRunner:
         method_name: str = self.cfg.inference.bdy_swap_method["name"]
         n_grid: int = self.cfg.inference.bdy_swap_method["n_of_grid"]
         logger.info(
-            "PredictFeedbackRunner: two-way feedback enabled "
-            "(method=%s, n_of_grid=%d)",
+            "PredictFeedbackRunner: two-way feedback enabled (method=%s, n_of_grid=%d)",
             method_name,
             n_grid,
         )
@@ -132,6 +131,5 @@ class PredictFeedbackRunner:
         for key in ("name", "n_of_grid"):
             if key not in bdy_method:
                 raise ValueError(
-                    f"cfg.inference.bdy_swap_method is missing key '{key}'. "
-                    f"Current value: {dict(bdy_method)}"
+                    f"cfg.inference.bdy_swap_method is missing key '{key}'. Current value: {dict(bdy_method)}"
                 )

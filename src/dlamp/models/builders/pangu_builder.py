@@ -25,15 +25,9 @@ class PanguBuilder(BaseBuilder):
     def __init__(self, hydra_dir: Path, data_list: list[DataCompose], **kwargs):
         super().__init__(**kwargs)
 
-        self.pressure_levels: list[str] = DataCompose.get_all_levels(
-            data_list, only_upper=True, to_str=True
-        )
-        self.upper_vars: list[str] = DataCompose.get_all_vars(
-            data_list, only_upper=True, to_str=True
-        )
-        self.surface_vars: list[str] = DataCompose.get_all_vars(
-            data_list, only_surface=True, to_str=True
-        )
+        self.pressure_levels: list[str] = DataCompose.get_all_levels(data_list, only_upper=True, to_str=True)
+        self.upper_vars: list[str] = DataCompose.get_all_vars(data_list, only_upper=True, to_str=True)
+        self.surface_vars: list[str] = DataCompose.get_all_vars(data_list, only_surface=True, to_str=True)
 
         self.time_stamp = convert_hydra_dir_to_timestamp(hydra_dir)
 
@@ -42,11 +36,7 @@ class PanguBuilder(BaseBuilder):
         self.info_log(f"Window Size: {self.kwargs.window_size}")
 
     def _backbone_model(self) -> nn.Module:
-        sfc_input_ch = (
-            len(self.surface_vars) + 4
-            if self.kwargs.add_time_features
-            else len(self.surface_vars)
-        )
+        sfc_input_ch = len(self.surface_vars) + 4 if self.kwargs.add_time_features else len(self.surface_vars)
         return PanguModel(
             image_shape=self.kwargs.image_shape,
             patch_size=self.kwargs.patch_size,
@@ -84,26 +74,16 @@ class PanguBuilder(BaseBuilder):
         )
 
     def build_trainer(self, logger) -> Trainer:
-        num_gpus = (
-            torch.cuda.device_count()
-            if self.kwargs.num_gpus is None
-            else self.kwargs.num_gpus
-        )
+        num_gpus = torch.cuda.device_count() if self.kwargs.num_gpus is None else self.kwargs.num_gpus
         strategy = getattr(self.kwargs, "strategy", "auto")
 
         callbacks = []
         callbacks.append(LearningRateMonitor())
         callbacks.append(self.checkpoint_callback())
         if self.kwargs.log_image_every_n_steps is not None:
-            callbacks.append(
-                LogPredictionSamplesCallback(self.kwargs.log_image_every_n_steps)
-            )
+            callbacks.append(LogPredictionSamplesCallback(self.kwargs.log_image_every_n_steps))
         if self.kwargs.early_stop_patience is not None:
-            callbacks.append(
-                EarlyStopping(
-                    monitor="val_loss_epoch", patience=self.kwargs.early_stop_patience
-                )
-            )
+            callbacks.append(EarlyStopping(monitor="val_loss_epoch", patience=self.kwargs.early_stop_patience))
 
         return Trainer(
             num_sanity_val_steps=2,
@@ -131,9 +111,7 @@ class PanguBuilder(BaseBuilder):
     def checkpoint_callback(self) -> ModelCheckpoint:
         return ModelCheckpoint(
             dirpath=CHECKPOINT_DIR,
-            filename=self.kwargs.model_name
-            + f"_{self.time_stamp}"
-            + "-{epoch:03d}-{val_loss_epoch:.4f}",
+            filename=self.kwargs.model_name + f"_{self.time_stamp}" + "-{epoch:03d}-{val_loss_epoch:.4f}",
             save_top_k=1,
             verbose=True,
             monitor="val_loss_epoch",

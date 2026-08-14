@@ -63,10 +63,7 @@ class RuntimeConfig:
 
         if missing:
             raise RuntimeConfigError(
-                f"DLAMP_EXP_CODE '{model_code}' requires:\n"
-                + "\n".join(
-                    f"  {m} [NOT FOUND]" for m in missing
-                )
+                f"DLAMP_EXP_CODE '{model_code}' requires:\n" + "\n".join(f"  {m} [NOT FOUND]" for m in missing)
             )
 
         return cls(
@@ -80,8 +77,6 @@ class RuntimeConfig:
     @property
     def standardization_json_path(self) -> Path:
         return self.standardization_path
-
-
 
 
 def get_runtime_config() -> RuntimeConfig:

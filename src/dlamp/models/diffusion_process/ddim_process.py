@@ -5,7 +5,6 @@ from .ddpm_process import DDPMProcess
 
 
 class DDIMProcess(DDPMProcess):
-
     def __init__(self, n_steps: int, min_beta: float = 0.0001, max_beta: float = 0.02):
         super().__init__(n_steps, min_beta, max_beta)
 
@@ -38,8 +37,7 @@ class DDIMProcess(DDPMProcess):
 
         first_term = torch.sqrt(alpha_bar_prev / alpha_bar_curr) * xt
         second_term = (
-            torch.sqrt(1 - alpha_bar_prev - var)
-            - torch.sqrt(alpha_bar_prev * (1 - alpha_bar_curr) / alpha_bar_curr)
+            torch.sqrt(1 - alpha_bar_prev - var) - torch.sqrt(alpha_bar_prev * (1 - alpha_bar_curr) / alpha_bar_curr)
         ) * eps_model
 
         if simple_var:

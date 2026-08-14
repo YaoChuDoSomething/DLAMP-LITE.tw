@@ -73,9 +73,7 @@ def window_reverse_3d(
     return orig_img
 
 
-def pad_3d(
-    img_shape: tuple[int, int, int], sub_shape: tuple[int, int, int]
-) -> nn.ZeroPad3d:
+def pad_3d(img_shape: tuple[int, int, int], sub_shape: tuple[int, int, int]) -> nn.ZeroPad3d:
     """
     Get nn.ZeroPad3d for padding the input to be divisible by sub_shape.
 
@@ -123,9 +121,7 @@ def pad_2d(img_shape: tuple[int, int], sub_shape: tuple[int, int]) -> nn.ZeroPad
     return pad
 
 
-def crop_pad_3d(
-    img_shape: tuple[int, int, int], sub_shape: tuple[int, int, int]
-) -> tuple[slice, slice, slice]:
+def crop_pad_3d(img_shape: tuple[int, int, int], sub_shape: tuple[int, int, int]) -> tuple[slice, slice, slice]:
     """
     Get the index for reversing padding via GetPad3D.
 
@@ -144,9 +140,7 @@ def crop_pad_3d(
     )
 
 
-def crop_pad_2d(
-    img_shape: tuple[int, int], sub_shape: tuple[int, int]
-) -> tuple[slice, slice]:
+def crop_pad_2d(img_shape: tuple[int, int], sub_shape: tuple[int, int]) -> tuple[slice, slice]:
     """
     Get the index for reversing padding via GetPad2D.
 
@@ -269,9 +263,7 @@ def restruct_dimension(x_upper, x_surface, is_numpy=False, device=None):
     return x
 
 
-def deconstruct(
-    x: torch.Tensor, upper_ch: int, surface_ch: int
-) -> tuple[torch.Tensor, torch.Tensor]:
+def deconstruct(x: torch.Tensor, upper_ch: int, surface_ch: int) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Deconstructs a tensor `x` into two tensors `x_upper` and `x_surface`.
 

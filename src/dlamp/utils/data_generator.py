@@ -53,9 +53,7 @@ class DataGenerator:
         return wrapper
 
     @yield_data_hook
-    def yield_data(
-        self, np_data: np.ndarray, to_numpy: bool = True
-    ) -> torch.Tensor | np.ndarray:
+    def yield_data(self, np_data: np.ndarray, to_numpy: bool = True) -> torch.Tensor | np.ndarray:
         """
         Generate a tensor or numpy array of processed data based on the provided numpy array.
 
@@ -67,9 +65,7 @@ class DataGenerator:
             torch.Tensor or np.ndarray: The processed data in shape (H, W).
         """
         if isinstance(self.preprocess, Compose):
-            torch_data = torch.from_numpy(np_data[None]).type(
-                torch.float32
-            )  # (1, H, W)
+            torch_data = torch.from_numpy(np_data[None]).type(torch.float32)  # (1, H, W)
             processed_data: torch.Tensor = self.preprocess(torch_data)  # (H, W)
             return processed_data.numpy() if to_numpy else processed_data
         else:
@@ -108,6 +104,4 @@ class DataGenerator:
         Returns:
             None
         """
-        assert (
-            data.shape == self._data_shp
-        ), f"{target_dt} data shape mismatch: {data.shape} != {self._data_shp}"
+        assert data.shape == self._data_shp, f"{target_dt} data shape mismatch: {data.shape} != {self._data_shp}"

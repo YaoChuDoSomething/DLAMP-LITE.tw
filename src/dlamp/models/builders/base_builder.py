@@ -6,7 +6,6 @@ from omegaconf import OmegaConf
 
 
 class BaseBuilder(metaclass=abc.ABCMeta):
-
     def __init__(self, *args, **kwargs):
         self.kwargs = OmegaConf.create(kwargs)
         self.log = logging.getLogger(__name__)

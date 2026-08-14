@@ -47,3 +47,6 @@ debug_plots/**png
 *.png
 *.gif
 .worktrees/
+
+# Regression golden baselines (generated pre-move, stored under DLAMP_DATA_PATH)
+regression_golden/

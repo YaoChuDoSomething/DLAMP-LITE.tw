@@ -93,7 +93,7 @@ class ForecastSaver:
 
         # Determine the full list of variables and their order
         # This needs to be consistent for the 'variable' dimension
-        all_variables_with_levels: List[Tuple[DataType, Level]] = []
+        all_variables_with_levels: list[tuple[DataType, Level]] = []
         for level in self.manager.pressure_levels:
             for var in self.manager.upper_vars:
                 all_variables_with_levels.append((var, level))
@@ -101,7 +101,7 @@ class ForecastSaver:
             # For surface variables, use Level.Surface as a consistent identifier
             all_variables_with_levels.append((var, Level.Surface))
 
-        variable_names: List[str] = []
+        variable_names: list[str] = []
         for var_type, level_type in all_variables_with_levels:
             # Create a unique string identifier for each variable-level combination
             if level_type.is_surface():
@@ -122,9 +122,7 @@ class ForecastSaver:
 
         # Populate the data array
         for idx, (var_type, level_type) in enumerate(all_variables_with_levels):
-            data: np.ndarray = self.manager.get_forecast_data(
-                forecast_step, var_type, level_type
-            )
+            data: np.ndarray = self.manager.get_forecast_data(forecast_step, var_type, level_type)
             # Handle Qw unit conversion if necessary (from g/kg to kg/kg)
             # The manager's _qw_output_unit_gkg indicates if Qw was converted to g/kg for plotting.
             # If so, convert it back to kg/kg for the Earth2Studio output.
@@ -136,8 +134,12 @@ class ForecastSaver:
         # Calculate time as hours since 0001-01-01 00:00:00.0
         reference_time = cftime.DatetimeGregorian(1, 1, 1, 0, 0, 0)
         forecast_cftime = cftime.DatetimeGregorian(
-            forecast_time.year, forecast_time.month, forecast_time.day,
-            forecast_time.hour, forecast_time.minute, forecast_time.second
+            forecast_time.year,
+            forecast_time.month,
+            forecast_time.day,
+            forecast_time.hour,
+            forecast_time.minute,
+            forecast_time.second,
         )
         time_value = (forecast_cftime - reference_time).total_seconds() / 3600.0
 
@@ -155,7 +157,8 @@ class ForecastSaver:
             },
             coords={
                 "time": (
-                    "time", [time_value],
+                    "time",
+                    [time_value],
                     {
                         "units": "hours since 0001-01-01 00:00:00.0",
                         "calendar": "proleptic_gregorian",
@@ -170,9 +173,7 @@ class ForecastSaver:
         filename: str = f"earth2studio_{self.exp_code}_{forecast_time.strftime('%Y%m%d_%H%M%S')}.nc"
         output_path: Path = self.earth2studio_output_dir / filename
 
-        encoding: dict[str, dict[str, Any]] = {
-            "initial_data": {"zlib": True, "complevel": 4}
-        }
+        encoding: dict[str, dict[str, Any]] = {"initial_data": {"zlib": True, "complevel": 4}}
         ds.to_netcdf(output_path, encoding=encoding)
         logger.info(f"Saved Earth2Studio-ready NetCDF to {output_path}")
 
@@ -218,9 +219,7 @@ class ForecastSaver:
 
         # Initialize containers for upper-air data
         upper_air_cubes: dict[str, np.ndarray] = {
-            var.name: np.full(
-                (1, len(pres_levels_val), H, W), np.nan, dtype=np.float32
-            )
+            var.name: np.full((1, len(pres_levels_val), H, W), np.nan, dtype=np.float32)
             for var in self.manager.upper_vars
         }
 
@@ -237,9 +236,7 @@ class ForecastSaver:
         }
 
         for dc in self.manager.data_compositions:
-            arr: np.ndarray = self.manager.get_forecast_data(
-                forecast_step, dc.var_name, dc.level
-            )
+            arr: np.ndarray = self.manager.get_forecast_data(forecast_step, dc.var_name, dc.level)
             # Default key is from the DataType enum's nc_key
             key: str = dc.var_name.nc_key
 
@@ -263,9 +260,9 @@ class ForecastSaver:
         # If a standardization path is provided in the config, it's assumed
         # that the de-standardized Qw is in g/kg and must be converted to
         # kg/kg by dividing by 1000. Otherwise, it's assumed to be in kg/kg.
-        #adjust_qw_units: bool = (
+        # adjust_qw_units: bool = (
         #    self.manager.cfg.data.get("standardization_path") is not None
-        #)
+        # )
         for var_name, cube in upper_air_cubes.items():
             var_type: DataType = DataType[var_name]
             key = var_type.nc_key
@@ -288,7 +285,5 @@ class ForecastSaver:
         filename: str = f"{self.exp_code}_{start_time_str}_F{step_plus_one:03d}.nc"
         output_path: Path = self.output_dir / filename
 
-        encoding: dict[str, dict[str, Any]] = {
-            var: {"zlib": True, "complevel": 4} for var in data_vars
-        }
+        encoding: dict[str, dict[str, Any]] = {var: {"zlib": True, "complevel": 4} for var in data_vars}
         dataset.to_netcdf(output_path, encoding=encoding)

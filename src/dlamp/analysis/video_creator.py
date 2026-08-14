@@ -10,9 +10,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-def create_animation(
-    image_paths: list[Path], output_video_path: Path, framerate: int = 1
-) -> bool:
+def create_animation(image_paths: list[Path], output_video_path: Path, framerate: int = 1) -> bool:
     """Creates an MP4 video from a list of image files using ffmpeg.
 
     Args:
@@ -29,17 +27,13 @@ def create_animation(
 
     ffmpeg_path = shutil.which("ffmpeg")
     if not ffmpeg_path:
-        logger.warning(
-            "ffmpeg not found. Cannot create video. Please install ffmpeg."
-        )
+        logger.warning("ffmpeg not found. Cannot create video. Please install ffmpeg.")
         return False
 
     # Sort paths to ensure correct order in the video
     sorted_paths = sorted(image_paths)
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", delete=False, suffix=".txt"
-    ) as tmpfile:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as tmpfile:
         for img_path in sorted_paths:
             # Use resolve() to get an absolute path for ffmpeg
             tmpfile.write(f"file '{img_path.resolve()}'\n")
@@ -48,13 +42,20 @@ def create_animation(
     command = [
         ffmpeg_path,
         "-y",  # Overwrite output file if it exists
-        "-r", str(framerate),
-        "-f", "concat",
-        "-safe", "0",
-        "-i", temp_list_path,
-        "-c:v", "libx264",
-        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-        "-pix_fmt", "yuv420p",
+        "-r",
+        str(framerate),
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        temp_list_path,
+        "-c:v",
+        "libx264",
+        "-vf",
+        "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        "-pix_fmt",
+        "yuv420p",
         str(output_video_path),
     ]
 

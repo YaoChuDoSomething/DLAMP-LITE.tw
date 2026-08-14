@@ -1,5 +1,5 @@
 import warnings
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -97,16 +97,14 @@ def read_cwa_ncfile(
             # Qw = Qr + Qc + Qi + Qs + Qg
             components = ["Qr", "Qc", "Qi", "Qs", "Qg"]
             data = sum(
-                dataset[DataCompose(getattr(DataType, q), dc.level).combined_key].values
-                for q in components
+                dataset[DataCompose(getattr(DataType, q), dc.level).combined_key].values for q in components
             )  # (1, Z, H, W)
-            #data = dataset[dc.combined_key].value
+            # data = dataset[dc.combined_key].value
             data *= 1000  # kg/kg -> g/kg
         elif dc.var_name == DataType.SST:
             data = dataset[dc.combined_key].values
             data[np.isnan(data)] = 298.60870361328125  # SST mean
-            mask = dataset[DataCompose(getattr(DataType, MASK), dc.level).combined_key].values
-            #np.where(mask==1,0)
+            # original masking of land points was disabled
         else:
             data = dataset[dc.combined_key].values  # (1, Z, H, W) or (1, H, W)
 
@@ -127,13 +125,11 @@ def read_cwa_ncfile(
             for ele in data_compose:
                 ret[str(ele)] = fn(ele)
             return ret
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - re-raised as RuntimeError
         raise RuntimeError(f"Data retrieval fails for {file_path}. Original error: {e}")
 
 
-def read_cwa_npfile(
-    file_path: Path, is_radar: bool, dtype: np.dtype | None = None
-) -> np.ndarray:
+def read_cwa_npfile(file_path: Path, is_radar: bool, dtype: np.dtype | None = None) -> np.ndarray:
     """
     The x and y grids point of RWRF model data are 450 and 450, respectively.
 
@@ -200,28 +196,18 @@ def gen_path(
                 / data_compose.basename
             )
         case "CWA_RWRF":
-            predict_dt = (
-                target_time + timedelta(hours=use_Kth_hour_pred)
-                if use_Kth_hour_pred
-                else target_time
-            )
+            predict_dt = target_time + timedelta(hours=use_Kth_hour_pred) if use_Kth_hour_pred else target_time
 
             return (
                 config.data_path
-                #/ f"RWRF_{target_time.strftime('%Y-%m')}"
-                #/ f"{target_time.strftime('%Y-%m-%d_%H')}"
+                # / f"RWRF_{target_time.strftime('%Y-%m')}"
+                # / f"{target_time.strftime('%Y-%m-%d_%H')}"
                 / f"wrfout_d01_{predict_dt.strftime('%Y-%m-%d_%H')}_interp"
             )
         case "OP_ERA5":
-            return (
-                config.data_path
-                / f"e5dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
-            )
+            return config.data_path / f"e5dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
         case "OP_E2S":
-            return (
-                config.data_path
-                / f"e2s_sfno_dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
-            )
+            return config.data_path / f"e2s_sfno_dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
         case _:
             raise ValueError(f"Invalid data source: {data_source}")
 
@@ -240,8 +226,8 @@ def convert_hydra_dir_to_timestamp(hydra_dir: Path | str) -> str:
         ValueError: If the hydra directory path cannot be parsed into a datetime object.
     """
     try:
-        dt = datetime.strptime(
-            f"{hydra_dir.parent.name} {hydra_dir.name}", "%Y-%m-%d %H:%M:%S"
+        dt = datetime.strptime(f"{hydra_dir.parent.name} {hydra_dir.name}", "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=UTC
         )
     except ValueError:
         if isinstance(hydra_dir, str):
@@ -252,8 +238,6 @@ def convert_hydra_dir_to_timestamp(hydra_dir: Path | str) -> str:
             )
             return hydra_dir
         else:
-            raise ValueError(
-                f"given hydra dir {hydra_dir} can't be parsed into datetime"
-            )
+            raise TypeError(f"given hydra dir {hydra_dir} can't be parsed into datetime")
 
     return dt.strftime("%y%m%d_%H%M%S")

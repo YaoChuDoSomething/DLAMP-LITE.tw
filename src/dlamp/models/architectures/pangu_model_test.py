@@ -1,5 +1,6 @@
 import unittest
 from copy import deepcopy
+from typing import ClassVar
 
 import torch
 import yaml
@@ -11,8 +12,8 @@ class PanguModelTest(unittest.TestCase):
     with open("config/model/dlamp_train.yaml", "r") as file:
         model_config = yaml.safe_load(file)
 
-    TEST_CASE = deepcopy(model_config)
-    TEST_CASE["image_shape"] = [224, 224]
+    TEST_CASE: ClassVar[dict] = deepcopy(model_config)
+    TEST_CASE["image_shape"] = [224, 224]  # noqa: RUF012
     TEST_CASE["upper_levels"] = 6
     TEST_CASE["upper_channels"] = 4
     TEST_CASE["surface_channels"] = 1

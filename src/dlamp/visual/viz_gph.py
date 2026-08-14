@@ -21,9 +21,12 @@ class VizGph(TwBackground):
         lon: np.ndarray,
         lat: np.ndarray,
         data: list[np.ndarray],
-        titles: list[str] = [],
+        titles: list[str] | None = None,
         grid_on: bool = False,
     ):
+        if titles is None:
+            titles = []
+
         cols = len(data)
 
         plt.close()
@@ -55,9 +58,7 @@ class VizGph(TwBackground):
         )
 
         # inline lables
-        clabels = ax.clabel(
-            conf, inline=True, colors="k", fontsize=10, use_clabeltext=False
-        )
+        clabels = ax.clabel(conf, inline=True, colors="k", fontsize=10, use_clabeltext=False)
         for label in clabels:
             label.set_path_effects(
                 [

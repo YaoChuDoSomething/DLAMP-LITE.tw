@@ -88,16 +88,12 @@ class ResidualBlock(nn.Module):
         # Group normalization and the first convolution layer
         self.norm1 = nn.GroupNorm(n_groups, in_channels)
         self.act1 = Swish()
-        self.conv1 = nn.Conv2d(
-            in_channels, out_channels, kernel_size=(3, 3), padding=(1, 1)
-        )
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=(3, 3), padding=(1, 1))
 
         # Group normalization and the second convolution layer
         self.norm2 = nn.GroupNorm(n_groups, out_channels)
         self.act2 = Swish()
-        self.conv2 = nn.Conv2d(
-            out_channels, out_channels, kernel_size=(3, 3), padding=(1, 1)
-        )
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=(3, 3), padding=(1, 1))
 
         # If the number of input channels is not equal to the number of output channels we have to
         # project the shortcut connection
@@ -131,7 +127,7 @@ class AttentionBlock(nn.Module):
     This is similar to [transformer multi-head attention](../../transformers/mha.html).
     """
 
-    def __init__(self, n_channels: int, n_heads: int = 1, d_k: int = None):
+    def __init__(self, n_channels: int, n_heads: int = 1, d_k: int | None = None):
         """
         * `n_channels` is the number of channels in the input
         * `n_heads` is the number of heads in multi-head attention
@@ -194,9 +190,7 @@ class DownBlock(nn.Module):
     This combines `ResidualBlock` and `AttentionBlock`. These are used in the first half of U-Net at each resolution.
     """
 
-    def __init__(
-        self, in_channels: int, out_channels: int, time_channels: int, has_attn: bool
-    ):
+    def __init__(self, in_channels: int, out_channels: int, time_channels: int, has_attn: bool):
         super().__init__()
         self.res = ResidualBlock(in_channels, out_channels, time_channels)
         if has_attn:
@@ -216,15 +210,11 @@ class UpBlock(nn.Module):
     This combines `ResidualBlock` and `AttentionBlock`. These are used in the second half of U-Net at each resolution.
     """
 
-    def __init__(
-        self, in_channels: int, out_channels: int, time_channels: int, has_attn: bool
-    ):
+    def __init__(self, in_channels: int, out_channels: int, time_channels: int, has_attn: bool):
         super().__init__()
         # The input has `in_channels + out_channels` because we concatenate the output of the same resolution
         # from the first half of the U-Net
-        self.res = ResidualBlock(
-            in_channels + out_channels, out_channels, time_channels
-        )
+        self.res = ResidualBlock(in_channels + out_channels, out_channels, time_channels)
         if has_attn:
             self.attn = AttentionBlock(out_channels)
         else:
@@ -315,9 +305,7 @@ class UNet(nn.Module):
         n_resolutions = len(ch_mults)
 
         # Project image into feature map
-        self.image_proj = nn.Conv2d(
-            image_channels, n_channels, kernel_size=(3, 3), padding=(1, 1)
-        )
+        self.image_proj = nn.Conv2d(image_channels, n_channels, kernel_size=(3, 3), padding=(1, 1))
 
         # Time embedding layer. Time embedding has `n_channels * 4` channels
         self.time_emb = TimeEmbedding(n_channels * 4)
@@ -332,9 +320,7 @@ class UNet(nn.Module):
             out_channels = in_channels * ch_mults[i]
             # Add `n_blocks`
             for _ in range(n_blocks):
-                down.append(
-                    DownBlock(in_channels, out_channels, n_channels * 4, is_attn[i])
-                )
+                down.append(DownBlock(in_channels, out_channels, n_channels * 4, is_attn[i]))
                 in_channels = out_channels
             # Down sample at all resolutions except the last
             if i < n_resolutions - 1:
@@ -357,9 +343,7 @@ class UNet(nn.Module):
         for i in reversed(range(n_resolutions)):
             # `n_blocks` at the same resolution
             for _ in range(n_blocks):
-                up.append(
-                    UpBlock(in_channels, out_channels, n_channels * 4, is_attn[i])
-                )
+                up.append(UpBlock(in_channels, out_channels, n_channels * 4, is_attn[i]))
             # Final block to reduce the number of channels
             out_channels = in_channels // ch_mults[i]
             up.append(UpBlock(in_channels, out_channels, n_channels * 4, is_attn[i]))
@@ -374,9 +358,7 @@ class UNet(nn.Module):
         # Final normalization and convolution layer
         self.norm = nn.GroupNorm(8, n_channels)
         self.act = Swish()
-        self.final = nn.Conv2d(
-            in_channels, image_channels, kernel_size=(3, 3), padding=(1, 1)
-        )
+        self.final = nn.Conv2d(in_channels, image_channels, kernel_size=(3, 3), padding=(1, 1))
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         """

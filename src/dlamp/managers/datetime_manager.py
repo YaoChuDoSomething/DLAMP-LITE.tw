@@ -4,7 +4,7 @@ import logging
 import random
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -27,22 +27,20 @@ class DatetimeManager:
         format: str,
         interval: dict[str, int],
     ):
-        self.start_time = datetime.strptime(start_time, format)
-        self.end_time = datetime.strptime(end_time, format)
+        self.start_time = datetime.strptime(start_time, format).replace(tzinfo=UTC)
+        self.end_time = datetime.strptime(end_time, format).replace(tzinfo=UTC)
         self.interval = timedelta(**interval)
         self.format = format
 
         # internal property
-        self.time_list: list[datetime] = list()
+        self.time_list: list[datetime] = []
         self.train_time: set[datetime] = set()
         self.valid_time: set[datetime] = set()
         self.test_time: set[datetime] = set()
         self.eval_cases: set[datetime] = set()
         self._done = False
 
-    def build_initial_time_list(
-        self, data_list: list[DataCompose], use_Kth_hour_pred: int | None
-    ) -> DatetimeManager:
+    def build_initial_time_list(self, data_list: list[DataCompose], use_Kth_hour_pred: int | None) -> DatetimeManager:
         if not Path(BLACKLIST_PATH).exists():
             self._build_init_time_list(data_list, use_Kth_hour_pred, save_output=True)
         else:
@@ -87,9 +85,7 @@ class DatetimeManager:
                 continue
 
             # skip checking current time if `skip_current = True`
-            if not skip_current and not self.sanity_check(
-                current_time, data_list, use_Kth_hour_pred
-            ):
+            if not skip_current and not self.sanity_check(current_time, data_list, use_Kth_hour_pred):
                 remove.append(current_time)
                 current_time += self.interval
                 skip_current = True
@@ -119,7 +115,7 @@ class DatetimeManager:
         blacklist = []
         with open(BLACKLIST_PATH, "r") as f:
             for line in f:
-                dt = datetime.strptime(line.strip(), self.format)
+                dt = datetime.strptime(line.strip(), self.format).replace(tzinfo=UTC)
                 blacklist.append(dt)
 
         num_time = int((self.end_time - self.start_time) / self.interval) + 1
@@ -136,9 +132,7 @@ class DatetimeManager:
         log.info(f"Removed {len(blacklist)} datetimes during data sanity check.")
         log.debug(f"{self.BC} Built initial time list in {time.time() - s:.5f} sec.")
 
-    def random_split(
-        self, ratios: list[float | int], split_method: str = "random"
-    ) -> DatetimeManager:
+    def random_split(self, ratios: list[float | int], split_method: str = "random") -> DatetimeManager:
         """
         Split the time list into train, validation and test sets based on specified ratios and method.
 
@@ -155,9 +149,7 @@ class DatetimeManager:
             DatetimeManager: Returns self for method chaining.
         """
         s = time.time()
-        assert (
-            len(ratios) == 3
-        ), f"ratios should be [train_r, valid_r, test_r], but {ratios}"
+        assert len(ratios) == 3, f"ratios should be [train_r, valid_r, test_r], but {ratios}"
 
         ratios = np.array(ratios) / np.array(ratios).sum()
 
@@ -236,11 +228,7 @@ class DatetimeManager:
                 raise RuntimeError(f"Invalid days: {key}")
 
             for dt in value:
-                self.eval_cases |= set(
-                    TimeUtil.N_days_time_list(
-                        dt.year, dt.month, dt.day, self.interval, n_days
-                    )
-                )
+                self.eval_cases |= set(TimeUtil.N_days_time_list(dt.year, dt.month, dt.day, self.interval, n_days))
 
         self.eval_cases &= set(self.time_list)
         log.debug(f"{self.BC} Built eval case list in {time.time() - s:.5f} sec.")
@@ -278,12 +266,12 @@ class DatetimeManager:
                 # since CWA prepared the data for us, we believe all variables are consistent
                 # in every netCDF file. Thus, we only check the file existence here.
                 data_filename = gen_path(dt, use_Kth_hour_pred=use_Kth_hour_pred)
-                return True if data_filename.exists() else False
+                return bool(data_filename.exists())
             case "RWRF_ERA5":
                 # since CWA prepared the data for us, we believe all variables are consistent
                 # in every netCDF file. Thus, we only check the file existence here.
                 data_filename = gen_path(dt)
-                return True if data_filename.exists() else False
+                return bool(data_filename.exists())
             case _:
                 log.error(f"Invalid data_source: {config.data_source}")
                 raise ValueError(f"Invalid data_source: {config.data_source}")

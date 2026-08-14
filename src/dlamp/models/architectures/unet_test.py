@@ -1,4 +1,5 @@
 import unittest
+from typing import ClassVar
 
 import torch
 
@@ -78,12 +79,12 @@ class ResidualBlockTest(unittest.TestCase):
     batch_size = 16
     H = 224
     W = 480
-    test_case_0 = {
+    test_case_0: ClassVar[dict] = {
         "in_channels": 128,
         "out_channels": 256,
         "time_channels": 64,
     }
-    test_case_1 = {
+    test_case_1: ClassVar[dict] = {
         "in_channels": 128,
         "out_channels": 64,
         "time_channels": 32,
@@ -108,9 +109,7 @@ class ResidualBlockTest(unittest.TestCase):
             with torch.no_grad():
                 y = residual_block(x, t)
 
-            self.assertEqual(
-                y.shape, torch.Size([self.batch_size, out_channels, self.H, self.W])
-            )
+            self.assertEqual(y.shape, torch.Size([self.batch_size, out_channels, self.H, self.W]))
 
 
 class AttentionBlockTest(unittest.TestCase):

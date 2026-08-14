@@ -46,6 +46,14 @@ dependencies = [
     "rasterio>=1.4.4",
 ]
 
+[project.scripts]
+dlamp-train = "dlamp.train:main"
+dlamp-predict = "dlamp.analysis.prediction:main"
+dlamp-export-onnx = "dlamp.export_onnx:main"
+dlamp-infer-onnx = "dlamp.inference_onnx:main"
+dlamp-gen-const-masks = "dlamp.generate_const_masks:main"
+dlamp-unpack-tgz = "dlamp.unzip_tgz:main"
+
 [project.optional-dependencies]
 dev = [
     "ruff",
@@ -61,7 +69,7 @@ requires = ["uv_build>=0.11.21,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.ruff]
-line-length = 79
+line-length = 120
 target-version = "py311"
 
 [tool.mypy]
@@ -74,3 +82,8 @@ mypy_path = "src"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "integration: tests requiring real sample ERA5 data in DLAMP_DATA_PATH (skipped by default)",
+    "regression: tests comparing against pre-move golden baselines in DLAMP_DATA_PATH/regression_golden (run via `make regression`)",
+]
+addopts = "-m 'not integration and not regression'"

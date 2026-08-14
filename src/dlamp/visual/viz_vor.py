@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,7 +27,7 @@ class VizVor(TwBackground):
         prediction_u: np.ndarray,
         prediction_v: np.ndarray,
         grid_resolution_in_meter: list[int],
-        all_init_times: list[datetime] = [],
+        all_init_times: list[datetime] | None = None,
     ) -> tuple[Figure, Axes]:
         assert len(ground_truth_u.shape) == 3
         assert ground_truth_u.shape[-2:] == lat.shape
@@ -40,9 +40,7 @@ class VizVor(TwBackground):
         # ground truth
         for j in range(columns):
             tmp_ax = ax[0, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax)
             fig, tmp_ax = self._plot_vor(
                 fig,
@@ -58,9 +56,7 @@ class VizVor(TwBackground):
         # prediction
         for j in range(columns):
             tmp_ax = ax[1, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax)
             fig, tmp_ax = self._plot_vor(
                 fig,
@@ -87,9 +83,7 @@ class VizVor(TwBackground):
         plt.close()
         fig, ax = plt.subplots(1, 1, figsize=(6, 5), dpi=200, facecolor="w")
         fig, ax = super().plot_bg(fig, ax)
-        fig, ax = self._plot_vor(
-            fig, ax, lon, lat, u_wind, v_wind, grid_resolution_in_meter, title
-        )
+        fig, ax = self._plot_vor(fig, ax, lon, lat, u_wind, v_wind, grid_resolution_in_meter, title)
 
         return fig, ax
 
@@ -143,9 +137,11 @@ class VizVor(TwBackground):
         u_wind_list: np.ndarray,
         v_wind_list: np.ndarray,
         grid_resolution_in_meter: list[int],
-        titles: list[str] = [],
+        titles: list[str] | None = None,
         grid_on: bool = False,
     ):
+        if titles is None:
+            titles = []
         cols = u_wind_list.shape[0]
 
         plt.close()
@@ -169,7 +165,7 @@ class VizVor(TwBackground):
 
 
 if __name__ == "__main__":
-    target_time = datetime(2022, 10, 16, 0)
+    target_time = datetime(2022, 10, 16, 0, tzinfo=UTC)
     u850 = gen_data(target_time, DataCompose(DataType.U, Level.Hpa850))
     v850 = gen_data(target_time, DataCompose(DataType.V, Level.Hpa850))
     data_lat = gen_data(target_time, DataCompose(DataType.Lat, Level.Surface))

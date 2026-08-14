@@ -117,7 +117,14 @@ class DataCompose:
             ret = []
             for data_compose in data_list:
                 lv = data_compose.level
-                if lv.is_surface() and only_surface or not lv.is_surface() and only_upper or not only_surface and not only_upper:
+                if (
+                    lv.is_surface()
+                    and only_surface
+                    or not lv.is_surface()
+                    and only_upper
+                    or not only_surface
+                    and not only_upper
+                ):
                     fn(ret, data_compose)
             return [x.name for x in ret] if to_str else ret
 

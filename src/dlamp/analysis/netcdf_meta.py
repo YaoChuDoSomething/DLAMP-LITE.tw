@@ -5,6 +5,7 @@ This module provides dictionaries containing attributes (like units and
 descriptions) for variables and global properties of the NetCDF files,
 ensuring consistency with WRF output standards.
 """
+
 from typing import Any
 
 # Global attributes to be written to the NetCDF file
@@ -19,9 +20,7 @@ GLOBAL_ATTRIBUTES: dict[str, Any] = {
 
 # Variable-specific attributes (units, description, etc.)
 VARIABLE_ATTRIBUTES: dict[str, Any] = {
-    "Times": {
-        "description": "model time"
-    },
+    "Times": {"description": "model time"},
     "XLAT": {
         "description": "Latitude, South is Negative",
         "units": "degree_north",
@@ -30,10 +29,7 @@ VARIABLE_ATTRIBUTES: dict[str, Any] = {
         "description": "Longitude, West is Negative",
         "units": "degree_east",
     },
-    "pres_levels": {
-        "description": "Constant Pressure Levels", 
-        "units": "hPa"
-    },
+    "pres_levels": {"description": "Constant Pressure Levels", "units": "hPa"},
     "HGT": {
         "description": "Terrain Height",
         "units": "m",

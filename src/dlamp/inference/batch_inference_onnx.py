@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 from omegaconf import DictConfig
@@ -22,9 +22,7 @@ class BatchInferenceOnnx(InferenceBase):
         super().__init__(cfg, eval_cases)
 
     def _setup(self):
-        self.ort_sess = init_ort_instance(
-            gpu_id=self.cfg.inference.gpu_id, onnx_path=self.cfg.inference.onnx_path
-        )
+        self.ort_sess = init_ort_instance(gpu_id=self.cfg.inference.gpu_id, onnx_path=self.cfg.inference.onnx_path)
 
         log.info(f"onnx runtime session is ready on GPU {self.cfg.inference.gpu_id}")
 
@@ -65,15 +63,13 @@ class BatchInferenceOnnx(InferenceBase):
                 }
                 inp_upper, inp_surface = self.ort_sess.run(None, ort_inputs)
 
-                #if (step + 1) % interval == 0:
+                # if (step + 1) % interval == 0:
                 #    tmp_upper.append(inp_upper.copy())
                 #    tmp_sfc.append(inp_surface.copy())
 
                 curr_time = self.init_time[batch_id] + timedelta(hours=step + 1)
                 if self.cfg.data.add_time_features:
-                    time_features = TimeUtil.create_time_features(
-                        curr_time, inp_surface.shape[2:4]
-                    )  # (H, W, 4)
+                    time_features = TimeUtil.create_time_features(curr_time, inp_surface.shape[2:4])  # (H, W, 4)
                     time_features = np.expand_dims(time_features, axis=(0, 1))
                     inp_surface = np.concatenate((inp_surface, time_features), axis=-1)
 
@@ -115,4 +111,4 @@ class BatchInferenceOnnx(InferenceBase):
         for product_type, tensor in predictions.items():
             setattr(self, product_type, tensor)
 
-        log.info(f"Batch inference finished at {datetime.now()}")
+        log.info(f"Batch inference finished at {datetime.now(UTC)}")

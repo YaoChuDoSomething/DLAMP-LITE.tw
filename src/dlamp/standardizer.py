@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import numpy as np
 import yaml
@@ -13,9 +12,6 @@ from tqdm import tqdm
 from .const import BLACKLIST_PATH
 from .runtime_config import RuntimeConfig
 from .utils import DataCompose, DataGenerator, DataType, gen_path
-
-if TYPE_CHECKING:
-    from .utils import DataCompose
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +72,7 @@ class Standardizer:
         is_surface = array.shape[1 if num_array_dim == 5 else 0] == 1
         return self._destandardize(array, is_surface)
 
-    def _destandardize(
-        self, array: np.ndarray, is_sfc: bool
-    ) -> np.ndarray:
+    def _destandardize(self, array: np.ndarray, is_sfc: bool) -> np.ndarray:
         """Handle destandardization for surface or upper-level variables."""
         new_array = np.zeros_like(array)
 
@@ -103,15 +97,11 @@ class Standardizer:
                     array[:, lv_idx, :, :, var_idx], stat, dc
                 )
             else:
-                new_array[lv_idx, :, :, var_idx] = self._destandardize_array(
-                    array[lv_idx, :, :, var_idx], stat, dc
-                )
+                new_array[lv_idx, :, :, var_idx] = self._destandardize_array(array[lv_idx, :, :, var_idx], stat, dc)
 
         return new_array
 
-    def _destandardize_array(
-        self, array: np.ndarray, stat: dict[str, float], dc: DataCompose
-    ) -> np.ndarray:
+    def _destandardize_array(self, array: np.ndarray, stat: dict[str, float], dc: DataCompose) -> np.ndarray:
         """Apply destandardization to a single array using statistics from stat_dict."""
         if abs(stat["mean"]) < MEAN_THRESHOLD:
             return array
@@ -122,69 +112,55 @@ class Standardizer:
 
     def calc_standardization(
         self,
-        start_time: datetime = datetime(2021, 1, 1),
-        end_time: datetime = datetime(2022, 12, 31),
+        start_time: datetime = datetime(2021, 1, 1, tzinfo=UTC),
+        end_time: datetime = datetime(2022, 12, 31, tzinfo=UTC),
         sample_size: int = 100,
         num_criteria: int = 1000,
     ) -> None:
         """Calculate the mean and standard deviation from a dataset within a specified time range."""
-        logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-        )
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
         with open(self._config.data_config_path, "r") as stream:
             data_config = yaml.safe_load(stream)
 
         with open(BLACKLIST_PATH, "r") as f:
             blacklist = [
-                datetime.strptime(line.strip(), "%Y-%m-%d %H:%M")
+                datetime.strptime(line.strip(), "%Y-%m-%d %H:%M").replace(tzinfo=UTC)
                 for line in f
                 if line.strip()
             ]
 
         data_list = DataCompose.from_config(data_config["train_data"])
         data_gnrt = DataGenerator(data_config["data_shape"], data_config["image_shape"])
-        use_Kth_hour_pred = (
-            data_config["use_Kth_hour_pred"] if "use_Kth_hour_pred" in data_config else None
-        )
+        use_Kth_hour_pred = data_config.get("use_Kth_hour_pred", None)
 
         def _progress_one_step(dt, month_cnt):
             dt += timedelta(hours=8)
             if (dt - start_time) / timedelta(days=30) > month_cnt:
                 month_cnt += 1
-                logging.info(f"now is processing {dt}")
+                logger.info(f"now is processing {dt}")
             return dt, month_cnt
 
         for data_compose in tqdm(data_list):
             dt = start_time
             month_cnt = 0
             container = []
-            logging.info(f"start executing {data_compose}")
+            logger.info(f"start executing {data_compose}")
 
             if str(data_compose) in self._stat_dict:
-                logging.info(
-                    f"skip {data_compose} because it already exists in {self._config.standardization_path}"
-                )
+                logger.info(f"skip {data_compose} because it already exists in {self._config.standardization_path}")
                 continue
 
             while dt < end_time:
-                if (
-                    gen_path(dt, data_compose, use_Kth_hour_pred).exists()
-                    and dt not in blacklist
-                ):
-                    data: np.ndarray = data_gnrt.yield_data(
-                        dt, data_compose, use_Kth_hour_pred=use_Kth_hour_pred
-                    )
+                if gen_path(dt, data_compose, use_Kth_hour_pred).exists() and dt not in blacklist:
+                    data: np.ndarray = data_gnrt.yield_data(dt, data_compose, use_Kth_hour_pred=use_Kth_hour_pred)
 
                     indices = np.arange(data.size)
                     chosen_indices = np.random.choice(indices, sample_size, replace=False)
                     rows, cols = np.unravel_index(chosen_indices, data.shape)
                     random_values = data[rows, cols]
 
-                    if (
-                        data_compose.var_name == DataType.SWDOWN
-                        and np.mean(random_values) == 0
-                    ):
+                    if data_compose.var_name == DataType.SWDOWN and np.mean(random_values) == 0:
                         dt, month_cnt = _progress_one_step(dt, month_cnt)
                         continue
 
@@ -198,9 +174,7 @@ class Standardizer:
             filtered_data = all_data[(all_data > lower_bound) & (all_data < upper_bound)]
 
             if len(filtered_data) < num_criteria:
-                logging.info(
-                    f"skip {data_compose} because data sample {len(filtered_data)} is not enough"
-                )
+                logger.info(f"skip {data_compose} because data sample {len(filtered_data)} is not enough")
                 continue
 
             self._stat_dict[str(data_compose)] = {
@@ -224,6 +198,7 @@ def get_standardizer(config: RuntimeConfig | None = None) -> Standardizer:
     if not hasattr(get_standardizer, "_singleton"):
         if config is None:
             from .runtime_config import get_runtime_config
+
             config = get_runtime_config()
         get_standardizer._singleton = Standardizer(config)
     return get_standardizer._singleton

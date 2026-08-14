@@ -90,9 +90,7 @@ class DataManager(L.LightningDataModule):
 
         self._already_called[stage] = True
         self.info_log(f'Stage "{stage}" setup done')
-        self.info_log(
-            f"Total data collected: {len(self.dtm.time_list)}, Sampling Rate: {self.hparams.sampling_rate}"
-        )
+        self.info_log(f"Total data collected: {len(self.dtm.time_list)}, Sampling Rate: {self.hparams.sampling_rate}")
         self.info_log(
             f"Training Data Size: {len(self.dtm.train_time) // self.hparams.sampling_rate}, "
             f"Validating Data Size: {len(self.dtm.valid_time) // self.hparams.sampling_rate}, "

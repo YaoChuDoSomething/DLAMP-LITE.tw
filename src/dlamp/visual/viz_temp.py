@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,7 +24,7 @@ class VizTemp(TwBackground):
         lat: np.ndarray,
         ground_truth: np.ndarray,
         prediction: np.ndarray,
-        all_init_times: list[datetime] = [],
+        all_init_times: list[datetime] | None = None,
         grid_on: bool = False,
     ) -> tuple[Figure, Axes]:
         """
@@ -36,6 +36,8 @@ class VizTemp(TwBackground):
             all_init_times (list[datetime]): A list of all initial times in length S.
             grid_on (bool, optional): Whether to show grid. Defaults to False.
         """
+        if all_init_times is None:
+            all_init_times = []
         assert len(ground_truth.shape) == 3
         assert ground_truth.shape[-2:] == lat.shape
 
@@ -48,24 +50,16 @@ class VizTemp(TwBackground):
         # ground truth
         for j in range(columns):
             tmp_ax = ax[0, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax, grid_on)
-            fig, tmp_ax = self._plot_temp(
-                fig, tmp_ax, lon, lat, ground_truth[j], time_title
-            )
+            fig, tmp_ax = self._plot_temp(fig, tmp_ax, lon, lat, ground_truth[j], time_title)
 
         # prediction
         for j in range(columns):
             tmp_ax = ax[1, j]
-            time_title = (
-                all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
-            )
+            time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax, grid_on)
-            fig, tmp_ax = self._plot_temp(
-                fig, tmp_ax, lon, lat, prediction[j], time_title
-            )
+            fig, tmp_ax = self._plot_temp(fig, tmp_ax, lon, lat, prediction[j], time_title)
 
         return fig, ax
 
@@ -124,9 +118,11 @@ class VizTemp(TwBackground):
         lon: np.ndarray,
         lat: np.ndarray,
         data: np.ndarray,
-        titles: list[str] = [],
+        titles: list[str] | None = None,
         grid_on: bool = False,
     ):
+        if titles is None:
+            titles = []
         cols = data.shape[0]
 
         plt.close()
@@ -141,7 +137,7 @@ class VizTemp(TwBackground):
 
 
 if __name__ == "__main__":
-    target_time = datetime(2022, 10, 16, 0)
+    target_time = datetime(2022, 10, 16, 0, tzinfo=UTC)
     t850 = gen_data(target_time, DataCompose(DataType.T, Level.Hpa850))
     data_lat = gen_data(target_time, DataCompose(DataType.Lat, Level.Surface))
     data_lon = gen_data(target_time, DataCompose(DataType.Lon, Level.Surface))

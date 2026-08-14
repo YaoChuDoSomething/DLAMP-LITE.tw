@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import lightning as L
 import torch
@@ -33,9 +33,7 @@ class LogPredictionSamplesCallback(Callback):
         self.log_target_imgs = []
         self.log_pred_imgs = []
 
-    def on_validation_start(
-        self, trainer: L.Trainer, pl_module: L.LightningModule
-    ) -> None:
+    def on_validation_start(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
         if self.already_load_data_for_plot == True:
             return
 
@@ -47,14 +45,14 @@ class LogPredictionSamplesCallback(Callback):
         self.data_lon = data_gnrt.yield_data(custom_dataset._init_time_list[0], dc_lon)
 
         # choose cases from `src.const.EVAL_CASES`
-        cases = [datetime(2022, 9, 12)]  # datetime(2022, 10, 16)
+        cases = [datetime(2022, 9, 12, tzinfo=UTC)]  # datetime(2022, 10, 16)
         standardizer = get_standardizer()
         for case in cases:
             internal_idx = custom_dataset.get_internal_index_from_dt(case)
             input, target = custom_dataset[internal_idx]
 
             # Input Data: (lv, H, W, C) -> (1, lv, H, W, C)
-            for k in input.keys():
+            for k in input:
                 input[k] = torch.from_numpy(input[k][None]).cuda()
             self.log_input_tensors.append(input)  # torch.Tensor
 
@@ -89,9 +87,7 @@ class LogPredictionSamplesCallback(Callback):
 
             # table.add_data(idx, wandb.Image(fig_pd), wandb.Image(fig_gt))
 
-        wandb_logger.log(
-            {"ground truth": self.log_target_imgs, "predictions": self.log_pred_imgs}
-        )
+        wandb_logger.log({"ground truth": self.log_target_imgs, "predictions": self.log_pred_imgs})
         # wandb_logger.log({"prediction_table": table})
 
         self.log_pred_imgs.clear()

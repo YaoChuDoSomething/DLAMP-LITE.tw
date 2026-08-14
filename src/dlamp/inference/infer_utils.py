@@ -74,9 +74,7 @@ def ort_instance_decorator(func):
         elif gpu_id is not None:
             return partial(func, gpu_id=gpu_id)
         else:
-            raise RuntimeError(
-                "onnx_path and gpu_id are both None. Please specify onnx_path and gpu_id."
-            )
+            raise RuntimeError("onnx_path and gpu_id are both None. Please specify onnx_path and gpu_id.")
 
     return wrapper
 
@@ -137,16 +135,12 @@ def load_pangu_model(
         cfg_lightning = yaml.safe_load(stream)
 
     # build model
-    pangu_builder = PanguBuilder(
-        "dummy", data_list, image_shape=image_shape, **cfg_model, **cfg_lightning
-    )
+    pangu_builder = PanguBuilder("dummy", data_list, image_shape=image_shape, **cfg_model, **cfg_lightning)
     model = pangu_builder._backbone_model()
 
     # load weights from checkpoint
     ckpt = torch.load(ckpt_path, weights_only=False)
-    state_dict = {
-        k.replace("backbone_model.", ""): v for k, v in ckpt["state_dict"].items()
-    }
+    state_dict = {k.replace("backbone_model.", ""): v for k, v in ckpt["state_dict"].items()}
     model.load_state_dict(state_dict)
 
     return lambda device: model.to(device)

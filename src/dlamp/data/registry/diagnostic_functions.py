@@ -1,21 +1,19 @@
 import numpy as np
 import xarray as xr
-import yaml
+
 
 def _create_dataarray(
-        data: np.ndarray,
-        ds: xr.Dataset,
-        var_name: str,
-        long_name: str,
-        units: str,
-    ) -> xr.DataArray:
-    """
-
-    """
+    data: np.ndarray,
+    ds: xr.Dataset,
+    var_name: str,
+    long_name: str,
+    units: str,
+) -> xr.DataArray:
+    """Build an xarray DataArray with standard coordinates and metadata."""
 
     # setup default coords
     coords = {"Time": ds["Time"]}
-    #coords["pres_bottom_top"] = {}
+    # coords["pres_bottom_top"] = {}
     dims = ["Time"]
 
     if var_name == "pres_levels":
@@ -29,18 +27,22 @@ def _create_dataarray(
 
     elif data.ndim == 3:
         dims += ["pres_bottom_top", "south_north", "west_east"]
-        coords.update({
-            "pres_bottom_top": ds["pres_bottom_top"],
-            "south_north": ds["south_north"],
-            "west_east": ds["west_east"],
-        })
+        coords.update(
+            {
+                "pres_bottom_top": ds["pres_bottom_top"],
+                "south_north": ds["south_north"],
+                "west_east": ds["west_east"],
+            }
+        )
 
     elif data.ndim == 2:
         dims += ["south_north", "west_east"]
-        coords.update({
-            "south_north": ds["south_north"],
-            "west_east": ds["west_east"],
-        })
+        coords.update(
+            {
+                "south_north": ds["south_north"],
+                "west_east": ds["west_east"],
+            }
+        )
 
     return xr.DataArray(
         np.expand_dims(data, axis=0).astype(np.float32),
@@ -50,22 +52,23 @@ def _create_dataarray(
         attrs={
             "long_name": long_name,
             "units": units,
-            #"dtype": str(data.dtype),
-        }
+            # "dtype": str(data.dtype),
+        },
     )
+
 
 def sat_vapor_pressure_water(T):  # T in Celsius
     return 6.112 * np.exp((17.67 * T) / (T + 243.5))  # hPa
+
 
 def diag_z_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
     Geopotential height = geopotential / g
 
     """
-    g = 9.80665 # Standard gravity constant
+    g = 9.80665  # Standard gravity constant
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["z"].values) / g
             nc_key = "z_p"
@@ -90,14 +93,11 @@ def diag_tk_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["t"].values)
-            nc_key = "tk_p"
 
         case "ERA5_r":
             data = np.squeeze(ds["tk_p"].values)
-            nc_key = "t"
 
         case "RWRF":
             data = np.squeeze(ds["tk_p"].values)
@@ -115,7 +115,6 @@ def diag_umet_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["u"].values)
             nc_key = "umet_p"
@@ -141,7 +140,6 @@ def diag_vmet_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["v"].values)
             nc_key = "vmet_p"
@@ -167,16 +165,15 @@ def diag_QVAPOR_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             if "q" in ds:
                 q = np.squeeze(ds["q"].values)
-                data = q/(1-q)
+                data = q / (1 - q)
             elif "r" in ds and "t" in ds and "pres_levels" in ds:
                 # Convert relative humidity to mixing ratio
                 rh = np.squeeze(ds["r"].values) / 100.0  # convert to fraction
                 t = np.squeeze(ds["t"].values)  # temperature in Kelvin
-                p = np.squeeze(ds["pres_levels"].values) * 100 # pressure in Pa
+                p = np.squeeze(ds["pres_levels"].values) * 100  # pressure in Pa
 
                 # Convert temperature to Celsius for vapor pressure calculation
                 t_celsius = t - 273.15
@@ -188,7 +185,7 @@ def diag_QVAPOR_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
                 e = rh * es
 
                 # Mixing ratio
-                data = (0.622 * e) / (p / 100.0 - e) # p/100.0 to convert Pa to hPa
+                data = (0.622 * e) / (p / 100.0 - e)  # p/100.0 to convert Pa to hPa
             else:
                 data = np.nan
 
@@ -208,10 +205,9 @@ def diag_QRAIN_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             q = np.squeeze(ds["crwc"].values)
-            data = q/(1-q)
+            data = q / (1 - q)
 
         case "RWRF":
             data = np.squeeze(ds["QRAIN_p"].values)
@@ -229,10 +225,9 @@ def diag_QCLOUD_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             q = np.squeeze(ds["clwc"].values)
-            data = q/(1-q)
+            data = q / (1 - q)
 
         case "RWRF":
             data = np.squeeze(ds["QCLOUD_p"].values)
@@ -250,10 +245,9 @@ def diag_QSNOW_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             q = np.squeeze(ds["cswc"].values)
-            data = q/(1-q)
+            data = q / (1 - q)
 
         case "RWRF":
             data = np.squeeze(ds["QSNOW_p"].values)
@@ -271,10 +265,9 @@ def diag_QICE_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             q = np.squeeze(ds["ciwc"].values)
-            data = q/(1-q)
+            data = q / (1 - q)
 
         case "RWRF":
             data = np.squeeze(ds["QICE_p"].values)
@@ -292,10 +285,9 @@ def diag_QGRAUP_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             q = np.squeeze(ds["q"].values) * 0
-            data = q/(1-q)
+            data = q / (1 - q)
 
         case "RWRF":
             data = np.squeeze(ds["QGRAUP_p"].values)
@@ -313,7 +305,6 @@ def diag_QTOTAL_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             qlist = ["clwc", "crwc", "ciwc", "cswc"]
             # Convert each specific humidity to mixing ratio first, then sum them up.
@@ -336,16 +327,14 @@ def diag_wa_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     omega [Pa s-1] to w [m s-1]
 
     """
-    Rd = 287.058 # Dry air gas constant J/(kg K)
-    epsilon = 0.622 # Ratio of molecular weight of water vapor to dry air
-    g = 9.80665 # Standard gravity constant
+    Rd = 287.058  # Dry air gas constant J/(kg K)
+    g = 9.80665  # Standard gravity constant
 
     match source_dataset:
-
         case "ERA5":
             omega = np.squeeze(ds["w"].values)
             tmk = np.squeeze(ds["t"].values)
-            plev = np.squeeze(ds["pres_levels"].values * 100) # pressure in Pa
+            plev = np.squeeze(ds["pres_levels"].values * 100)  # pressure in Pa
 
             if "q" in ds:
                 q = np.squeeze(ds["q"].values)
@@ -353,7 +342,7 @@ def diag_wa_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
             elif "r" in ds and "t" in ds and "pres_levels" in ds:
                 # Convert relative humidity to mixing ratio
                 rh = np.squeeze(ds["r"].values) / 100.0  # convert to fraction
-                t_celsius = tmk - 273.15 # temperature in Celsius
+                t_celsius = tmk - 273.15  # temperature in Celsius
 
                 # Saturation vapor pressure (hPa)
                 es = sat_vapor_pressure_water(t_celsius)
@@ -362,9 +351,9 @@ def diag_wa_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
                 e = rh * es
 
                 # Mixing ratio
-                qvp = (0.622 * e) / (plev / 100.0 - e) # plev/100.0 to convert Pa to hPa
+                qvp = (0.622 * e) / (plev / 100.0 - e)  # plev/100.0 to convert Pa to hPa
             else:
-                qvp = np.zeros_like(tmk) # Default to 0 if no humidity data
+                qvp = np.zeros_like(tmk)  # Default to 0 if no humidity data
 
             t_virt = tmk * (1 + 0.61 * qvp)
 
@@ -382,6 +371,7 @@ def diag_wa_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
 
     return _create_dataarray(data, ds, "wa_p", "Vertical Velocity", "m s-1")
 
+
 def diag_T2(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
     Air Temperature at 2 m height above surface
@@ -389,7 +379,6 @@ def diag_T2(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["2t"].values)
 
@@ -409,7 +398,6 @@ def diag_Q2(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             td2 = np.squeeze(ds["2d"].values)
             sp = np.squeeze(ds["sp"].values)
@@ -432,11 +420,9 @@ def diag_rh2(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             td2 = np.squeeze(ds["2d"].values)
             t2 = np.squeeze(ds["2t"].values)
-            sp = np.squeeze(ds["sp"].values)
             e = sat_vapor_pressure_water(td2 - 273.15) * 100  # [Pa]
             esat = sat_vapor_pressure_water(t2 - 273.15) * 100  # [Pa]
             data = e / esat * 100
@@ -457,7 +443,6 @@ def diag_td2(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["2d"].values)
 
@@ -477,7 +462,6 @@ def diag_umet10(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["10u"].values)
 
@@ -497,7 +481,6 @@ def diag_vmet10(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["10v"].values)
 
@@ -509,6 +492,7 @@ def diag_vmet10(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
 
     return _create_dataarray(data, ds, "vmet10", "10m V-component of Wind", "m s-1")
 
+
 def diag_umet100(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
     U-wind at 100 m height above surface
@@ -516,7 +500,6 @@ def diag_umet100(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["100u"].values)
             nc_key = "umet100"
@@ -543,7 +526,6 @@ def diag_vmet100(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["100v"].values)
             nc_key = "vmet100"
@@ -570,14 +552,11 @@ def diag_slp(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
-            data = np.squeeze(ds["msl"].values) / 100.
-            nc_key = "slp"
+            data = np.squeeze(ds["msl"].values) / 100.0
 
         case "ERA5_r":
-            data = np.squeeze(ds["slp"].values) * 100.
-            nc_key = "msl"
+            data = np.squeeze(ds["slp"].values) * 100.0
 
         case "RWRF":
             data = np.squeeze(ds["slp"].values)
@@ -595,12 +574,11 @@ def diag_SST(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["sst"].values)
             nc_key = "SST"
-            #sst[np.isnan(sst)] = np.nanmean(sst.ravel())
-            #data = sst
+            # sst[np.isnan(sst)] = np.nanmean(sst.ravel())
+            # data = sst
 
         case "ERA5_r":
             data = np.squeeze(ds["SST"].values)
@@ -622,7 +600,6 @@ def diag_PSFC(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["sp"].values)
             nc_key = "PSFC"
@@ -648,7 +625,6 @@ def diag_pw(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["tcwv"].values)
             nc_key = "pw"
@@ -674,7 +650,6 @@ def diag_PBLH(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["blh"].values)
 
@@ -694,7 +669,6 @@ def diag_RAINNC(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["tp"].values)
 
@@ -714,7 +688,6 @@ def diag_SWDOWN(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["ssrd"].values) / 3600
 
@@ -734,7 +707,6 @@ def diag_OLR(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             data = np.squeeze(ds["ttr"].values) / 3600
 
@@ -754,17 +726,16 @@ def diag_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
 
     match source_dataset:
-
         case "ERA5":
             tmk = np.squeeze(ds["t"].values)
-            qvp = np.squeeze(ds["q"].values)/(1-np.squeeze(ds["q"].values))
-            qra = np.squeeze(ds["crwc"].values/(1-ds["crwc"].values))
-            qsn = np.squeeze(ds["cswc"].values/(1-ds["cswc"].values))
+            qvp = np.squeeze(ds["q"].values) / (1 - np.squeeze(ds["q"].values))
+            qra = np.squeeze(ds["crwc"].values / (1 - ds["crwc"].values))
+            qsn = np.squeeze(ds["cswc"].values / (1 - ds["cswc"].values))
             qgr = np.zeros(np.shape(tmk))
             prs = np.zeros(np.shape(tmk))
             plev = np.squeeze(ds["pres_levels"].values)
             for pl in range(len(plev)):
-                prs[pl,:,:] = (plev[pl] * 100)
+                prs[pl, :, :] = plev[pl] * 100
 
         case "RWRF":
             tmk = np.squeeze(ds["tk_p"].values)
@@ -775,7 +746,7 @@ def diag_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
             prs = np.zeros(np.shape(tmk))
             plev = np.squeeze(ds["pres_levels"].values)
             for pl in range(len(plev)):
-                prs[pl,:,:] = (plev[pl] * 100.0)
+                prs[pl, :, :] = plev[pl] * 100.0
 
         case _:
             template_shape = ds["t" if "t" in ds else "tk_p"].values.shape
@@ -796,19 +767,22 @@ def diag_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
 
     virtual_t = tmk * (1 + 0.61 * qvp)
 
-    rhoair = prs / (287.04 * virtual_t) # prs_val.values 假設可以自動廣播
+    rhoair = prs / (287.04 * virtual_t)  # prs_val.values 假設可以自動廣播
 
-    factor_r = 720 * 1e18 * (1 / (np.pi * 1000))**1.75
-    factor_s = factor_r * (0.224 * (100 / 1000)**2)
-    factor_g = factor_r * (0.224 * (400 / 1000)**2)
+    factor_r = 720 * 1e18 * (1 / (np.pi * 1000)) ** 1.75
+    factor_s = factor_r * (0.224 * (100 / 1000) ** 2)
+    factor_g = factor_r * (0.224 * (400 / 1000) ** 2)
 
-    z_e = (factor_r * (rhoair * qra)**1.75 / (8e6 if ivarint == 0 else 1e10)**0.75 +
-           factor_s * (rhoair * qsn)**1.75 / (2e7 if ivarint == 0 else 2e8)**0.75 +
-           factor_g * (rhoair * qgr)**1.75 / (4e6 if ivarint == 0 else 5e7)**0.75)
+    z_e = (
+        factor_r * (rhoair * qra) ** 1.75 / (8e6 if ivarint == 0 else 1e10) ** 0.75
+        + factor_s * (rhoair * qsn) ** 1.75 / (2e7 if ivarint == 0 else 2e8) ** 0.75
+        + factor_g * (rhoair * qgr) ** 1.75 / (4e6 if ivarint == 0 else 5e7) ** 0.75
+    )
 
     data = 10 * np.log10(np.maximum(z_e, 0.001))
 
     return _create_dataarray(data, ds, "REFL", "Emulated Radar Reflectivity", "dBZ")
+
 
 def diag_MAX_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
@@ -819,7 +793,6 @@ def diag_MAX_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     # We take the maximum over the pressure level axis (axis=1)
     _, nl, ny, nx = np.shape(REFL.values)
 
-    data =  np.max(np.reshape(REFL.values, (nl, ny, nx)), axis=0)
+    data = np.max(np.reshape(REFL.values, (nl, ny, nx)), axis=0)
 
     return _create_dataarray(data, ds, "MAX_REFL", "Emulated Column Maximum Radar Reflectivity", "dBZ")
-

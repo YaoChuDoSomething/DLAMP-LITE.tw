@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import torch
@@ -84,9 +84,7 @@ class BatchInferenceCkpt(InferenceBase):
 
                 curr_time = self.init_time[batch_id] + timedelta(hours=step + 1)
                 if self.cfg.data.add_time_features:
-                    time_features = TimeUtil.create_time_features(
-                        curr_time, inp_surface.shape[2:4]
-                    )  # (H, W, 4)
+                    time_features = TimeUtil.create_time_features(curr_time, inp_surface.shape[2:4])  # (H, W, 4)
                     time_features = np.expand_dims(time_features, axis=(0, 1))
                     inp_surface = np.concatenate((inp_surface, time_features), axis=-1)
 
@@ -127,4 +125,4 @@ class BatchInferenceCkpt(InferenceBase):
         for product_type, tensor in predictions.items():
             setattr(self, product_type, tensor)
 
-        log.info(f"Batch inference finished at {datetime.now()}")
+        log.info(f"Batch inference finished at {datetime.now(UTC)}")

@@ -27,9 +27,7 @@ from dlamp.runtime_config import RuntimeConfig, get_runtime_config
 
 logger = logging.getLogger(__name__)
 
-_SUPPORTED_METHODS = frozenset(
-    {"extract_from_nc", "gen_tw_cn_terrain", "gen_tw_only_terrain"}
-)
+_SUPPORTED_METHODS = frozenset({"extract_from_nc", "gen_tw_cn_terrain", "gen_tw_only_terrain"})
 
 
 class DataPrepRunner:
@@ -57,10 +55,7 @@ class DataPrepRunner:
 
         method: str = cfg.data_prep.method
         if method not in _SUPPORTED_METHODS:
-            raise ValueError(
-                f"Unsupported data_prep.method '{method}'. "
-                f"Choose from: {sorted(_SUPPORTED_METHODS)}"
-            )
+            raise ValueError(f"Unsupported data_prep.method '{method}'. Choose from: {sorted(_SUPPORTED_METHODS)}")
         self._method = method
 
     def run(self) -> dict[str, Any]:
@@ -88,12 +83,8 @@ class DataPrepRunner:
         else:
             artifacts = self._gen_tw_only_terrain()
 
-        out_dir = str(
-            self.runtime_config.standardization_path.parent / "constant_masks"
-        )
-        logger.info(
-            "DataPrepRunner: wrote %d artefact(s) to %s", len(artifacts), out_dir
-        )
+        out_dir = str(self.runtime_config.standardization_path.parent / "constant_masks")
+        logger.info("DataPrepRunner: wrote %d artefact(s) to %s", len(artifacts), out_dir)
         return {"method": self._method, "output_dir": out_dir, "artifacts": artifacts}
 
     # ------------------------------------------------------------------
@@ -106,9 +97,9 @@ class DataPrepRunner:
         Returns:
             list[str]: Paths of the two ``.npy`` files written.
         """
-        import yaml
-        import xarray as xr
         import numpy as np
+        import xarray as xr
+        import yaml
 
         from dlamp.const import REPO_ROOT
         from dlamp.utils import gen_path
@@ -117,16 +108,13 @@ class DataPrepRunner:
         with open(rc.data_config_path, "r") as fh:
             data_config = yaml.safe_load(fh)
 
-        from datetime import datetime
+        from datetime import UTC, datetime
 
-        start_t = datetime.strptime(
-            data_config["start_time"], data_config["format"]
-        )
+        start_t = datetime.strptime(data_config["start_time"], data_config["format"]).replace(tzinfo=UTC)
         filename = gen_path(start_t)
         if not Path(str(filename)).exists():
             raise FileNotFoundError(
-                f"Source NetCDF not found: {filename}. "
-                "Ensure DLAMP_DATA_PATH and DLAMP_EXP_CODE are correct."
+                f"Source NetCDF not found: {filename}. Ensure DLAMP_DATA_PATH and DLAMP_EXP_CODE are correct."
             )
 
         data_shape = data_config["data_shape"]

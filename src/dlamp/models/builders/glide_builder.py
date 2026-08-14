@@ -57,9 +57,7 @@ class GlideBuilder(BaseBuilder):
                 image_shape=self.kwargs.image_shape,
             )
         else:
-            raise ValueError(
-                "Either regression_onnx_path or regressoin_ckpt_path must be provided."
-            )
+            raise ValueError("Either regression_onnx_path or regressoin_ckpt_path must be provided.")
 
     def build_model(self, test_dataloader: DataLoader | None = None) -> LightningModule:
         if self.kwargs.diffusion_type == "DDPM":
@@ -84,23 +82,15 @@ class GlideBuilder(BaseBuilder):
 
     def build_trainer(self, logger) -> Trainer:
         # set number of GPUs
-        num_gpus = (
-            torch.cuda.device_count()
-            if self.kwargs.num_gpus is None
-            else self.kwargs.num_gpus
-        )
+        num_gpus = torch.cuda.device_count() if self.kwargs.num_gpus is None else self.kwargs.num_gpus
 
         # distributed training strategy
         strategy = getattr(self.kwargs, "strategy", "auto")
         match strategy:
             case "FULL_SHARD":
-                strategy = FSDPStrategy(
-                    sharding_strategy="FULL_SHARD", state_dict_type="sharded"
-                )
+                strategy = FSDPStrategy(sharding_strategy="FULL_SHARD", state_dict_type="sharded")
             case "SHARD_GRAD_OP":
-                strategy = FSDPStrategy(
-                    sharding_strategy="SHARD_GRAD_OP", state_dict_type="sharded"
-                )
+                strategy = FSDPStrategy(sharding_strategy="SHARD_GRAD_OP", state_dict_type="sharded")
             case _:
                 pass
 
@@ -109,15 +99,9 @@ class GlideBuilder(BaseBuilder):
         callbacks.append(LearningRateMonitor())
         callbacks.append(self.checkpoint_callback())
         if self.kwargs.log_image_every_n_steps is not None:
-            callbacks.append(
-                LogDiffusionPredSamplesCallback(self.kwargs.log_image_every_n_steps)
-            )
+            callbacks.append(LogDiffusionPredSamplesCallback(self.kwargs.log_image_every_n_steps))
         if self.kwargs.early_stop_patience is not None:
-            callbacks.append(
-                EarlyStopping(
-                    monitor="val_loss_epoch", patience=self.kwargs.early_stop_patience
-                )
-            )
+            callbacks.append(EarlyStopping(monitor="val_loss_epoch", patience=self.kwargs.early_stop_patience))
 
         return Trainer(
             num_sanity_val_steps=2,
@@ -160,8 +144,6 @@ class GlideBuilder(BaseBuilder):
             save_dir=save_dir,
             log_model=False,  # log W&B artifacts
             project="my-burdensome-project",
-            name=self.kwargs.model_name
-            + f"_{self.kwargs.diffusion_type}"
-            + f"_{self.time_stamp}",
+            name=self.kwargs.model_name + f"_{self.kwargs.diffusion_type}" + f"_{self.time_stamp}",
             offline=True,
         )

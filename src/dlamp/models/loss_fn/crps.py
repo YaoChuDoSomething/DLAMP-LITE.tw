@@ -27,13 +27,10 @@ class CRPS(nn.Module):
         # use sigmoid to approximate the cdf, since genuine method:
         # return torch.mean((data.unsqueeze(1) <= x.unsqueeze(0)).float(), dim=0)
         # is not continuous.
-        return torch.mean(
-            torch.sigmoid((x.unsqueeze(0) - data.unsqueeze(1)) * 1000), dim=0
-        )
+        return torch.mean(torch.sigmoid((x.unsqueeze(0) - data.unsqueeze(1)) * 1000), dim=0)
 
 
 class L1CRPS(nn.Module):
-
     def __init__(self):
         super().__init__()
 

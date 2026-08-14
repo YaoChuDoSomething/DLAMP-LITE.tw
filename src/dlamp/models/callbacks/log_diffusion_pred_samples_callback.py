@@ -17,15 +17,12 @@ class LogDiffusionPredSamplesCallback(LogPredictionSamplesCallback):
 
     def on_validation_epoch_end(self, trainer: L.Trainer, pl_module: L.LightningModule):
         global_step = trainer.global_step
-        if pl_module.global_rank != 0 or (
-            global_step != 0 and global_step - self.global_step_record < self.log_freq
-        ):
+        if pl_module.global_rank != 0 or (global_step != 0 and global_step - self.global_step_record < self.log_freq):
             return
 
         wandb_logger: WandbLogger = trainer.logger.experiment
         standardizer = get_standardizer()
         for idx, input in enumerate(self.log_input_tensors):
-            upa_ch = input["upper_air"].shape[-1]
             sfc_ch = input["surface"].shape[-1]
 
             # one-time logging for first guess
@@ -36,17 +33,13 @@ class LogDiffusionPredSamplesCallback(LogPredictionSamplesCallback):
                 regress_sfc = regress[:, -sfc_ch:].permute(0, 2, 3, 1)  # (B, H, W, C2)
                 regress_sfc = regress_sfc.unsqueeze(1).cpu().numpy()  # (B, 1, H, W, C2)
                 regress_sfc = np.squeeze(standardizer.destandardize(regress_sfc))  # (H, W)
-                fig_fg, _ = self.painter.plot_1x1(
-                    self.data_lon, self.data_lat, regress_sfc
-                )
+                fig_fg, _ = self.painter.plot_1x1(self.data_lon, self.data_lat, regress_sfc)
                 self.first_guess.append(regress)
                 self.first_guess_surface.append(regress_sfc)
                 self.log_first_guess_imgs.append(wandb.Image(fig_fg))
 
             # denoising process
-            model_output = pl_module.denoising(
-                self.first_guess[idx], input["upper_air"].device
-            )
+            model_output = pl_module.denoising(self.first_guess[idx], input["upper_air"].device)
             model_output_radar = {}
             for step, output in model_output.items():
                 # extract radar channel (B, 1, H, W, 1)

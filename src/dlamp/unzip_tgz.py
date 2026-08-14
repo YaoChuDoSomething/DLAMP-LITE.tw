@@ -30,14 +30,12 @@ def main():
         new_dir = str(new_dir)
         try:
             if tar_gz_file.endswith("tar.gz"):
-                tar = tarfile.open(tar_gz_file, "r:gz")
-                tar.extractall(new_dir)
-                tar.close()
+                with tarfile.open(tar_gz_file, "r:gz") as tar:
+                    tar.extractall(new_dir)
             elif tar_gz_file.endswith("tar"):
-                tar = tarfile.open(tar_gz_file, "r:")
-                tar.extractall(new_dir)
-                tar.close()
-        except Exception as e:
+                with tarfile.open(tar_gz_file, "r:") as tar:
+                    tar.extractall(new_dir)
+        except Exception as e:  # noqa: BLE001 - broad error boundary on archive extraction
             logger.error(e)
 
         # done

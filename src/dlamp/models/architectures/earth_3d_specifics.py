@@ -45,26 +45,22 @@ class EarthSpecificLayer(nn.Module):
         Returns:
             None
         """
-        assert (
-            len(drop_path_ratio_list) == depth
-        ), "length of drop_path_ratio_list should be equal to depth"
+        assert len(drop_path_ratio_list) == depth, "length of drop_path_ratio_list should be equal to depth"
         super().__init__()
 
         self.depth = depth
         self.blocks = nn.ModuleList(
-            
-                EarthSpecificBlock(
-                    input_shape=input_shape,
-                    dim=dim,
-                    heads=heads,
-                    drop_path_ratio=drop_path_ratio_list[i],
-                    dropout_rate=dropout_rate,
-                    window_size=window_size,
-                    is_rolling=(i % 2 == 1),
-                    reduce_dim=True if i == 0 and skip_concat else False,
-                )
-                for i in range(depth)
-            
+            EarthSpecificBlock(
+                input_shape=input_shape,
+                dim=dim,
+                heads=heads,
+                drop_path_ratio=drop_path_ratio_list[i],
+                dropout_rate=dropout_rate,
+                window_size=window_size,
+                is_rolling=(i % 2 == 1),
+                reduce_dim=(i == 0 and skip_concat),
+            )
+            for i in range(depth)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -183,9 +179,7 @@ class EarthSpecificBlock(nn.Module):
                     img_mask[:, z, h, w, :] = cnt
                     cnt += 1
         mask_windows = window_partition_3d(img_mask, window_size)
-        mask_windows = mask_windows.reshape(
-            -1, window_size[0] * window_size[1] * window_size[2]
-        )
+        mask_windows = mask_windows.reshape(-1, window_size[0] * window_size[1] * window_size[2])
         attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
         attn_mask = attn_mask.masked_fill(attn_mask != 0, (-100.0))
         attn_mask = attn_mask.masked_fill(attn_mask == 0, 0.0)
@@ -214,9 +208,7 @@ class EarthSpecificBlock(nn.Module):
         x = self.attention(x, getattr(self, "attn_mask", None))
 
         # x: shape of (B, inp_Z, inp_H, inp_W, dim)
-        x = window_reverse_3d(
-            x, self.window_size, self.input_shape, from_combine_dim=True
-        )
+        x = window_reverse_3d(x, self.window_size, self.input_shape, from_combine_dim=True)
 
         # forward shift
         if self.is_rolling:
@@ -253,9 +245,7 @@ class EarthAttention3D(nn.Module):
         Returns:
             None
         """
-        assert is_divisible_elementwise(
-            [dim], [heads]
-        ), f"dim {dim} must be divisible by heads {heads}"
+        assert is_divisible_elementwise([dim], [heads]), f"dim {dim} must be divisible by heads {heads}"
         super().__init__()
 
         self.linear1 = nn.Linear(dim, dim * 3, bias=True)
@@ -268,9 +258,7 @@ class EarthAttention3D(nn.Module):
         self.scale = (dim // heads) ** 0.5
 
         self.win_Z, self.win_H, self.win_W = window_size
-        self.num_Z, self.num_H, self.num_W = map(
-            lambda x, y: x // y, input_shape, window_size
-        )
+        self.num_Z, self.num_H, self.num_W = map(lambda x, y: x // y, input_shape, window_size)
 
         # Record the number of different windows of the entire domain
         self.type_of_windows = self.num_Z * self.num_H
@@ -285,9 +273,7 @@ class EarthAttention3D(nn.Module):
             dtype=torch.float32,
         )
         self.earth_specific_bias = nn.Parameter(self.earth_specific_bias)
-        self.earth_specific_bias = nn.init.trunc_normal_(
-            self.earth_specific_bias, std=0.02
-        )
+        self.earth_specific_bias = nn.init.trunc_normal_(self.earth_specific_bias, std=0.02)
 
         self.register_buffer("position_index", self._construct_index())
 
@@ -300,12 +286,8 @@ class EarthAttention3D(nn.Module):
         coords_w = torch.arange(self.win_W)
 
         # Change the order of the index to calculate the index in total
-        coords_1 = torch.stack(
-            torch.meshgrid(coords_zi, coords_hi, coords_w, indexing="ij"), dim=0
-        )
-        coords_2 = torch.stack(
-            torch.meshgrid(coords_zj, coords_hj, coords_w, indexing="ij"), dim=0
-        )
+        coords_1 = torch.stack(torch.meshgrid(coords_zi, coords_hi, coords_w, indexing="ij"), dim=0)
+        coords_2 = torch.stack(torch.meshgrid(coords_zj, coords_hj, coords_w, indexing="ij"), dim=0)
         coords_flatten_1 = torch.flatten(coords_1, start_dim=1)
         coords_flatten_2 = torch.flatten(coords_2, start_dim=1)
         coords = coords_flatten_1[:, :, None] - coords_flatten_2[:, None, :]
@@ -320,9 +302,7 @@ class EarthAttention3D(nn.Module):
         position_index = position_index.flatten()
         return position_index
 
-    def forward(
-        self, x: torch.Tensor, mask: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         """
         Args:
             x (torch.Tensor): Tensor of shape (B*num_windows, win_Z*win_H*win_W, dim)

@@ -46,36 +46,26 @@ def plot_bdy_blending_verification(
     axes[0, 1].set_title(f"Original GT Data (L{l} C{c})")
     fig.colorbar(im, ax=axes[0, 1])
 
-    im = axes[0, 2].imshow(
-        fft_blended_initial[l, :, :, c], cmap="viridis", vmin=vmin, vmax=vmax
-    )
+    im = axes[0, 2].imshow(fft_blended_initial[l, :, :, c], cmap="viridis", vmin=vmin, vmax=vmax)
     axes[0, 2].set_title(f"FFT Blended Initial (L{l} C{c})")
     fig.colorbar(im, ax=axes[0, 2])
 
-    pd_mask_stats = (
-        f"Max: {pd_mask.max():.2f}, Mean: {pd_mask.mean():.2f}, Min: {pd_mask.min():.2f}"
-    )
+    pd_mask_stats = f"Max: {pd_mask.max():.2f}, Mean: {pd_mask.mean():.2f}, Min: {pd_mask.min():.2f}"
     im = axes[1, 0].imshow(pd_mask, cmap="twilight_shifted", vmin=0, vmax=1)
     axes[1, 0].set_title(f"Linear Blend PD Mask\n{pd_mask_stats}")
     fig.colorbar(im, ax=axes[1, 0])
 
-    gt_mask_stats = (
-        f"Max: {gt_mask.max():.2f}, Mean: {gt_mask.mean():.2f}, Min: {gt_mask.min():.2f}"
-    )
+    gt_mask_stats = f"Max: {gt_mask.max():.2f}, Mean: {gt_mask.mean():.2f}, Min: {gt_mask.min():.2f}"
     im = axes[1, 1].imshow(gt_mask, cmap="twilight_shifted", vmin=0, vmax=1)
     axes[1, 1].set_title(f"Linear Blend GT Mask\n{gt_mask_stats}")
     fig.colorbar(im, ax=axes[1, 1])
 
-    im = axes[1, 2].imshow(
-        final_data[0, l, :, :, c], cmap="viridis", vmin=vmin, vmax=vmax
-    )
+    im = axes[1, 2].imshow(final_data[0, l, :, :, c], cmap="viridis", vmin=vmin, vmax=vmax)
     axes[1, 2].set_title(f"Final Blended (FFT + Linear) (L{l} C{c})")
     fig.colorbar(im, ax=axes[1, 2])
 
     os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(
-        save_dir, f"debug_{{dt.strftime('%Y%m%d%H')}}_{method}_L{l}_C{c}.png"
-    )
+    save_path = os.path.join(save_dir, f"debug_{{dt.strftime('%Y%m%d%H')}}_{method}_L{l}_C{c}.png")
     plt.savefig(save_path)
     plt.close(fig)
 
@@ -101,9 +91,7 @@ def plot_fft_blending_debug(
     plt.ioff()
     plt.close("all")
     fig_fft, axes_fft = plt.subplots(4, 4, figsize=(24, 24))
-    fig_fft.suptitle(
-        f"FFT Blending Debug (L{l}, C{c}, Method: {method}) @ {dt}", fontsize=16
-    )
+    fig_fft.suptitle(f"FFT Blending Debug (L{l}, C{c}, Method: {method}) @ {dt}", fontsize=16)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     # --- Pre-calculate all components for the grid ---
@@ -156,9 +144,7 @@ def plot_fft_blending_debug(
 
     # --- Plotting Grid ---
     # Row 0: Masks and Final Result
-    im = axes_fft[0, 0].imshow(
-        blended_spatial_slice, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial
-    )
+    im = axes_fft[0, 0].imshow(blended_spatial_slice, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial)
     axes_fft[0, 0].set_title("[0,0] Final Blended Spatial")
     fig_fft.colorbar(im, ax=axes_fft[0, 0])
 
@@ -197,9 +183,7 @@ def plot_fft_blending_debug(
     fig_fft.colorbar(im, ax=axes_fft[0, 3])
 
     # Row 1: Predicted Data Analysis
-    im = axes_fft[1, 0].imshow(
-        pd_slice, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial
-    )
+    im = axes_fft[1, 0].imshow(pd_slice, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial)
     axes_fft[1, 0].set_title("[1,0] PD Slice (Spatial)")
     fig_fft.colorbar(im, ax=axes_fft[1, 0])
 
@@ -215,22 +199,16 @@ def plot_fft_blending_debug(
     axes_fft[1, 1].set_ylabel("Wavenumber k_y")
     fig_fft.colorbar(im, ax=axes_fft[1, 1])
 
-    im = axes_fft[1, 2].imshow(
-        pd_low_freq_spatial, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial
-    )
+    im = axes_fft[1, 2].imshow(pd_low_freq_spatial, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial)
     axes_fft[1, 2].set_title("[1,2] PD Low-Freq (Spatial)")
     fig_fft.colorbar(im, ax=axes_fft[1, 2])
 
-    im = axes_fft[1, 3].imshow(
-        pd_high_freq_spatial, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial
-    )
+    im = axes_fft[1, 3].imshow(pd_high_freq_spatial, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial)
     axes_fft[1, 3].set_title("[1,3] PD High-Freq (Spatial)")
     fig_fft.colorbar(im, ax=axes_fft[1, 3])
 
     # Row 2: Ground Truth Analysis
-    im = axes_fft[2, 0].imshow(
-        gt_slice, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial
-    )
+    im = axes_fft[2, 0].imshow(gt_slice, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial)
     axes_fft[2, 0].set_title("[2,0] GT Slice (Spatial)")
     fig_fft.colorbar(im, ax=axes_fft[2, 0])
 
@@ -246,47 +224,33 @@ def plot_fft_blending_debug(
     axes_fft[2, 1].set_ylabel("Wavenumber k_y")
     fig_fft.colorbar(im, ax=axes_fft[2, 1])
 
-    im = axes_fft[2, 2].imshow(
-        gt_low_freq_spatial, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial
-    )
+    im = axes_fft[2, 2].imshow(gt_low_freq_spatial, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial)
     axes_fft[2, 2].set_title("[2,2] GT Low-Freq (Spatial)")
     fig_fft.colorbar(im, ax=axes_fft[2, 2])
 
-    im = axes_fft[2, 3].imshow(
-        gt_high_freq_spatial, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial
-    )
+    im = axes_fft[2, 3].imshow(gt_high_freq_spatial, cmap="viridis", vmin=vmin_spatial, vmax=vmax_spatial)
     axes_fft[2, 3].set_title("[2,3] GT High-Freq (Spatial)")
     fig_fft.colorbar(im, ax=axes_fft[2, 3])
 
     # Row 3: Difference Analysis
-    im = axes_fft[3, 0].imshow(
-        diff_spatial, cmap="coolwarm", norm=get_centered_norm(diff_spatial)
-    )
+    im = axes_fft[3, 0].imshow(diff_spatial, cmap="coolwarm", norm=get_centered_norm(diff_spatial))
     axes_fft[3, 0].set_title("[3,0] Diff Spatial (PD-GT)")
     fig_fft.colorbar(im, ax=axes_fft[3, 0])
 
-    im = axes_fft[3, 1].imshow(
-        diff_freq, cmap="coolwarm", norm=get_centered_norm(diff_freq)
-    )
+    im = axes_fft[3, 1].imshow(diff_freq, cmap="coolwarm", norm=get_centered_norm(diff_freq))
     axes_fft[3, 1].set_title("[3,1] Diff Spectrum (PD-GT)")
     fig_fft.colorbar(im, ax=axes_fft[3, 1])
 
-    im = axes_fft[3, 2].imshow(
-        diff_low_freq, cmap="coolwarm", norm=get_centered_norm(diff_low_freq)
-    )
+    im = axes_fft[3, 2].imshow(diff_low_freq, cmap="coolwarm", norm=get_centered_norm(diff_low_freq))
     axes_fft[3, 2].set_title("[3,2] Diff Low-Freq (PD-GT)")
     fig_fft.colorbar(im, ax=axes_fft[3, 2])
 
-    im = axes_fft[3, 3].imshow(
-        diff_high_freq, cmap="coolwarm", norm=get_centered_norm(diff_high_freq)
-    )
+    im = axes_fft[3, 3].imshow(diff_high_freq, cmap="coolwarm", norm=get_centered_norm(diff_high_freq))
     axes_fft[3, 3].set_title("[3,3] Diff High-Freq (PD-GT)")
     fig_fft.colorbar(im, ax=axes_fft[3, 3])
 
     # Save the figure
     os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(
-        save_dir, f"debug_fft_{{dt.strftime('%Y%m%d%H')}}_{method}_L{l}_C{c}.png"
-    )
+    save_path = os.path.join(save_dir, f"debug_fft_{{dt.strftime('%Y%m%d%H')}}_{method}_L{l}_C{c}.png")
     plt.savefig(save_path)
     plt.close(fig_fft)
