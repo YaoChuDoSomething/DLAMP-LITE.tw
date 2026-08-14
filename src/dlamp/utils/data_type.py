@@ -1,60 +1,97 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Self, cast
 
 
 class DataType(Enum):
-    def __new__(cls, short_name: str, description: str, nc_key: str):
+    def __new__(
+        cls,
+        short_name: str,
+        standard_name: str,
+        description: str,
+        units: str,
+        nc_key: str,
+    ) -> Self:
         obj = object.__new__(cls)
-        obj._value_ = (short_name, description, nc_key)
+        obj._value_ = (short_name, standard_name, description, units, nc_key)
         return obj
 
     @property
-    def short_name(self):
-        return self.value[0]
+    def short_name(self) -> str:
+        return cast(str, self.value[0])
 
     @property
-    def description(self):
-        return self.value[1]
+    def standard_name(self) -> str:
+        return cast(str, self.value[1])
 
     @property
-    def nc_key(self):
-        return self.value[2]
+    def description(self) -> str:
+        return cast(str, self.value[2])
 
-    # var_name = (short_name, description, nc_key)
-    PH = ("PH", "Geopotential Height", "z_p")
-    P = ("P", "Pressure Level", "pres_levels")
-    TK = ("TK", "Temperature", "tk_p")
-    UM = ("UM", "U-wind", "umet_p")
-    VM = ("VM", "V-wind", "vmet_p")
-    WA = ("WA", "W-wind", "wa_p")
-    Qv = ("Qv", "Water Vapor Mixing Ratio", "QVAPOR_p")
-    Qr = ("Qr", "Rain Water Mixing Ratio", "QRAIN_p")
-    Qs = ("Qs", "Snow Mixing Ratio", "QSNOW_p")
-    Qg = ("Qg", "Graupel Mixing Ratio", "QGRAUP_p")
-    Qc = ("Qc", "Cloud Water Mixing Ratio", "QCLOUD_p")
-    Qi = ("Qi", "Ice Mixing Ratio", "QICE_p")
-    Qt = ("Qt", "Total Hydrometeors Mixing Ratio", "QTOTAL_p")
-    RH = ("RH", "Relative Humidity", "rh")
-    Td = ("Td", "Dew Point Temperature", "td")
-    SLP = ("SLP", "Sea Level Pressure", "slp")
-    SST = ("SST", "SST", "SST")
-    PSFC = ("PSFC", "Surface Pressure", "PSFC")
-    PW = ("PW", "Precipitable Water", "pw")
-    PBLH = ("PBLH", "PBL Height", "PBLH")
-    RAINNC = ("RAINNC", "Accumulated Precipitation", "RAINNC")
-    SWDOWN = ("SWDOWN", "Downward Shortwave Flux", "SWDOWN")
-    OLR = ("OLR", "Outgoing Longwave Radiation", "OLR")
-    Lat = ("Lat", "Latitude", "XLAT")
-    Lon = ("Lon", "Longitude", "XLONG")
-    MASK = ("MASK", "Land-Sea Mask", "LANDMASK")
-    HGT = ("HGT", "Terrain Height", "HGT")
-    Radar = ("Radar", "Maximum Radar Reflectivity", "MAX_REFL")
-    dBZ = ("dBZ", "Radar Reflectivity", "REFL_p")
+    @property
+    def units(self) -> str:
+        return cast(str, self.value[3])
+
+    @property
+    def nc_key(self) -> str:
+        return cast(str, self.value[4])
+
+    # Coordinates
+    # fmt: off
+    # (short_name, standard_name, description, units, nc_key)
+    Lat   = ("lat",   "latitude",  "Latitude (1-D, monotonic increasing)",  "degrees_north", "lat")
+    Lon   = ("lon",   "longitude", "Longitude (1-D, monotonic increasing)", "degrees_east",  "lon")
+    XLAT  = ("XLAT",  "latitude",  "Latitude meshgrid (2-D)",               "degrees_north", "XLAT")
+    XLON  = ("XLON",  "longitude", "Longitude meshgrid (2-D)",              "degrees_east",  "XLON")
+
+    # Pressure-level fields (nc_key = {shortname}_{hPa})
+    TK  = ("TK",  "air_temperature",                  "Temperature",                      "K",       "TK")
+    Z   = ("Z",   "geopotential_height",              "Geopotential height",              "m",       "Z")
+    UM  = ("UM",  "eastward_wind",                    "U-wind component",                 "m s-1",   "UM")
+    VM  = ("VM",  "northward_wind",                   "V-wind component",                 "m s-1",   "VM")
+    WA  = ("WA",  "upward_air_velocity",              "W-wind (vertical) component",      "m s-1",   "WA")
+    RH  = ("RH",  "relative_humidity",                "Relative humidity",                "%",       "RH")
+    Qv  = ("Qv",  "water_vapor_mixing_ratio",         "Water-vapor mixing ratio",         "kg kg-1", "Qv")
+    Qc  = ("Qc",  "cloud_water_mixing_ratio",         "Cloud-water mixing ratio",         "kg kg-1", "Qc")
+    Qi  = ("Qi",  "cf:cloud_ice_mixing_ratio",        "Cloud-ice mixing ratio",           "kg kg-1", "Qi")
+    Qr  = ("Qr",  "cf:rain_water_mixing_ratio",       "Rain-water mixing ratio",          "kg kg-1", "Qr")
+    Qs  = ("Qs",  "cf:snow_mixing_ratio",             "Snow mixing ratio",                "kg kg-1", "Qs")
+    Qg  = ("Qg",  "cf:graupel_mixing_ratio",          "Graupel mixing ratio",             "kg kg-1", "Qg")
+
+    # AGL fields (nc_key = {shortname}_{height_in_m}m)
+    T2m  = ("T",  "air_temperature",        "Air temperature",           "K",       "T_2m")
+    Td2m = ("Td", "dew_point_temperature",  "Dew-point temperature",     "K",       "Td_2m")
+    U10m = ("U",  "eastward_wind",          "U-wind component",          "m s-1",   "U_10m")
+    V10m = ("V",  "northward_wind",         "V-wind component",          "m s-1",   "V_10m")
+
+    # Other single-level horizontal fields
+    SLP      = ("SLP",     "air_pressure_at_sea_level",         "Sea-level pressure",            "Pa",      "SLP")
+    PSFC     = ("PSFC",    "surface_air_pressure",              "Surface pressure",              "Pa",      "PSFC")
+    SST      = ("SST",     "sea_surface_temperature",           "Sea-surface temperature",       "K",       "SST")
+    PW       = ("PW",      "atmosphere_mass_content_of_water_vapor", "Precipitable-water column", "kg m-2",  "PW")
+    PBLH     = ("PBLH",    "atmosphere_boundary_layer_thickness", "Planetary boundary-layer height", "m",  "PBLH")
+    RAINNC   = ("RAINNC",  "precipitation_amount",              "Accumulated precipitation",     "kg m-2",  "RAINNC")
+    SWDOWN   = ("SWDOWN",  "surface_downwelling_shortwave_flux_in_air", "Downward shortwave flux", "W m-2",  "SWDOWN")
+    OLR      = ("OLR",     "toa_outgoing_longwave_flux",        "Outgoing longwave radiation",   "W m-2",   "OLR")
+    HGT      = ("HGT",     "surface_altitude",                  "Terrain height",                "m",       "HGT")
+    MASKLAND = ("MASKLAND", "cf:land_binary_mask",              "Land-sea mask (bool)",          "1",       "LANDMASK")
+    dBZ      = ("REFL",    "radar_reflectivity",                "Max column radar reflectivity", "dBZ",     "REFL")
+
+    # Model input: read directly from source, never derived (no diagnostic).
+    Qt = ("Qt", "cf:total_hydrometeor_mixing_ratio", "Total hydrometeor mixing ratio", "kg kg-1", "Qt")
+
+    # Pressure coordinate (not a model output): source pressure-level array, used
+    # only to map a level to its index when reading a pressure-level field.
+    P = ("P", "air_pressure", "Pressure coordinate", "Pa", "pres_levels")
+    # fmt: on
 
 
 class Level(Enum):
-    def __new__(cls, description: str, code: str, nc_key: str):
+    code: str
+    nc_key: str
+
+    def __new__(cls, description: str, code: str, nc_key: str) -> Self:
         obj = object.__new__(cls)
         obj._value_ = description
         obj.code = code

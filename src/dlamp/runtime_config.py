@@ -79,6 +79,9 @@ class RuntimeConfig:
         return self.standardization_path
 
 
+_singleton: RuntimeConfig | None = None
+
+
 def get_runtime_config() -> RuntimeConfig:
     """Return (or construct) the singleton RuntimeConfig for the current
     process. The config is built lazily: the first call to
@@ -88,9 +91,10 @@ def get_runtime_config() -> RuntimeConfig:
     .. note:: If multiple entrypoints are run in the same process
               (e.g. tests), the last call wins.
     """
-    if not hasattr(get_runtime_config, "_singleton"):
-        get_runtime_config._singleton = RuntimeConfig.from_env()
-    return get_runtime_config._singleton
+    global _singleton
+    if _singleton is None:
+        _singleton = RuntimeConfig.from_env()
+    return _singleton
 
 
 def get_runtime_config_error() -> str | None:
