@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review — dlamp (weather forecasting)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 5 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .badge-strength { background:#059669; color:#fff; }
+      .badge-explore { background:#d97706; color:#fff; }
+      .badge-spec { background:#475569; color:#fff; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+
+      <header class="border-b border-slate-200 pb-6">
+        <h1 class="text-3xl font-serif font-semibold">dlamp — architecture deepening review</h1>
+        <p class="text-sm text-slate-500 mt-1">AI/ML weather forecasting · 2026-08-14</p>
+        <div class="flex flex-wrap gap-3 text-xs text-slate-600 mt-4">
+          <span class="flex items-center gap-1"><span class="inline-block w-4 h-3 border border-slate-800 bg-white"></span> module</span>
+          <span class="flex items-center gap-1"><svg width="28" height="6"><line x1="0" y1="3" x2="28" y2="3" class="seam" stroke="#334155"/></svg> seam</span>
+          <span class="flex items-center gap-1"><svg width="28" height="6"><line x1="0" y1="3" x2="28" y2="3" stroke="#dc2626" stroke-width="2"/></svg> leakage</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-4 h-3 rounded-sm deep"></span> deep module</span>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-10">
+
+        <!-- ============ CANDIDATE 1 ============ -->
+        <article class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-serif font-semibold">Collapse the duplicated auto-regressive inference loop</h2>
+            <span class="badge-strength text-xs font-semibold px-3 py-1 rounded-full">Strong</span>
+          </div>
+          <div class="text-xs text-slate-500 -mt-2 flex gap-2">
+            <span class="bg-stone-100 rounded-full px-2 py-0.5">in-process</span>
+          </div>
+          <div class="font-mono text-sm text-slate-600">src/dlamp/inference/{batch_inference_onnx.py, batch_inference_ckpt.py} · inference_base.py</div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before</div>
+              <pre class="mermaid">
+flowchart TD
+  ONNX[BatchInferenceOnnx] --> A[loop interval + time-features + boundary-swap]
+  CKPT[BatchInferenceCkpt] --> B[loop interval + time-features + boundary-swap]
+  A --> RUN[ort_sess.run]
+  B --> MODEL[pl_module(...)]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class ONNX,CKPT leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">After</div>
+              <div class="flex flex-col gap-2 h-full justify-center px-4">
+                <div class="text-xs uppercase tracking-wider text-slate-500">one loop, one seam</div>
+                <div class="border border-slate-800 p-4 rounded">
+                  <div class="text-xs uppercase tracking-wider text-slate-400">InferenceBase.infer()</div>
+                  <div class="text-slate-600 text-sm mt-1">interval · time-features · boundary-swap · postprocess</div>
+                  <div class="text-slate-400 text-xs mt-1">─ _forward(inp_upper, inp_surface) ─</div>
+                </div>
+                <div class="flex items-center gap-2 px-2">
+                  <span class="border border-slate-400 rounded px-2 py-1 text-xs">Onnx forward</span>
+                  <span class="border border-slate-400 rounded px-2 py-1 text-xs">Ckpt forward</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-sm"><span class="font-semibold">Problem:</span> ~85 lines of loop logic differ only by the model call and device; edits must mirror across both files.</p>
+          <p class="text-sm"><span class="font-semibold">Solution:</span> Hoist the shared loop into <code class="font-mono">InferenceBase</code> behind a single abstract <code class="font-mono">_forward()</code> seam; each batch module becomes a small adapter that supplies the call.</p>
+          <ul class="text-sm list-disc pl-5 space-y-1 text-slate-700">
+            <li><span class="font-semibold">locality:</span> one file is home to the loop</li>
+            <li><span class="font-semibold">leverage:</span> one interface, two adapters</li>
+            <li>Two adapters justify the seam — two real engines vary across it</li>
+            <li>Delete ~40 duplicated lines near-verbatim</li>
+          </ul>
+        </article>
+
+        <!-- ============ CANDIDATE 2 ============ -->
+        <article class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-serif font-semibold">Decompose the 264-line boundary-swapping monolith</h2>
+            <span class="badge-explore text-xs font-semibold px-3 py-1 rounded-full">Worth exploring</span>
+          </div>
+          <div class="text-xs text-slate-500 -mt-2 flex gap-2">
+            <span class="bg-stone-100 rounded-full px-2 py-0.5">local-substitutable</span>
+          </div>
+          <div class="font-mono text-sm text-slate-600">inference_base.py:109–373</div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before</div>
+              <div class="p-3 rounded border border-red-200 bg-red-50 text-xs space-y-2">
+                <div class="font-semibold text-red-700">_boundary_swapping</div>
+                <div>override · linear · exp_decay · fft_tukey · fft_tukey0</div>
+                <div class="text-red-500">+ debug-plots woven in</div>
+                <div class="text-red-500">+ nested FFT mask helper</div>
+                <div class="text-red-500">+ reads ground truth from private dataset internals</div>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">After</div>
+              <div class="flex flex-col gap-2">
+                <div class="border border-slate-800 rounded p-2 deep">
+                  <div class="text-white text-xs uppercase tracking-wider">BoundarySwapper</div>
+                  <div class="text-slate-300 text-xs mt-1">apply(pred, gt, method) _method registry</div>
+                </div>
+                <div class="flex gap-2 px-2">
+                  <span class="border border-slate-400 rounded px-2 py-1 text-xs">override</span>
+                  <span class="border border-slate-400 rounded px-2 py-1 text-xs">linear</span>
+                  <span class="border border-slate-400 rounded px-2 py-1 text-xs">exp_decay</span>
+                  <span class="border border-slate-400 rounded px-2 py-1 text-xs">fft_tukey*</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-sm"><span class="font-semibold">Problem:</span> six blending strategies, debug side-effects, and private-ground-truth access entangled in one method — untestable in isolation.</p>
+          <p class="text-sm"><span class="font-semibold">Solution:</span> a <code class="font-mono">BoundarySwapper</code> module with a name→strategy registry; ground truth passed in as a parameter instead of reached-through; debug plotting behind its own call.</p>
+          <ul class="text-sm list-disc pl-5 space-y-1 text-slate-700">
+            <li><span class="font-semibold">interface is the test surface:</span> test each strategy with a fake ground-truth accessor</li>
+            <li><span class="font-semibold">locality:</span> blending math lives in one module</li>
+            <li>fft_tukey / fft_tukey0 share one FFT core</li>
+            <li>No longer needs a full DataManager to exercise</li>
+          </ul>
+        </article>
+
+        <!-- ============ CANDIDATE 3 ============ -->
+        <article class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-serif font-semibold">Capture the predict→save→plot pipeline as a shared workflow module</h2>
+            <span class="badge-strength text-xs font-semibold px-3 py-1 rounded-full">Strong</span>
+          </div>
+          <div class="text-xs text-slate-500 -mt-2 flex gap-2">
+            <span class="bg-stone-100 rounded-full px-2 py-0.5">in-process</span>
+          </div>
+          <div class="font-mono text-sm text-slate-600">analysis/prediction.py:125–204 · workflows/predict_{dscale,feedback}_runner.py</div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before</div>
+              <pre class="mermaid">
+flowchart LR
+  PRED[predict.main] --> SAVE[ForecastSaver]
+  PRED --> PLOT[WeatherPlotter]
+  PRED --> RT[RuntimeConfig]
+  PRED --> STD[Standardizer]
+  DSCALE[dscale runner] -.no save/plot.-> PRED_RUN[PredictionRunner.run]
+  FEEDBACK[feedback runner] -.no save/plot.-> PRED_RUN
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class DSCALE,FEEDBACK leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">After</div>
+              <div class="flex flex-col gap-2 h-full justify-center px-4">
+                <div class="border border-slate-800 rounded p-4 deep">
+                  <div class="text-white text-xs uppercase tracking-wider">PredictWorkflow</div>
+                  <div class="text-slate-300 text-sm mt-1">run(cfg) → forecast → save → plot</div>
+                </div>
+                <div class="flex items-center gap-2 px-2 text-xs">
+                  <span class="border border-slate-400 rounded px-2 py-1">predict</span>
+                  <span class="border border-slate-400 rounded px-2 py-1">dscale</span>
+                  <span class="border border-slate-400 rounded px-2 py-1">feedback</span>
+                  <span class="text-slate-400">→ all reuse the same seam</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-sm"><span class="font-semibold">Problem:</span> the save/plot orchestration lives only in <code class="font-mono">prediction.main()</code> inline; dscale/feedback reuse inference but re-implement everything else.</p>
+          <p class="text-sm"><span class="font-semibold">Solution:</span> extract a <code class="font-mono">PredictWorkflow</code> running forecast→save→plot, invoked by all three entrypoints; the runner classes delegate to it.</p>
+          <ul class="text-sm list-disc pl-5 space-y-1 text-slate-700">
+            <li><span class="font-semibold">locality:</span> pipeline order in one module</li>
+            <li><span class="font-semibold">leverage:</span> three entrypoints share one path</li>
+            <li>Dscale/feedback gain save+plot for free</li>
+            <li>Wiring testable end-to-end without hydra</li>
+          </ul>
+        </article>
+
+        <!-- ============ CANDIDATE 4 ============ -->
+        <article class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-serif font-semibold">Consolidate the three data-source dispatch tables into one strategy</h2>
+            <span class="badge-explore text-xs font-semibold px-3 py-1 rounded-full">Worth exploring</span>
+          </div>
+          <div class="text-xs text-slate-500 -mt-2 flex gap-2">
+            <span class="bg-stone-100 rounded-full px-2 py-0.5">local-substitutable</span>
+          </div>
+          <div class="font-mono text-sm text-slate-600">file_util.py:38–59, 189–212 · datetime_manager.py:255–277</div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before</div>
+              <pre class="mermaid">
+flowchart LR
+  SRC[data_source]
+  SRC --> A[gen_data match]
+  SRC --> B[gen_path match]
+  SRC --> C[sanity_check match]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class A,B,C leak
+              </pre>
+              <div class="text-xs text-red-500 mt-1">drift: OP_E2S only in gen_path; RWRF_ERA5 only in sanity_check</div>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">After</div>
+              <div class="flex flex-col gap-2">
+                <div class="border border-slate-800 rounded p-3 deep">
+                  <div class="text-white text-xs uppercase tracking-wider">DataSource</div>
+                  <div class="text-slate-300 text-xs mt-1">gen_path() · reader() · sanity_check()</div>
+                </div>
+                <div class="flex gap-2 px-2 text-xs">
+                  <span class="border border-slate-400 rounded px-2 py-1">OP_ERA5</span>
+                  <span class="border border-slate-400 rounded px-2 py-1">OP_E2S</span>
+                  <span class="border border-slate-400 rounded px-2 py-1">CWA_RWRF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-sm"><span class="font-semibold">Problem:</span> each data source's filename, reading, and sanity logic is matched separately — adding a source touches three places, and they have already drifted.</p>
+          <p class="text-sm"><span class="font-semibold">Solution:</span> a <code class="font-mono">DataSource</code> module holding path/reader/sanity behind one interface; file_util and datetime_manager delegate to it.</p>
+          <ul class="text-sm list-disc pl-5 space-y-1 text-slate-700">
+            <li><span class="font-semibold">locality:</span> one module per source</li>
+            <li><span class="font-semibold">leverage:</span> add a source in one place</li>
+            <li>eliminates existing drift (OP_E2S vs RWRF_ERA5)</li>
+            <li>four adapters already exist — seam is real</li>
+          </ul>
+        </article>
+
+        <!-- ============ CANDIDATE 5 ============ -->
+        <article class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-serif font-semibold">Unify the duplicated meteorology formulas</h2>
+            <span class="badge-spec text-xs font-semibold px-3 py-1 rounded-full">Speculative</span>
+          </div>
+          <div class="text-xs text-slate-500 -mt-2 flex gap-2">
+            <span class="bg-stone-100 rounded-full px-2 py-0.5">local-substitutable</span>
+          </div>
+          <div class="font-mono text-sm text-slate-600">diagnostic_functions.py · analysis/data_manager.py:299–405 · standardizer.py:53–111</div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before</div>
+              <div class="text-xs space-y-2">
+                <div class="border border-red-200 bg-red-50 rounded p-2">sat_vapor_pressure &nbsp;·&nbsp; 611.2·exp((17.67·T)/(T+243.5))</div>
+                <div class="text-red-500 pl-2">copied at diagnostic_functions:60,171,339,403</div>
+                <div class="border border-red-200 bg-red-50 rounded p-2">vapor-pressure→mixing-ratio</div>
+                <div class="text-red-500 pl-2">copied in data_manager + diagnostics</div>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">After</div>
+              <div class="flex flex-col gap-2 h-full justify-center px-4">
+                <div class="border border-slate-800 rounded p-3 deep">
+                  <div class="text-white text-xs uppercase tracking-wider">Thermo</div>
+                  <div class="text-slate-300 text-xs mt-1">sat_vapor_pressure() · vapor_pressure() · mixing_ratio() · theta()</div>
+                </div>
+                <div class="text-slate-500 text-xs pl-2">daily — 'Qt uses log-transform'· θ = T(p₀/p)^(R/cp)</div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-sm"><span class="font-semibold">Problem:</span> pure thermo formulas were extracted for testability, yet three modules re-derive them — a constant change must propagate in three places, and the call sites conceal a real bug (ERA5 sums 4 of 5 hydrometeor species, RWRF 5).</p>
+          <p class="text-sm"><span class="font-semibold">Solution:</span> one <code class="font-mono">Thermo</code> module owning the formulas; diagnostics, data_manager, standardizer call it.</p>
+          <ul class="text-sm list-disc pl-5 space-y-1 text-slate-700">
+            <li><span class="font-semibold">locality:</span> formula corrected once</li>
+            <li><span class="font-semibold">leverage:</span> one formula, N diagnostics</li>
+            <li>surface the species-count drift as a test</li>
+          </ul>
+        </article>
+
+        <!-- ============ CANDIDATE 6 ============ -->
+        <article class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-serif font-semibold">Restore encapsulation across the plotter and forecast-saver seams</h2>
+            <span class="badge-strength text-xs font-semibold px-3 py-1 rounded-full">Strong</span>
+          </div>
+          <div class="text-xs text-slate-500 -mt-2 flex gap-2">
+            <span class="bg-stone-100 rounded-full px-2 py-0.5">in-process</span>
+          </div>
+          <div class="font-mono text-sm text-slate-600">analysis/plotter.py · analysis/forecast_saver.py · analysis/data_manager.py</div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before</div>
+              <pre class="mermaid">
+flowchart LR
+  PLOT[WeatherPlotter] -.priv _get_wind_components.-> DM[AnalysisDataManager]
+  PLOT -.global get_runtime_config.-> RT[RuntimeConfig]
+  SAVER[ForecastSaver] -.re-derives key_map.-> TYP[DataType.nc_key]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class PLOT,SAVER leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">After</div>
+              <div class="flex flex-col gap-2 h-full justify-center px-4">
+                <div class="border border-slate-800 rounded p-3 deep">
+                  <div class="text-white text-xs uppercase tracking-wider">AnalysisDataManager</div>
+                  <div class="text-slate-300 text-xs mt-1">public wind_components() · get_forecast_data() · levels</div>
+                </div>
+                <div class="text-slate-500 text-xs pl-2">plotter + saver cross one seam, no globals, no private reach</div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-sm"><span class="font-semibold">Problem:</span> the plotter reads private wind methods and a global singleton; the saver re-derives the variable→key map it already owns — breaking locality, and the plotter reads <code class="font-mono">manager.levels</code> which AnalysisDataManager never defines.</p>
+          <p class="text-sm"><span class="font-semibold">Solution:</span> promote wind access and level listing to the manager's public interface; route runtime config through the manager; saver consumes <code class="font-mono">DataType.nc_key</code> instead of a private copy.</p>
+          <ul class="text-sm list-disc pl-5 space-y-1 text-slate-700">
+            <li><span class="font-semibold">locality:</span> wind logic, level list owned once</li>
+            <li><span class="font-semibold">interface is the test surface:</span> plotter testable via the manager's public seam</li>
+            <li>key/unit knowledge no longer duplicated</li>
+          </ul>
+        </article>
+
+      </section>
+
+      <section id="top-recommendation" class="rounded-xl border-2 border-slate-800 bg-white p-6">
+        <h2 class="text-xl font-serif font-semibold mb-2">Top recommendation</h2>
+        <p class="text-sm text-slate-700">
+          Start with <a href="#candidates" class="underline text-slate-900 font-semibold">Collapse the duplicated auto-regressive inference loop</a>.
+          It is the highest-leverage, lowest-risk deepening: two real engines vary across an already-there seam,
+          so hoisting the shared loop into <code class="font-mono">InferenceBase</code> behind a single <code class="font-mono">_forward()</code>
+          removes ~40 duplicated lines, gives every boundary-swapping and post-processing change one home (<span class="font-semibold">locality</span>),
+          and makes the loop testable with a stub forward (<span class="font-semibold">interface is the test surface</span>).
+          It is also the natural prerequisite for the other three inference-path candidates (workflow collapse and boundary-swapping decomposition).
+        </p>
+      </section>
+
+    </main>
+  </body>
+</html>
