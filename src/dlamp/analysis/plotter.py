@@ -158,12 +158,12 @@ class WeatherPlotter:
         colorbar_gamma: float | None = config.get("colorbar_gamma")
         colorbar_center: float | None = config.get("colorbar_center")
 
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
         wspd_fc: np.ndarray = self.manager.get_wind_speed(step, level, is_gt=False)
         u_fc, v_fc = self.manager._get_wind_components(step, level)
 
         time: datetime = self.manager.get_forecast_time(step)
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
         wspd_gt: np.ndarray = self.manager.get_wind_speed(step, level, is_gt=True)
         u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
 
@@ -212,12 +212,12 @@ class WeatherPlotter:
 
         u_fc, v_fc = self.manager._get_wind_components(step, level)
         vort_fc: np.ndarray = self.manager.get_relative_vorticity(step, level, False) * 1e6
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
 
         time: datetime = self.manager.get_forecast_time(step)
         u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
         vort_gt: np.ndarray = self.manager.get_relative_vorticity(step, level, True) * 1e6
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
 
         self._generic_grid_plot(
             ax_fc,
@@ -267,13 +267,13 @@ class WeatherPlotter:
 
         # Forecast fields
         thetae_fc: np.ndarray = self.manager.get_equivalent_potential_temperature(step, level, is_gt=False)
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
         u_fc, v_fc = self.manager._get_wind_components(step, level)
 
         # Ground-truth fields
         time: datetime = self.manager.get_forecast_time(step)
         thetae_gt: np.ndarray = self.manager.get_equivalent_potential_temperature(step, level, is_gt=True)
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
         u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
 
         # Plot: FC (theta-e shading + Z contours + streamlines)
@@ -323,12 +323,12 @@ class WeatherPlotter:
         colorbar_center: float | None = config.get("colorbar_center")
 
         t_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.TK, level)
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
 
         time: datetime = self.manager.get_forecast_time(step)
         t_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.TK, level)
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
 
         self._generic_grid_plot(

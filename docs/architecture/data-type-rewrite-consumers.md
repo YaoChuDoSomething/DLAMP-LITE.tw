@@ -27,20 +27,21 @@ shape/meaning and need review in the venv-gated Q8 sweep.
 
 ## Files referencing changed variables (need review)
 
-`data_compose.py` and `file_util.py` were **migrated** as part of the mypy
-transitive gate (this commit). Remaining files still reference old members:
+All consumers were migrated in this sweep. Remaining mypy errors in
+`plotter.py`/`data_manager.py` are pre-existing strict-mode debt (no-redef,
+missing return types, `RuntimeConfig` indexing), unrelated to the enum rename.
 
-| File                                        | Ref(s)                       | status |
-| ------------------------------------------- | ---------------------------- | ------ |
-| `src/dlamp/utils/data_compose.py`           | `Radar`→`dBZ`, `Td`→`Td2m`, `U/V`→`U10m/V10m` | migrated |
-| `src/dlamp/utils/file_util.py`              | `Qt` direct-read (:100), `P` restored (:120) | migrated |
-| `src/dlamp/utils/test_data_type.py`         | `TK`, `PH`, `Lat`            | broken  |
-| `src/dlamp/analysis/plotter.py`             | `PH`, `Qt`, `TK`             | broken  |
-| `src/dlamp/analysis/data_manager.py`        | `Qt`                         | broken  |
-| `src/dlamp/analysis/forecast_saver.py`      | `Qt` (:129,:244)             | broken  |
-| `src/dlamp/visual/viz_radar.py`             | `Radar`, `Lat`, `Lon`        | broken  |
-| `src/dlamp/visual/viz_temp.py`              | `T`, `Lat`, `Lon`            | broken  |
-| `src/dlamp/visual/viz_vor.py`               | `U`, `V`                     | broken  |
+| File                                        | fix applied                                     |
+| ------------------------------------------- | ----------------------------------------------- |
+| `src/dlamp/utils/data_compose.py`           | `Radar`→`dBZ`, `Td`→`Td2m`, `U/V`→`U10m/V10m`, `var_name.code` bug fixed |
+| `src/dlamp/utils/file_util.py`              | `Qt` direct-read, `P` restored                  |
+| `src/dlamp/utils/test_data_type.py`         | `PH`→`Z`, `tk_p`→`TK`, `Lat`→`lat`, + `XLAT`/`Qt`/`units`/`standard_name` asserts |
+| `src/dlamp/analysis/plotter.py`             | `PH`→`Z` (8×); `Qt` kept (still a member)       |
+| `src/dlamp/analysis/data_manager.py`        | no change needed (`Qt` still a member)          |
+| `src/dlamp/analysis/forecast_saver.py`      | no change needed (`Qt` still a member)          |
+| `src/dlamp/visual/viz_radar.py`             | `Radar`→`dBZ`, `Lat`→`XLAT`, `Lon`→`XLON`       |
+| `src/dlamp/visual/viz_temp.py`              | `T`(Hpa850)→`TK`, `Lat`→`XLAT`, `Lon`→`XLON`    |
+| `src/dlamp/visual/viz_vor.py`               | `U`→`UM`, `V`→`VM`, `Lat`→`XLAT`, `Lon`→`XLON`  |
 
 ## Caveats
 
@@ -52,7 +53,6 @@ transitive gate (this commit). Remaining files still reference old members:
   output) for level→index mapping.
 - `runtime_config.py` singleton switched from function-attribute cache to
   module-level `_singleton` (mypy-strict clean).
-- plotter/data_manager/forecast_saver/viz renames deferred to the venv-gated
-  Q8 sweep.
-- No venv: verified via `uvx mypy` (transitive green), `uvx ruff`, and
-  `py_compile`. Not validated at runtime.
+- No venv: verified via `uvx mypy` (data_type module graph green),
+  `uvx ruff`, and `py_compile`. plotter/data_manager pre-existing mypy debt
+  left untouched (out of the enum-rename scope).
