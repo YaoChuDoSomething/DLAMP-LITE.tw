@@ -1,15 +1,13 @@
-# pre-commit configuration
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v4.5.0
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-bashbang-style
+      - id: check-docker
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-pip-install
       - id: check-yaml
-      - id: check-added-large-files
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
+      - id: trailing-whitespace

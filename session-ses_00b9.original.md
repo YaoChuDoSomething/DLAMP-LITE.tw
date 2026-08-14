@@ -1,4 +1,5 @@
 # dlamp & dlamp-data 大型重構與測試文件規劃
+
 **Session ID:** ses_00b94e1b5ffeZcCyHFUbwqxazF
 **Created:** 8/12/2026, 1:21:28 PM
 **Updated:** 8/12/2026, 4:15:39 PM
@@ -6,35 +7,38 @@
 ---
 
 ## Assistant (Build · Big Pickle · 4.9s)
+
 Ticket 08 resolved (grilled, all five questions confirmed):
 
 1. **Repo identity** — `YaoChuDoSomething/DLAMP` @ `/wk2/yaochu/main/dlamp-monorepo` (name availability to verify before execution — no `gh` here)
 2. **Init + branch** — `git init -b main`, single `main` working branch, ticket-07 merge recipe
-3. **Assets** — DLAMP.tw's 11 LFS files → `src/dlamp/assets/**` (provisional until ticket 03); no copy/re-point needed (LFS pointers survive rewrite); canonical dlamp-data has nothing to migrate
+3. **Assets** — DLAMP.tw's 11 LFS files → `src/dlamp/assets/**` (provisional until ticket 03); no copy/re-point needed (LFS pointers survive the rewrite); canonical dlamp-data has nothing to migrate
 4. **Archiving** — GitHub Archive toggle + README banner on both old repos, stay public, no deletion
 5. **Conventions** — carry `GEMINI.md` + `.pre-commit-config.yaml` verbatim; rewrite `AGENTS.md` + `Makefile`; `pyproject.toml` deferred to 06
 
-Fog item on "archived" graduated. Stopping per one-ticket-per-session. Next frontier: **03 (target submodule tree)** — with 01, 02, 07, 08 resolved, its blockers are clear, and it'll confirm provisional asset paths.
+Fog item on "archived" graduated. Stopping per one-ticket-per-session. Next frontier: **03 (target submodule tree)** — with 01, 02, 07, 08 resolved, its blockers are clear, and it'll confirm the provisional asset paths.
 
 ---
 
 ## User
-Ok
+
+ok
 
 ---
 
 ## Assistant (Build · Big Pickle · 6.0s)
+
 _Thinking:_
 
- user said "ok" — acknowledging. session's ticket (08) is done. I already stated next frontier is 03. user hasn't approved new ticket yet. keep it brief and not start anything new without approval.
+The user said "ok" — acknowledging. The session's ticket (08) is done. I already stated next frontier is 03. The user hasn't approved a new ticket yet. I should keep it brief and not start anything new without approval.
 
-Per map mechanics, ticket 03 is now frontier (01, 02 resolved → 03 unblocked; 07 resolved → 08 done). Ticket 03's blockers were 01 and 02, both resolved. So 03 is open+unblocked+unclaimed = frontier.
+Actually, per the map mechanics, ticket 03 is now the frontier (01, 02 resolved → 03 unblocked; 07 resolved → 08 done). Ticket 03's blockers were 01 and 02, both resolved. So 03 is open+unblocked+unclaimed = frontier.
 
- user said "ok" which could be approval to proceed with 03. It's bit ambiguous. Given previous pattern — "approved", "confirmed", "ok" — "ok" is likely acknowledgment. But it could also mean "go ahead with 03". Given user said "ok" after I said "Stopping per one-ticket-per-session. Next frontier: 03", it's reasonable to interpret "ok" as "fine, proceed" OR acknowledgment.
+The user said "ok" which could be approval to proceed with 03. It's a bit ambiguous. Given the previous pattern — "approved", "confirmed", "ok" — "ok" is likely acknowledgment. But it could also mean "go ahead with 03". Given the user just said "ok" after I said "Stopping per one-ticket-per-session. Next frontier: 03", I think it's reasonable to interpret "ok" as "fine, proceed" OR just acknowledgment.
 
-Hmm. Given workflow's one-ticket-per-session rule and that "ok" is ambiguous, ask brief clarifying question rather than assume. — user's "ok" in this context, after I announced next frontier, most plausibly approves proceeding. But strict reading is that it's acknowledgment of completion.
+Hmm. Given the workflow's one-ticket-per-session rule and that "ok" is ambiguous, I should ask a brief clarifying question rather than assume. Actually — the user's "ok" in this context, after I announced next frontier, most plausibly approves proceeding. But the strict reading is that it's just acknowledgment of completion.
 
- ask concisely whether to claim 03. , "question" tool might be overkill. simple one-liner is fine. But consider: each prior ticket user explicitly said "approved" or "confirmed". Here "ok". To be safe and not surprise user, I'll ask if they want me to proceed with 03.
+Let me ask concisely whether to claim 03. Actually, a "question" tool might be overkill. A simple one-liner is fine. But let me consider: each prior ticket the user explicitly said "approved" or "confirmed". Here just "ok". To be safe and not surprise the user, I'll ask if they want me to proceed with 03.
 
 Keep it to one line.
 
@@ -43,14 +47,16 @@ Want me to claim **03 (target submodule tree)** now?
 ---
 
 ## User
+
 OK
 
 ---
 
 ## Assistant (Build · Big Pickle · 3.3s)
+
 _Thinking:_
 
- user approved ticket 03. claim it and work on it. Ticket 03 is "target submodule tree". read it first.
+The user approved ticket 03. Let me claim it and work on it. Ticket 03 is "target submodule tree". Let me read it first.
 
 **Tool: read**
 
@@ -93,36 +99,37 @@ _Thinking:_
 ---
 
 ## Assistant (Build · Big Pickle · 6.8s)
+
 _Thinking:_
 
-Ticket 03 is grilling ticket. Note: Question refers to old assumed layout (from `github/dlamp-data` — `src/core`, `src/dlamp_data`, `src/io`, `src/tasks`, `src/tools`, `definition/`, `src/dlamp/data`). But ticket 02 established that canonical dlamp.data (`externals/dlamp-data`) is different layout: `src/preproc/` + `src/registry/`, configs, runners. So adjust grilling to reflect actual layout.
+Ticket 03 is a grilling ticket. Note: the Question refers to the old assumed layout (from `github/dlamp-data` — `src/core`, `src/dlamp_data`, `src/io`, `src/tasks`, `src/tools`, `definition/`, `src/dlamp/data`). But ticket 02 established that the canonical dlamp.data (`externals/dlamp-data`) is actually a different layout: `src/preproc/` + `src/registry/`, configs, runners. So I need to adjust the grilling to reflect the actual layout.
 
-Also note:  ticket is blocked by 01, 02 — both now resolved. So it's unblocked.
+Also note: the ticket is blocked by 01, 02 — both now resolved. So it's unblocked.
 
- claim it and start grilling, one branch at time. grilling skill says: ask one question at time, wait for feedback, provide recommended answers, look up facts myself.
+Let me claim it and start grilling, one branch at a time. The grilling skill says: ask one question at a time, wait for feedback, provide recommended answers, look up facts myself.
 
- gather facts first. I have lot from tickets 01 and 02. recall:
+Let me gather the facts first. I have a lot from tickets 01 and 02. Let me recall:
 
 DLAMP.tw (`/wk2/yaochu/main/dlamp`, branch dev):
 
 - 5 top-level code dirs: `analysis/`, `inference/`, `visual/`, `config/`, `assets/`
 - `src/{const,standardization,datasets,managers,utils,debug,models}`
-- Starter pkg `src/dlamp/` — toy MLP scaffold: `model.py`, `datamodule.py`, `lightning_module.py`, `train.py`, `config/config.yaml`
-- Nested `externals/dlamp-data` (untracked nested repo)
+- starter pkg `src/dlamp/` — toy MLP scaffold: `model.py`, `datamodule.py`, `lightning_module.py`, `train.py`, `config/config.yaml`
+- nested `externals/dlamp-data` (untracked nested repo)
 
-Dlamp.data canonical (`externals/dlamp-data`):
+dlamp.data canonical (`externals/dlamp-data`):
 
 - `src/preproc/{cds_downloader,dlamp_regridder,sfno_processor}.py`
 - `src/registry/{diagnostic_functions,diagnostic_registry}.py`
-- Root runners: `DLAMPreproc.py`, `SFNOPreproc.py`, `main.py`, `updated.py`
+- root runners: `DLAMPreproc.py`, `SFNOPreproc.py`, `main.py`, `updated.py`
 - `config/{era5,sfno,dataDownloader}.yaml`
 - `assets/{search_keyword.sh,target.nc,validate_vars.py}`
 
- look at actual structure of DLAMP.tw's src/ and top-level dirs to grill accurately. gather facts on exact dir structure.
+Let me look at the actual structure of DLAMP.tw's src/ and top-level dirs to grill accurately. Let me gather facts on the exact dir structure.
 
- claim ticket and gather facts in parallel.
+Let me claim the ticket and gather facts in parallel.
 
-Ticket 03 is grilling ticket. Claiming it and gathering concrete directory facts first.
+Ticket 03 is a grilling ticket. Claiming it and gathering the concrete directory facts first.
 
 **Tool: edit**
 
@@ -145,6 +152,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 4.3s)
+
 **Tool: bash**
 
 **Input:**
@@ -282,62 +290,63 @@ train_pangu.yaml
 ---
 
 ## Assistant (Build · Big Pickle · 16.0s)
+
 _Thinking:_
 
-Now I have facts. note actual structure of DLAMP.tw:
+Now I have the facts. Let me note the actual structure of DLAMP.tw:
 
 Top-level dirs (DLAMP.tw, branch dev): analysis/, assets/, config/, docs/, export/, externals/, gallery/, inference/, lightning_logs/, outputs/, src/, tests/, visual/
 
-Src/: **init**.py, const.py, datasets/, debug/, dlamp/ (starter pkg), export_onnx.py, generate_const_masks.py, inference_onnx.py, managers/, models/, standardization.py, unzip_tgz.py, utils/
+src/: **init**.py, const.py, datasets/, debug/, dlamp/ (starter pkg), export_onnx.py, generate_const_masks.py, inference_onnx.py, managers/, models/, standardization.py, unzip_tgz.py, utils/
 
-Src/dlamp starter: **init**.py, config/config.yaml, datamodule.py, lightning_module.py, model.py, py.typed, train.py
+src/dlamp starter: **init**.py, config/config.yaml, datamodule.py, lightning_module.py, model.py, py.typed, train.py
 
-Src/models: **init**.py, architectures/, builders/, callbacks/, diffusion_process/, lightning_modules/, loss_fn/, model_utils.py
+src/models: **init**.py, architectures/, builders/, callbacks/, diffusion_process/, lightning_modules/, loss_fn/, model_utils.py
 
-Src/datasets: custom_dataset.py
-Src/managers: data_manager.py, datetime_manager.py
-Src/debug: boundary_plots.py
+src/datasets: custom_dataset.py
+src/managers: data_manager.py, datetime_manager.py
+src/debug: boundary_plots.py
 
-Analysis/: data_manager.py, forecast_saver.py, netcdf_meta.py, plot_meta.py, plotter.py, prediction.py, video_creator.py
-Inference/: **init**.py, batch_inference_ckpt.py, batch_inference_onnx.py, infer_utils.py, inference_base.py
-Visual/: **init**.py + viz_*.py + tw_background.py
-Config/: data/, inference/, lightning/, model/, plot/, predict.yaml, train_diffusion.yaml, train_diffusion_radar.yaml, train_pangu.yaml
+analysis/: data_manager.py, forecast_saver.py, netcdf_meta.py, plot_meta.py, plotter.py, prediction.py, video_creator.py
+inference/: **init**.py, batch_inference_ckpt.py, batch_inference_onnx.py, infer_utils.py, inference_base.py
+visual/: **init**.py + viz_*.py + tw_background.py
+config/: data/, inference/, lightning/, model/, plot/, predict.yaml, train_diffusion.yaml, train_diffusion_radar.yaml, train_pangu.yaml
 
-Note ticket 03's question references things from OLD assumed dlamp-data layout (src/core, src/dlamp_data, src/io, src/tasks, src/tools, definition/, src/dlamp/data redundant dir). But ticket 02 established canonical dlamp.data is nested externals repo with src/preproc + src/registry. So I must adapt grilling to real layout — question in ticket was written before ticket 02 was resolved. flag this correction during grilling.
+Note ticket 03's question references things from the OLD assumed dlamp-data layout (src/core, src/dlamp_data, src/io, src/tasks, src/tools, definition/, src/dlamp/data redundant dir). But ticket 02 established the canonical dlamp.data is actually the nested externals repo with src/preproc + src/registry. So I must adapt the grilling to the real layout — the question in the ticket was written before ticket 02 was resolved. I should flag this correction during grilling.
 
-Ticket's bucket list includes "DLAMP.data components: confirm dlamp.data.<component> mapping for src/{core,dlamp_data,io,registry,tasks,tools}" — those components exist only in github/dlamp-data (redirected away). So correct that bucket to ACTUAL dlamp.data components: src/preproc/{cds_downloader,dlamp_regridder,sfno_processor}, src/registry/{diagnostic_functions,diagnostic_registry}, plus root runners (DLAMPreproc.py, SFNOPreproc.py, updated.py) and config/{era5,sfno}.yaml.
+Actually, the ticket's bucket list includes "DLAMP.data components: confirm the dlamp.data.<component> mapping for src/{core,dlamp_data,io,registry,tasks,tools}" — those components exist only in github/dlamp-data (redirected away). So I need to correct that bucket to the ACTUAL dlamp.data components: src/preproc/{cds_downloader,dlamp_regridder,sfno_processor}, src/registry/{diagnostic_functions,diagnostic_registry}, plus the root runners (DLAMPreproc.py, SFNOPreproc.py, updated.py) and config/{era5,sfno}.yaml.
 
- grill one branch at time. grilling skill says: ask questions one at time, provide recommended answer for each, look up facts myself.
+Let me grill one branch at a time. The grilling skill says: ask questions one at a time, provide recommended answer for each, look up facts myself.
 
 Let me plan the grilling branches:
 
-**Branch — DLAMP.tw legacy modules**: analysis/ → src/dlamp/analysis, inference/ → src/dlamp/inference, visual/ → src/dlamp/visual, src/models → src/dlamp/models, src/datasets → src/dlamp/datasets, src/utils → src/dlamp/utils, src/managers → src/dlamp/managers, src/debug → src/dlamp/debug. What about src/const.py, src/standardization.py, src/export_onnx.py, src/generate_const_masks.py, src/inference_onnx.py, src/unzip_tgz.py? These are src-level modules. src/const.py is hub. Where do these land? Maybe src/dlamp/const.py, src/dlamp/standardization.py, and scripts (export_onnx, generate_const_masks, inference_onnx, unzip_tgz) → console scripts or src/dlamp/tools? Hmm. standing pref says "everything folded under namespace".
+**Branch A — DLAMP.tw legacy modules**: analysis/ → src/dlamp/analysis, inference/ → src/dlamp/inference, visual/ → src/dlamp/visual, src/models → src/dlamp/models, src/datasets → src/dlamp/datasets, src/utils → src/dlamp/utils, src/managers → src/dlamp/managers, src/debug → src/dlamp/debug. What about src/const.py, src/standardization.py, src/export_onnx.py, src/generate_const_masks.py, src/inference_onnx.py, src/unzip_tgz.py? These are src-level modules. src/const.py is the hub. Where do these land? Maybe src/dlamp/const.py, src/dlamp/standardization.py, and the scripts (export_onnx, generate_const_masks, inference_onnx, unzip_tgz) → console scripts or src/dlamp/tools? Hmm. The standing pref says "everything folded under the namespace".
 
-**Branch B — starter src/dlamp package**: model.py, datamodule.py, lightning_module.py, train.py, config/config.yaml. These collide with names. Note: src/models/lightning_modules and src/models/architectures already exist — starter's model.py/datamodule.py/lightning_module.py are toy MLP scaffold. Where do they go? Possibly deleted? Or kept as starter example? ticket asks "how it merges with folded-in modules (name collisions? src/dlamp/config vs top-level config/?)".
+**Branch B — starter src/dlamp package**: model.py, datamodule.py, lightning_module.py, train.py, config/config.yaml. These collide with names. Note: src/models/lightning_modules and src/models/architectures already exist — the starter's model.py/datamodule.py/lightning_module.py are a toy MLP scaffold. Where do they go? Possibly deleted? Or kept as a starter example? The ticket asks "how it merges with the folded-in modules (name collisions? src/dlamp/config vs top-level config/?)".
 
-**Branch C — externals/dlamp-data disposition**: delete, submodule, vendor, ignore. Since canonical dlamp.data content gets folded into dlamp.data.*, and externals/ is untracked, recommendation is delete/ignore (don't carry it into monorepo). canonical content is merged via ticket 07 as dlamp.data history.
+**Branch C — externals/dlamp-data disposition**: delete, submodule, vendor, ignore. Since the canonical dlamp.data content gets folded into dlamp.data.*, and externals/ is untracked, the recommendation is delete/ignore (don't carry it into the monorepo). The canonical content is merged via ticket 07 as the dlamp.data history.
 
-**Branch D — DLAMP.data components**: corrected to actual: src/preproc/{cds_downloader,dlamp_regridder,sfno_processor} → dlamp.data.preproc or split; src/registry → dlamp.data.registry. Runners DLAMPreproc.py/SFNOPreproc.py → console scripts (ticket 04). config/{era5,sfno}.yaml → top-level data config dir? standing prefs say top-level data dirs referenced by path/env.
+**Branch D — DLAMP.data components**: corrected to actual: src/preproc/{cds_downloader,dlamp_regridder,sfno_processor} → dlamp.data.preproc or split; src/registry → dlamp.data.registry. Runners DLAMPreproc.py/SFNOPreproc.py → console scripts (ticket 04). config/{era5,sfno}.yaml → top-level data config dir? The standing prefs say top-level data dirs referenced by path/env.
 
 **Branch E — final tree diagram**.
 
-Given ticket 03 question references old (wrong) dlamp.data layout, correct it in answer and note correction. Also fog item about "redundant src/dlamp/data dir already present in dlamp-data" doesn't apply (that was github/dlamp-data).
+Given the ticket 03 question references the old (wrong) dlamp.data layout, I should correct it in the answer and note the correction. Also the fog item about "redundant src/dlamp/data dir already present in dlamp-data" doesn't apply (that was github/dlamp-data).
 
- start grilling Branch . One question at time.
+Let me start grilling Branch A. One question at a time.
 
-Be careful: this is big ticket with 5 branches. grill Branch first.
+Actually, I should be careful: this is a big ticket with 5 branches. Let me grill Branch A first.
 
-Branch A recommendation: Fold analysis/inference/visual as src/dlamp/{analysis,inference,visual}; src/{models,datasets,utils,managers,debug} as src/dlamp/{models,datasets,utils,managers,debug}. src-level modules: const.py → src/dlamp/const.py? But note src/const.py is imported as `from src.const import ...` everywhere. In monorepo under src/dlamp/, it becomes `dlamp.const`... wait, namespace is `src/dlamp/` meaning package `dlamp`. So `src/const.py` would become `src/dlamp/const.py` → `dlamp.const`. And `src/standardization.py` → `dlamp.standardization`. Scripts export_onnx.py, generate_const_masks.py, inference_onnx.py, unzip_tgz.py → likely console scripts (ticket 04) or `src/dlamp/tools/`. I'll propose: const + standardization fold as modules; 4 scripts move to console entry points per ticket 04.
+Branch A recommendation: fold analysis/inference/visual as src/dlamp/{analysis,inference,visual}; src/{models,datasets,utils,managers,debug} as src/dlamp/{models,datasets,utils,managers,debug}. The src-level modules: const.py → src/dlamp/const.py? But note src/const.py is imported as `from src.const import ...` everywhere. In the monorepo under src/dlamp/, it becomes `dlamp.const`... wait, actually the namespace is `src/dlamp/` meaning package `dlamp`. So `src/const.py` would become `src/dlamp/const.py` → `dlamp.const`. And `src/standardization.py` → `dlamp.standardization`. Scripts export_onnx.py, generate_const_masks.py, inference_onnx.py, unzip_tgz.py → likely console scripts (ticket 04) or `src/dlamp/tools/`. I'll propose: const + standardization fold as modules; the 4 scripts move to console entry points per ticket 04.
 
- ask Branch as first question. Keep it focused: main dirs fold in; ask about src-level script modules specifically since that's real decision.
+Let me ask Branch A as the first question. Keep it focused: the main dirs fold in; ask about the src-level script modules specifically since that's a real decision.
 
-I'll ask one question at time per skill. present Branch .
+I'll ask one question at a time per the skill. Let me present Branch A.
 
-All facts gathered. Note: ticket 03's Q4 references old assumed dlamp-data layout (`src/core`, `src/io`, `src/tasks`, `src/tools`, `definition/`) — but ticket 02 established canonical repo is `src/preproc/` + `src/registry/`, so I'll correct that branch as we grill.
+All facts gathered. Note: ticket 03's Q4 references the old assumed dlamp-data layout (`src/core`, `src/io`, `src/tasks`, `src/tools`, `definition/`) — but ticket 02 established the canonical repo is `src/preproc/` + `src/registry/`, so I'll correct that branch as we grill.
 
-Starting grilling, one branch at time.
+Starting grilling, one branch at a time.
 
-**Branch — DLAMP.tw legacy modules (grilling 1/5).**
+**Branch A — DLAMP.tw legacy modules (grilling 1/5).**
 
 Proposed mapping (preserving internal structure):
 
@@ -352,77 +361,83 @@ Proposed mapping (preserving internal structure):
 | `src/managers/` | `src/dlamp/managers/` |
 | `src/debug/` | `src/dlamp/debug/` |
 
-Special cases at `src/` level that aren't dirs (need decision, not move):
+Special cases at `src/` level that aren't dirs (need a decision, not just a move):
 
-- `src/const.py` ( hub, imported everywhere) → **`src/dlamp/const.py`** (`dlamp.const`)
+- `src/const.py` (the hub, imported everywhere) → **`src/dlamp/const.py`** (`dlamp.const`)
 - `src/standardization.py` → **`src/dlamp/standardization.py`**
 - `src/export_onnx.py`, `src/generate_const_masks.py`, `src/inference_onnx.py`, `src/unzip_tgz.py` — standalone scripts. **Recommendation: become `[project.scripts]` entry points (ticket 04 decides names), no package module home.**
 
-**My recommendation:** confirm 8-dir fold-in as above, plus `dlamp.const` + `dlamp.standardization` modules, and 4 scripts → entry points.
+**My recommendation:** confirm the 8-dir fold-in as above, plus `dlamp.const` + `dlamp.standardization` modules, and the 4 scripts → entry points.
 
 Confirm or amend?
 
 ---
 
 ## User
+
 Confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 6.3s)
+
 **Branch B — starter `src/dlamp/` package (grilling 2/5).**
 
-Facts:  starter package (`model.py`, `datamodule.py`, `lightning_module.py`, `train.py`, `config/config.yaml`, `py.typed`) is toy MLP scaffold — thing that currently makes `import dlamp` work. real model code lives in `src/models/` (architectures, lightning_modules, etc.), which per Branch folds in as `src/dlamp/models/`.
+Facts: the starter package (`model.py`, `datamodule.py`, `lightning_module.py`, `train.py`, `config/config.yaml`, `py.typed`) is a toy MLP scaffold — the thing that currently makes `import dlamp` work. The real model code lives in `src/models/` (architectures, lightning_modules, etc.), which per Branch A folds in as `src/dlamp/models/`.
 
 Collisions this creates:
 
 - `dlamp.model` (starter) vs `dlamp.models` (folded) — no name clash, but both exist.
 - `dlamp.train` (starter, `train.py`) vs root `train.py` / `train_pangu.py` entrypoints.
-- `dlamp.config` (starter `config/config.yaml`) vs top-level `config/` ( real Hydra configs). Per standing prefs, top-level `config/` stays un-packaged (referenced by path), so `dlamp.config` YAML _inside_ package would be only in-package config.
+- `dlamp.config` (starter `config/config.yaml`) vs top-level `config/` (the real Hydra configs). Per standing prefs, top-level `config/` stays un-packaged (referenced by path), so `dlamp.config` the YAML _inside_ the package would be the only in-package config.
 
-**My recommendation: delete starter scaffold entirely.** Rationale: it's placeholder (toy MLP) with no runtime dependency from real pipeline; real code folds in as `dlamp.models`/`dlamp.analysis` etc.; keeping it would preserve name-collision minefield (`dlamp.model` vs `dlamp.models`, redundant `dlamp.train`). Nothing in DLAMP.tw imports `src/dlamp/*` — it's only pytest `pythonpath=["src"]` target. Its value as "starter example" is superseded by monorepo's real structure.
+**My recommendation: delete the starter scaffold entirely.** Rationale: it's a placeholder (toy MLP) with no runtime dependency from the real pipeline; the real code folds in as `dlamp.models`/`dlamp.analysis` etc.; keeping it would preserve a name-collision minefield (`dlamp.model` vs `dlamp.models`, a redundant `dlamp.train`). Nothing in DLAMP.tw imports `src/dlamp/*` — it's only the pytest `pythonpath=["src"]` target. Its value as a "starter example" is superseded by the monorepo's real structure.
 
-( `tests/` that test `dlamp.*` — that's ticket 11's domain, noted for later.)
+(The `tests/` that test `dlamp.*` — that's ticket 11's domain, noted for later.)
 
-Confirm: **delete starter package** (its tests go to 11's disposition), or preserve it somewhere?
+Confirm: **delete the starter package** (its tests go to 11's disposition), or preserve it somewhere?
 
 ---
 
 ## User
-Delete starter package
+
+delete the starter package
 
 ---
 
 ## Assistant (Build · Big Pickle · 4.9s)
+
 **Branch C — disposition of nested `externals/dlamp-data` (grilling 3/5).**
 
-Facts from tickets 01/02/07: nested `externals/dlamp-data` is **untracked** working-tree copy (`?? externals/`) of data pipeline — not committed, not gitlink, so it won't be carried by ticket 07's history merge. canonical dlamp.data content ( same project, 55 commits) merges in separately as `src/dlamp/data/`.
+Facts from tickets 01/02/07: the nested `externals/dlamp-data` is an **untracked** working-tree copy (`?? externals/`) of the data pipeline — not committed, not a gitlink, so it won't be carried by ticket 07's history merge. The canonical dlamp.data content (the same project, 55 commits) merges in separately as `src/dlamp/data/`.
 
 Options:
 
-1. **Delete** (recommended) — it's redundant: canonical, up-to-date 55-commit history is what monorepo gets. Keeping stale untracked copy inside DLAMP.tw adds nothing and would confuse merged tree.
-2. **Convert to submodule** — pointless: ticket 07 rejects submodules for monorepo history; and it'd be submodule _of old repo_, not monorepo.
+1. **Delete** (recommended) — it's redundant: the canonical, up-to-date 55-commit history is what the monorepo gets. Keeping a stale untracked copy inside DLAMP.tw adds nothing and would confuse the merged tree.
+2. **Convert to submodule** — pointless: ticket 07 rejects submodules for the monorepo history; and it'd be a submodule _of the old repo_, not the monorepo.
 3. **Vendor / ignore** — same redundancy problem.
 
-**My recommendation: delete `externals/` from DLAMP.tw before/at archive.** It's already untracked, so this is `rm -rf externals/` in old repo (nothing committed changes). canonical data pipeline lives in monorepo as `src/dlamp/data/` from merged history.
+**My recommendation: delete `externals/` from DLAMP.tw before/at archive.** It's already untracked, so this is just `rm -rf externals/` in the old repo (nothing committed changes). The canonical data pipeline lives in the monorepo as `src/dlamp/data/` from the merged history.
 
 Confirm: **delete `externals/`** from DLAMP.tw at archiving?
 
 ---
 
 ## User
-Confirmed
+
+confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 7.7s)
+
 _Thinking:_
 
-Branch D — DLAMP.data components. This branch's original text assumed old layout (src/core, src/io, src/tasks, src/tools, definition/). correct it per ticket 02 findings: canonical repo has src/preproc/ + src/registry/, root runners, config yamls, assets. grill corrected mapping.
+Branch D — DLAMP.data components. This branch's original text assumed the old layout (src/core, src/io, src/tasks, src/tools, definition/). I need to correct it per ticket 02 findings: the canonical repo has src/preproc/ + src/registry/, root runners, config yamls, assets. Let me grill the corrected mapping.
 
 **Branch D — DLAMP.data components (grilling 4/5, corrected).**
 
-This branch's original text assumed old layout (`src/{core,io,tasks,tools}`, `definition/`, redundant `src/dlamp/data` dir) — all of which belong to redirected-away `github/dlamp-data` and **don't exist in canonical repo** (ticket 02). Corrected mapping based on what's there:
+This branch's original text assumed the old layout (`src/{core,io,tasks,tools}`, `definition/`, redundant `src/dlamp/data` dir) — all of which belong to the redirected-away `github/dlamp-data` and **don't exist in the canonical repo** (ticket 02). Corrected mapping based on what's actually there:
 
 | Canonical dlamp.data component | Target |
 | --- | --- |
@@ -432,28 +447,30 @@ This branch's original text assumed old layout (`src/{core,io,tasks,tools}`, `de
 | `src/registry/diagnostic_functions.py` (31 `diag_*`) | `src/dlamp/data/registry/diagnostic_functions.py` (`dlamp.data.registry...`) |
 | `src/registry/diagnostic_registry.py` | `src/dlamp/data/registry/diagnostic_registry.py` |
 | Runners `DLAMPreproc.py`, `SFNOPreproc.py` | `[project.scripts]` entry points (ticket 04) |
-| `updated.py` (overlapping diag module) | **resolve in ticket 09/11** — it duplicates `diagnostic_functions.py`; recommend flag for reconciliation, not separate home |
+| `updated.py` (overlapping diag module) | **resolve in ticket 09/11** — it duplicates `diagnostic_functions.py`; recommend flag for reconciliation, not a separate home |
 | `config/{era5,sfno,dataDownloader}.yaml` | top-level `config/` (un-packaged, per standing prefs — e.g. `config/data/`) |
 | `assets/target.nc` (gitignored) | top-level `assets/` — note it's LFS/regeneration territory for ticket 09 |
 | `main.py` (uv hello stub) | delete |
 
 So `dlamp.data` gets two subpackages: **`dlamp.data.preproc`** + **`dlamp.data.registry`**. No `core`/`io`/`tasks`/`tools` layer exists to map (gap already escalated in 02); no `definition/`; no redundant `src/dlamp/data` dir to worry about.
 
-**My recommendation:** confirm two-subpackage mapping (`preproc` + `registry`), runners → entry points, configs → top-level `config/`, `updated.py` → flag for 09/11 reconciliation, `main.py` → delete.
+**My recommendation:** confirm the two-subpackage mapping (`preproc` + `registry`), runners → entry points, configs → top-level `config/`, `updated.py` → flag for 09/11 reconciliation, `main.py` → delete.
 
 Confirm or amend?
 
 ---
 
 ## User
-Confirmed
+
+confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 11.6s)
+
 _Thinking:_
 
-All four branches confirmed. Now produce final tree diagram (Branch E) and lock it. note pending items that flow to other tickets (04, 05, 06, 09, 11). construct full annotated tree.
+All four branches confirmed. Now I need to produce the final tree diagram (Branch E) and lock it. Let me note the pending items that flow to other tickets (04, 05, 06, 09, 11). Let me construct the full annotated tree.
 
 Key elements:
 
@@ -462,17 +479,17 @@ Key elements:
 - `src/dlamp/data/` package: preproc/, registry/
 - Tests, packaging, etc.
 
-Wait — one consideration: `docs/` is in DLAMP.tw top-level already (found in ls earlier: analysis assets config docs export externals gallery inference lightning_logs outputs src tests visual). standing prefs say docs in CONTEXT.md + docs/adr/ + docs/{design,testing}. monorepo's docs/ is real thing.
+Wait — one consideration: `docs/` is in DLAMP.tw top-level already (found in the ls earlier: analysis assets config docs export externals gallery inference lightning_logs outputs src tests visual). Actually the standing prefs say docs in CONTEXT.md + docs/adr/ + docs/{design,testing}. The monorepo's docs/ is a real thing.
 
 Also `gallery/` and `outputs/` are data dirs — referenced by path/env. `lightning_logs/` is runtime output. These stay un-packaged.
 
- build tree and present it for approval (Branch E). This is lock-in step. I'll present full annotated tree diagram.
+Let me build the tree and present it for approval (Branch E). This is the lock-in step. I'll present the full annotated tree diagram.
 
-Double check: does monorepo need `lightning_logs/`? That's runtime. Keep as top-level runtime dir un-packaged (or output to outputs/). I'll note it.
+Actually, I should double check: does the monorepo need `lightning_logs/`? That's runtime. Keep as top-level runtime dir un-packaged (or output to outputs/). I'll note it.
 
- present Branch E as final tree diagram for approval.
+Let me present Branch E as the final tree diagram for approval.
 
-All four branches confirmed. Presenting final tree for lock-in.
+All four branches confirmed. Presenting the final tree for lock-in.
 
 **Branch E — Final tree diagram (grilling 5/5).**
 
@@ -514,25 +531,27 @@ dlamp-monorepo/                     # YaoChuDoSomething/DLAMP, single `main` bra
 
 Notes on the tree:
 
-- `dlamp.data` reuses `data/` subdir name inside `dlamp` package — i.e. `src/dlamp/data/` contains `dlamp.data.*` modules. No separate `src/dlamp/data` conflict (starter deleted in B; nested repo deleted in C).
+- `dlamp.data` reuses the `data/` subdir name inside the `dlamp` package — i.e. `src/dlamp/data/` contains the `dlamp.data.*` modules. No separate `src/dlamp/data` conflict (starter deleted in B; nested repo deleted in C).
 - Starter `src/dlamp/` toy scaffold → deleted (B); `updated.py` → flagged to 09/11 (D); `lightning_logs/` → runtime, ignored, not carried.
 - Runners + scripts (`export_onnx`, `generate_const_masks`, `inference_onnx`, `unzip_tgz`, `DLAMPreproc`, `SFNOPreproc`) → `[project.scripts]` (ticket 04).
 - Provisional paths from 08 confirmed: DLAMP.tw assets → `assets/` (top-level, not `src/dlamp/assets/` — correction from 08's provisional note, now locked by this tree).
 - Consumed by 04/05/06/09.
 
-Confirm tree as locked?
+Confirm the tree as locked?
 
 ---
 
 ## User
+
 Confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 5.8s)
+
 _Thinking:_
 
-All 5 branches confirmed. Now resolve ticket 03: append Answer with approved tree diagram, set Status: resolved, update map Decisions-so-far.
+All 5 branches confirmed. Now resolve ticket 03: append Answer with the approved tree diagram, set Status: resolved, update map Decisions-so-far.
 
 All branches confirmed. Resolving ticket 03.
 
@@ -557,6 +576,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 8.9s)
+
 **Tool: edit**
 
 **Input:**
@@ -578,6 +598,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 6.9s)
+
 **Tool: edit**
 
 **Input:**
@@ -599,11 +620,12 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 4.5s)
-Ticket 03 resolved. Tree locked — full annotated diagram recorded in issue answer and map.
+
+Ticket 03 resolved. Tree locked — full annotated diagram recorded in the issue answer and map.
 
 Key decisions this session:
 
-- **** — 8 legacy dirs fold in preserving structure; `const.py`/`standardization.py` → `dlamp.*` modules; 4 scripts → entry points
+- **A** — 8 legacy dirs fold in preserving structure; `const.py`/`standardization.py` → `dlamp.*` modules; 4 scripts → entry points
 - **B** — starter toy-MLP package deleted
 - **C** — nested `externals/dlamp-data` deleted at archiving (untracked, redundant)
 - **D** — canonical dlamp.data = `dlamp.data.preproc` + `dlamp.data.registry` only; `updated.py` flagged to 09/11
@@ -614,11 +636,13 @@ Frontier now: **04 (entry points)**, **05 (config/env wiring)**, **06 (packaging
 ---
 
 ## User
+
 05 (config/env wiring)
 
 ---
 
 ## Assistant (Build · Big Pickle · 4.8s)
+
 **Tool: read**
 
 **Input:**
@@ -659,23 +683,24 @@ Frontier now: **04 (entry points)**, **05 (config/env wiring)**, **06 (packaging
 ---
 
 ## Assistant (Build · Big Pickle · 8.0s)
+
 _Thinking:_
 
-Ticket 05 is grilling ticket. Note: it's blocked by 03 (now resolved). claim it and gather facts.
+Ticket 05 is a grilling ticket. Note: it's blocked by 03 (now resolved). Let me claim it and gather facts.
 
 Facts I need:
 
 - `src/const.py` env vars — already know: DLAMP_EXP_CODE (default 20250627), DLAMP_DATA_SOURCE (default OP_ERA5), DLAMP_DATA_PATH (default /wk2/yaochu/CASE_DATA/Pool/).
 - Hydra config layout: top-level `config/` with data/, model/, lightning/, inference/, plot/, predict.yaml, train_*.yaml.
-- Starter package `src/dlamp/config/config.yaml` — starter is being deleted (Branch B of ticket 03). So this question about `src/dlamp/config/config.yaml` is moot — starter package is deleted. But wait, ticket 03's Branch B deleted starter package. So `src/dlamp/config/config.yaml` disappears. But ticket asks "where does it land relative to top-level config/". Since starter is deleted, answer: it doesn't land anywhere — deleted with starter.
+- Starter package `src/dlamp/config/config.yaml` — the starter is being deleted (Branch B of ticket 03). So this question about `src/dlamp/config/config.yaml` is moot — the starter package is deleted. But wait, ticket 03's Branch B deleted the starter package. So `src/dlamp/config/config.yaml` disappears. But the ticket asks "where does it land relative to top-level config/". Since starter is deleted, answer: it doesn't land anywhere — deleted with the starter.
 
- wait — re-read ticket 03's answer. "B — starter `src/dlamp/` toy-MLP scaffold (`model/datamodule/lightning_module/train/config`) **deleted**". So starter's config/config.yaml is deleted too. So Q2 of this ticket is resolved by prior decision: one canonical config home = top-level `config/`.
+Actually wait — let me re-read ticket 03's answer. "B — starter `src/dlamp/` toy-MLP scaffold (`model/datamodule/lightning_module/train/config`) **deleted**". So the starter's config/config.yaml is deleted too. So Q2 of this ticket is resolved by the prior decision: one canonical config home = top-level `config/`.
 
-- Dlamp-data's `config/` — canonical repo has `config/{era5,sfno,dataDownloader}.yaml`. Branch D of 03 decided these go to top-level `config/` (e.g. `config/data/`). But ticket mentions "test/fixtures/test_config.yaml" — that's from redirected github/dlamp-data, doesn't exist in canonical. So flag that.
+- dlamp-data's `config/` — the canonical repo has `config/{era5,sfno,dataDownloader}.yaml`. Branch D of 03 decided these go to top-level `config/` (e.g. `config/data/`). But the ticket mentions "test/fixtures/test_config.yaml" — that's from the redirected github/dlamp-data, doesn't exist in canonical. So flag that.
 
 - Path references to top-level data dirs — relative-to-repo-root vs env-injected.
 
- gather facts on const.py, Hydra config, how configs reference paths, and environment. read const.py fully and check config paths in codebase.
+Let me gather facts on const.py, Hydra config, how configs reference paths, and the environment. Let me read const.py fully and check config paths in the codebase.
 
 **Tool: edit**
 
@@ -698,6 +723,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 4.8s)
+
 **Tool: read**
 
 **Input:**
@@ -1011,6 +1037,7 @@ similar flags that are available: --include-zero
 ---
 
 ## Assistant (Build · Big Pickle · 4.2s)
+
 **Tool: bash**
 
 **Input:**
@@ -1070,49 +1097,52 @@ visual/viz_wind.py:9:from src.const import FIGURE_PATH, WSP_COLOR, WSP_LV
 ---
 
 ## Assistant (Build · Big Pickle · 11.1s)
+
 _Thinking:_
 
 Now I have the facts:
 
-- `src/const.py` (→ `dlamp.const`): env vars `DLAMP_EXP_CODE` (default 20250627), `DLAMP_DATA_SOURCE` (default OP_ERA5, note hardcoded line 11 `DATA_SOURCE = "OP_E2S"` overwritten by env line 15), `DLAMP_DATA_PATH` (default `/wk2/yaochu/CASE_DATA/Pool/`). Also relative paths: `STANDARDIZATION_PATH = "./assets/standardization/z_score_3h_{MODEL_CODE}.json"`, `DATA_CONFIG_PATH = "./config/data/rwrf_{MODEL_CODE}.yaml"`, `BLACKLIST_PATH = "./assets/blacklist_rwrf_3h.txt"`, `CHECKPOINT_DIR = "./checkpoints/"`, LFS paths under `./assets/`, `FIGURE_PATH = "./gallery/"`. Plus colorbar constants and EVAL_CASES.
+- `src/const.py` (→ `dlamp.const`): env vars `DLAMP_EXP_CODE` (default 20250627), `DLAMP_DATA_SOURCE` (default OP_ERA5, note the hardcoded line 11 `DATA_SOURCE = "OP_E2S"` overwritten by env line 15), `DLAMP_DATA_PATH` (default `/wk2/yaochu/CASE_DATA/Pool/`). Also relative paths: `STANDARDIZATION_PATH = "./assets/standardization/z_score_3h_{MODEL_CODE}.json"`, `DATA_CONFIG_PATH = "./config/data/rwrf_{MODEL_CODE}.yaml"`, `BLACKLIST_PATH = "./assets/blacklist_rwrf_3h.txt"`, `CHECKPOINT_DIR = "./checkpoints/"`, LFS paths under `./assets/`, `FIGURE_PATH = "./gallery/"`. Plus colorbar constants and EVAL_CASES.
 - Hydra entrypoints: `train.py` uses `config_path="config"` (relative to script — starter package, deleted), `src/inference_onnx.py` and `src/export_onnx.py` use `config_path="../config"` relative to `src/` → resolves to top-level `config/`.
-- Dlamp-data's `config/era5.yaml` etc. — Branch D of 03 decided these go to top-level `config/`. ticket mentions `test/fixtures/test_config.yaml` — that's from redirected github/dlamp-data; canonical has no test dir (02). So flag that.
+- dlamp-data's `config/era5.yaml` etc. — Branch D of 03 decided these go to top-level `config/`. The ticket mentions `test/fixtures/test_config.yaml` — that's from the redirected github/dlamp-data; canonical has no test dir (02). So flag that.
 
-Note:  ticket's question 3 mentions dlamp-data's `config/` and `test/fixtures/test_config.yaml` — fixtures part doesn't exist canonically. Flag in grilling.
+Note: The ticket's question 3 mentions dlamp-data's `config/` and `test/fixtures/test_config.yaml` — the fixtures part doesn't exist canonically. Flag in grilling.
 
-Also important:  mismatch trap — `DLAMP_EXP_CODE` must match model version; `DLAMP_DATA_PATH` default is `/wk2/yaochu/CASE_DATA/Pool/`. In monorepo, `DATA_PATH` env var reads `DLAMP_DATA_PATH`. default `/wk2/yaochu/CASE_DATA/Pool/` is absolute path — should we keep env-driven defaults? Question 1 asks confirm env-driven + mismatch trap stays enforced.
+Also important: the mismatch trap — `DLAMP_EXP_CODE` must match model version; `DLAMP_DATA_PATH` default is `/wk2/yaochu/CASE_DATA/Pool/`. In the monorepo, `DATA_PATH` env var reads `DLAMP_DATA_PATH`. The default `/wk2/yaochu/CASE_DATA/Pool/` is an absolute path — should we keep env-driven defaults? Question 1 asks confirm env-driven + mismatch trap stays enforced.
 
- also check RWRF data path gen and how DATA_PATH is used, plus whether there are other relative path constants in analysis/inference. grep bit more for "./" path usage and hydra output config (chdir: False).
+Let me also check the RWRF data path gen and how DATA_PATH is used, plus whether there are other relative path constants in analysis/inference. Let me grep a bit more for "./" path usage and hydra output config (chdir: False).
 
- check where DATA_PATH is used and hydra run dir settings, and predict.yaml/outputs.
+Let me check where DATA_PATH is used and hydra run dir settings, and the predict.yaml/outputs.
 
- I have enough to grill. structure grilling branches per ticket's 4 questions:
+Actually I have enough to grill. Let me structure the grilling branches per the ticket's 4 questions:
 
 1. Env vars — keep env-driven, mismatch trap enforced.
-2. Hydra config layout — one canonical config home (top-level `config/`); starter's `src/dlamp/config/config.yaml` is deleted (Branch B), so no second home. Hydra `config_path="../config"` patterns → `config_path="../../config"` relative to `src/dlamp/` package after folding. Also `chdir: False` handling (AGENTS says Hydra runs with chdir: False). Need to decide: how entry points locate top-level config/ — relative path or Hydra absolute.
-3. Dlamp-data configs — `config/era5.yaml` etc → top-level `config/` (per 03). `test_config.yaml` doesn't exist canonically (02) — nothing to cross.
+2. Hydra config layout — one canonical config home (top-level `config/`); the starter's `src/dlamp/config/config.yaml` is deleted (Branch B), so no second home. Hydra `config_path="../config"` patterns → `config_path="../../config"` relative to `src/dlamp/` package after folding. Also `chdir: False` handling (AGENTS says Hydra runs with chdir: False). Need to decide: how entry points locate top-level config/ — relative path or Hydra absolute.
+3. dlamp-data configs — `config/era5.yaml` etc → top-level `config/` (per 03). `test_config.yaml` doesn't exist canonically (02) — nothing to cross.
 4. Path references to data dirs — relative-to-repo-root vs env-injected. Currently `./assets/...` relative paths (CWD-dependent, AGENTS: run from repo root) + env vars for data path. Decision: keep relative-to-repo-root constants, or switch to env-injected absolute paths.
 
- grill one at time with recommendations.
+Let me grill one at a time with recommendations.
 
-Facts gathered. One correction to ticket text up front: `test/fixtures/test_config.yaml` doesn't exist in canonical dlamp-data (no `test/` dir — ticket 02); I'll fold that into grill below.
+Facts gathered. One correction to the ticket text up front: `test/fixtures/test_config.yaml` doesn't exist in the canonical dlamp-data (no `test/` dir — ticket 02); I'll fold that into the grill below.
 
 **Q1 — `const.py` env vars (grilling 1/4).**
 
-Current state (lines 14–21): `DLAMP_EXP_CODE` (default `20250627`), `DLAMP_DATA_SOURCE` (default `OP_ERA5`), `DLAMP_DATA_PATH` (default `/wk2/yaochu/CASE_DATA/Pool/`), plus derived `STANDARDIZATION_PATH`/`DATA_CONFIG_PATH` built from `MODEL_CODE`. There's also dead hardcoded `DATA_SOURCE = "OP_E2S"` (line 11) that env immediately overrides.
+Current state (lines 14–21): `DLAMP_EXP_CODE` (default `20250627`), `DLAMP_DATA_SOURCE` (default `OP_ERA5`), `DLAMP_DATA_PATH` (default `/wk2/yaochu/CASE_DATA/Pool/`), plus derived `STANDARDIZATION_PATH`/`DATA_CONFIG_PATH` built from `MODEL_CODE`. There's also a dead hardcoded `DATA_SOURCE = "OP_E2S"` (line 11) that env immediately overrides.
 
-**My recommendation:** keep all three env vars, env-driven with same defaults. Enforce mismatch trap _in code_, not by convention: `dlamp.const` should **validate at import** that `MODEL_CODE` has matching `config/data/rwrf_<code>.yaml` + `assets/standardization/z_score_3h_<code>.json` and raise clear error (rather than silently applying wrong standardization, as today). dead line-11 hardcode gets removed. Defaults change to repo-root-relative once monorepo path is fixed (Q4 covers how).
+**My recommendation:** keep all three env vars, env-driven with the same defaults. Enforce the mismatch trap _in code_, not just by convention: `dlamp.const` should **validate at import** that `MODEL_CODE` has a matching `config/data/rwrf_<code>.yaml` + `assets/standardization/z_score_3h_<code>.json` and raise a clear error (rather than silently applying wrong standardization, as today). The dead line-11 hardcode gets removed. Defaults change to repo-root-relative once the monorepo path is fixed (Q4 covers how).
 
 Confirm?
 
 ---
 
 ## User
+
 Yes
 
 ---
 
 ## Assistant (Build · Big Pickle · 8.1s)
+
 _Thinking:_
 
 Q1 confirmed. Now Q2 — Hydra config layout.
@@ -1121,45 +1151,49 @@ Q1 confirmed. Now Q2 — Hydra config layout.
 
 Facts:
 
-- Top-level `config/` is real Hydra home (`data/`, `model/`, `lightning/`, `inference/`, `plot/`, `predict.yaml`, `train_pangu.yaml`, `train_diffusion.yaml`).
+- Top-level `config/` is the real Hydra home (`data/`, `model/`, `lightning/`, `inference/`, `plot/`, `predict.yaml`, `train_pangu.yaml`, `train_diffusion.yaml`).
 - Entry points today use relative `config_path`: `src/inference_onnx.py` and `src/export_onnx.py` → `config_path="../config"` (resolves to top-level from `src/`); starter `src/dlamp/train.py` → `config_path="config"` (its own subdir).
-- Ticket 03 deleted starter package, so `src/dlamp/config/config.yaml` **goes away** — no second config home.
+- Ticket 03 deleted the starter package, so `src/dlamp/config/config.yaml` **goes away** — no second config home.
 - Hydra runs with `chdir: False` (from AGENTS.md), so `./config/...` stays valid from repo root.
 
 **My recommendation: one canonical config home — top-level `config/` only.** Concretely:
 
-- In monorepo, all `[project.scripts]` entry points point Hydra at top-level `config/` via **absolute repo-root-relative path** derived from package location (e.g. `Path(__file__).parents[2] / "config"`), never hand-written `../config` — because after folding into `src/dlamp/`, `../config` would break (package depth changes).
-- Dlamp-data's `config/{era5,sfno,dataDownloader}.yaml` land **inside** top-level `config/` (e.g. `config/data/`... wait — `data/` already holds `rwrf_<code>.yaml`. Per ticket 03 they go to top-level `config/`; I'll propose `config/data/` to sit alongside DLAMP.tw data configs, with `era5.yaml`, `sfno.yaml` and `dataDownloader.yaml` renamed only if they collide — they don't collide with `rwrf_*` names).
-- No `dlamp.config` in-package config survives; delete starter's.
+- In the monorepo, all `[project.scripts]` entry points point Hydra at the top-level `config/` via an **absolute repo-root-relative path** derived from the package location (e.g. `Path(__file__).parents[2] / "config"`), never a hand-written `../config` — because after folding into `src/dlamp/`, `../config` would break (package depth changes).
+- dlamp-data's `config/{era5,sfno,dataDownloader}.yaml` land **inside** top-level `config/` (e.g. `config/data/`... wait — `data/` already holds `rwrf_<code>.yaml`. Per ticket 03 they go to top-level `config/`; I'll propose `config/data/` to sit alongside the DLAMP.tw data configs, with `era5.yaml`, `sfno.yaml` and `dataDownloader.yaml` renamed only if they collide — they don't collide with `rwrf_*` names).
+- No `dlamp.config` in-package config survives; delete the starter's.
 
-Confirm: Single canonical `config/` home, entry points resolve it by package-relative absolute path (not `../config`), dlamp-data yamls → `config/data/`?
+Confirm: single canonical `config/` home, entry points resolve it by package-relative absolute path (not `../config`), dlamp-data yamls → `config/data/`?
 
 ---
 
 ## User
+
 OK
 
 ---
 
 ## Assistant (Build · Big Pickle · 6.6s)
-**Q3 — Configs across `dlamp.data` boundary (grilling 3/4).**
 
-Facts: Dlamp-data's `DLAMPreproc.py`/`SFNOPreproc.py` read `config/era5.yaml` / `config/sfno.yaml` via `yaml_config = f"{DLAMP_DATA_DIR}/config/era5.yaml"` with `DLAMP_DATA_DIR = "./"` — i.e. CWD-relative today (must run from repo root). There's no `test_config.yaml` (ticket 02: no `test/` dir in canonical copy).
+**Q3 — Configs across the `dlamp.data` boundary (grilling 3/4).**
 
-Also note `config/era5.yaml` has `data_path: ${DATA_PATH}` and `base_dir: "/wk2/yaochu/DLAMP_model/DLAMP.data/"` — **absolute path** that won't exist in monorepo. It must become repo-root-relative or env-injected (same policy as Q4).
+Facts: dlamp-data's `DLAMPreproc.py`/`SFNOPreproc.py` read `config/era5.yaml` / `config/sfno.yaml` via `yaml_config = f"{DLAMP_DATA_DIR}/config/era5.yaml"` with `DLAMP_DATA_DIR = "./"` — i.e. CWD-relative today (must run from repo root). There's no `test_config.yaml` (ticket 02: no `test/` dir in canonical copy).
 
-**My recommendation:** after folding, `dlamp.data` components get config paths **injected by entry point**, not CWD-guessed. Each runner script (→ `[project.scripts]`) resolves top-level `config/` same package-relative way as Q2 and passes yaml path into `CDSDataDownloader`/`DataRegridder`/`SFNODataProcessor`. `${DATA_PATH}` placeholder and hardcoded `base_dir` in yamls get replaced by Q4 env policy.
+Also note `config/era5.yaml` has `data_path: ${DATA_PATH}` and `base_dir: "/wk2/yaochu/DLAMP_model/DLAMP.data/"` — an **absolute path** that won't exist in the monorepo. It must become repo-root-relative or env-injected (same policy as Q4).
 
-Confirm: Entry points pass config paths in (no CWD-relative `./config`), and hardcoded `base_dir`/`${DATA_PATH}` are swapped for env policy?
+**My recommendation:** after folding, `dlamp.data` components get config paths **injected by the entry point**, not CWD-guessed. Each runner script (→ `[project.scripts]`) resolves top-level `config/` the same package-relative way as Q2 and passes the yaml path into `CDSDataDownloader`/`DataRegridder`/`SFNODataProcessor`. The `${DATA_PATH}` placeholder and the hardcoded `base_dir` in the yamls get replaced by the Q4 env policy.
+
+Confirm: entry points pass config paths in (no CWD-relative `./config`), and the hardcoded `base_dir`/`${DATA_PATH}` are swapped for the env policy?
 
 ---
 
 ## User
-Confirmed
+
+confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 8.1s)
+
 _Thinking:_
 
 Q3 confirmed. Now Q4 — path references to top-level data dirs.
@@ -1170,24 +1204,26 @@ Facts from `dlamp.const` + code: all top-level data dirs are referenced as **CWD
 
 Options:
 
-1. **Env-injected absolute** (recommended): keep `DLAMP_EXP_CODE` / `DLAMP_DATA_SOURCE` / `DLAMP_DATA_PATH` as-is; add one new anchor env `DLAMP_MONOREPO_ROOT` (or reuse single existing mechanism) that `dlamp.const` resolves **once** at import into repo-root-absolute constants (`ASSETS_DIR`, `CONFIG_DIR`, `EXPORT_DIR`, `GALLERY_DIR`, `OUTPUTS_DIR`, `CHECKPOINT_DIR`, `STANDARDIZATION_PATH`, `DATA_CONFIG_PATH`). Default anchor = `Path(__file__).parents[2]` ( repo root, stable because `dlamp.const` lives at fixed depth `src/dlamp/const.py`). Code switches from `"./assets/..."` to constants — CWD-independent, so "run from repo root" rule becomes unnecessary and `chdir: False` stays irrelevant.
-2. **Keep CWD-relative** — zero code change, but keeps fragile run-from-root contract and breaks as soon as anyone runs from another dir.
+1. **Env-injected absolute** (recommended): keep `DLAMP_EXP_CODE` / `DLAMP_DATA_SOURCE` / `DLAMP_DATA_PATH` as-is; add one new anchor env `DLAMP_MONOREPO_ROOT` (or reuse a single existing mechanism) that `dlamp.const` resolves **once** at import into repo-root-absolute constants (`ASSETS_DIR`, `CONFIG_DIR`, `EXPORT_DIR`, `GALLERY_DIR`, `OUTPUTS_DIR`, `CHECKPOINT_DIR`, `STANDARDIZATION_PATH`, `DATA_CONFIG_PATH`). Default anchor = `Path(__file__).parents[2]` (the repo root, stable because `dlamp.const` lives at fixed depth `src/dlamp/const.py`). Code switches from `"./assets/..."` to the constants — CWD-independent, so the "run from repo root" rule becomes unnecessary and `chdir: False` stays irrelevant.
+2. **Keep CWD-relative** — zero code change, but keeps the fragile run-from-root contract and breaks as soon as anyone runs from another dir.
 
-**My recommendation: option 1.** `dlamp.const` computes repo root from its own location (`parents[2]`), derives all top-level data-dir constants from it, keeps three existing env vars for data-specific overrides (`DLAMP_EXP_CODE`, `DLAMP_DATA_SOURCE`, `DLAMP_DATA_PATH`), validates exp-code↔config/standardization match at import (Q1), and `./` literals across `src/analysis/inference/visual` + dlamp-data yamls get replaced by these constants. hardcoded `base_dir` in dlamp-data's yamls follows same policy.
+**My recommendation: option 1.** `dlamp.const` computes the repo root from its own location (`parents[2]`), derives all top-level data-dir constants from it, keeps the three existing env vars for the data-specific overrides (`DLAMP_EXP_CODE`, `DLAMP_DATA_SOURCE`, `DLAMP_DATA_PATH`), validates exp-code↔config/standardization match at import (Q1), and the `./` literals across `src/analysis/inference/visual` + dlamp-data yamls get replaced by these constants. The hardcoded `base_dir` in dlamp-data's yamls follows the same policy.
 
-Confirm: **env-anchored absolute paths via root-derived anchor (default from `dlamp.const` location), replacing all CWD-relative `./` literals** — or keep CWD-relative?
+Confirm: **env-anchored absolute paths via a root-derived anchor (default from `dlamp.const` location), replacing all CWD-relative `./` literals** — or keep CWD-relative?
 
 ---
 
 ## User
-Former one
+
+former one
 
 ---
 
 ## Assistant (Build · Big Pickle · 6.1s)
+
 _Thinking:_
 
-All four grilling questions confirmed. Now resolve ticket 05: append Answer, set Status: resolved, update map. do edits.
+All four grilling questions confirmed. Now resolve ticket 05: append Answer, set Status: resolved, update map. Let me do the edits.
 
 All four grilling questions confirmed. Resolving ticket 05.
 
@@ -1212,6 +1248,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 9.8s)
+
 **Tool: edit**
 
 **Input:**
@@ -1233,6 +1270,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 7.0s)
+
 **Tool: edit**
 
 **Input:**
@@ -1254,28 +1292,31 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 6.1s)
+
 Ticket 05 resolved. Config/env policy locked:
 
 - **Env vars**: keep all three, add import-time exp-code↔config/standardization validation; remove dead hardcode
 - **Config home**: single top-level `config/`; entry points resolve via `Path(__file__).parents[N]`, never `../config`; dlamp-data yamls → `config/data/`
 - **dlamp.data boundary**: config paths injected by entry points, no CWD `./config` guessing
-- **Paths**: `dlamp.const` derives repo root (`parents[2]`) and exports `ASSETS_DIR`/`CONFIG_DIR`/`EXPORT_DIR`/`GALLERY_DIR`/`OUTPUTS_DIR`/`CHECKPOINT_DIR`, replacing all CWD-relative literals — "run from repo root" rule becomes unnecessary
+- **Paths**: `dlamp.const` derives repo root (`parents[2]`) and exports `ASSETS_DIR`/`CONFIG_DIR`/`EXPORT_DIR`/`GALLERY_DIR`/`OUTPUTS_DIR`/`CHECKPOINT_DIR`, replacing all CWD-relative literals — the "run from repo root" rule becomes unnecessary
 
 Frontier now: **04 (entry points)**, **06 (packaging/deps)**, **09 (testing spec)** — all open and unblocked. Which next?
 
 ---
 
 ## User
+
 04 => 06 => 09
 
 ---
 
 ## Assistant (Build · Big Pickle · 5.5s)
+
 _Thinking:_
 
- user wants me to do 04, then 06, then 09 in sequence. That's three tickets in one session, which breaks "one ticket per session" rule — but user is explicitly directing it, so user instructions take precedence. proceed with 04 first.
+The user wants me to do 04, then 06, then 09 in sequence. That's three tickets in one session, which breaks the "one ticket per session" rule — but the user is explicitly directing it, so user instructions take precedence. Let me proceed with 04 first.
 
- read ticket 04.
+Let me read ticket 04.
 
 Proceeding with 04 → 06 → 09 as directed. Starting with 04.
 
@@ -1319,11 +1360,12 @@ Proceeding with 04 → 06 → 09 as directed. Starting with 04.
 ---
 
 ## Assistant (Build · Big Pickle · 5.2s)
+
 _Thinking:_
 
-Ticket 04 is grilling ticket. Note: ticket text references `dlamp_prep.py`, `scripts/`, and dlamp.data tasks (download/convert/regrid/diagnostics) — but per tickets 02/03, canonical dlamp.data has `DLAMPreproc.py` and `SFNOPreproc.py` runners (not `dlamp_prep.py`), no `scripts/` dir, and its pipeline stages are CDS download → regrid → diagnostics (+ SFNO forecast/convert). `download/convert/regrid/diagnostics` task list belongs to redirected-away github/dlamp-data layout.
+Ticket 04 is a grilling ticket. Note: the ticket text references `dlamp_prep.py`, `scripts/`, and dlamp.data tasks (download/convert/regrid/diagnostics) — but per tickets 02/03, the canonical dlamp.data has `DLAMPreproc.py` and `SFNOPreproc.py` runners (not `dlamp_prep.py`), no `scripts/` dir, and its pipeline stages are CDS download → regrid → diagnostics (+ SFNO forecast/convert). The `download/convert/regrid/diagnostics` task list belongs to the redirected-away github/dlamp-data layout.
 
-Let me claim it and gather the facts: Check actual scripts present in DLAMP.tw root and dlamp.data root.
+Let me claim it and gather the facts: check the actual scripts present in DLAMP.tw root and dlamp.data root.
 
 **Tool: edit**
 
@@ -1346,6 +1388,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 4.3s)
+
 **Tool: bash**
 
 **Input:**
@@ -1436,20 +1479,21 @@ def main():
 ---
 
 ## Assistant (Build · Big Pickle · 9.0s)
+
 _Thinking:_
 
-Now I have facts. note:
+Now I have the facts. Let me note:
 
 - DLAMP.tw root: `train.py`, `predict.py`
-- Dlamp-data root: `DLAMPreproc.py`, `SFNOPreproc.py`, `main.py` (uv hello stub → delete per 03), `updated.py` (flagged to 09/11)
+- dlamp-data root: `DLAMPreproc.py`, `SFNOPreproc.py`, `main.py` (uv hello stub → delete per 03), `updated.py` (flagged to 09/11)
 - `src/export_onnx.py`, `src/inference_onnx.py`, `src/unzip_tgz.py`, `src/generate_const_masks.py` — standalone scripts
--  ticket text mentions `dlamp_prep.py` and `scripts/` — those are from redirected-away copy; canonical dlamp-data has `DLAMPreproc.py`/`SFNOPreproc.py` (README references `dlamp_prep.py` as entry, but actual file is `DLAMPreproc.py`).
+- The ticket text mentions `dlamp_prep.py` and `scripts/` — those are from the redirected-away copy; canonical dlamp-data has `DLAMPreproc.py`/`SFNOPreproc.py` (README references `dlamp_prep.py` as the entry, but the actual file is `DLAMPreproc.py`).
 
-Also ticket's Q4 mentions dlamp.data tasks (download/convert/regrid/diagnostics) — canonical pipeline stages are: CDS download → regrid → diagnostics (DLAMPreproc), and SFNO forecast → convert → regrid → diagnostics (SFNOPreproc). So unified CLI question.
+Also the ticket's Q4 mentions dlamp.data tasks (download/convert/regrid/diagnostics) — the canonical pipeline stages are: CDS download → regrid → diagnostics (DLAMPreproc), and SFNO forecast → convert → regrid → diagnostics (SFNOPreproc). So a unified CLI question.
 
- grill Q1.
+Let me grill Q1.
 
-Facts gathered. Note ticket text mentions `dlamp_prep.py` and `scripts/` — those belong to redirected-away copy. Canonical dlamp-data has `DLAMPreproc.py` / `SFNOPreproc.py` (README calls it `dlamp_prep.py` loosely), and its stages are download → regrid → diagnostics (ERA5) and forecast → convert → regrid → diagnostics (SFNO).
+Facts gathered. Note the ticket text mentions `dlamp_prep.py` and `scripts/` — those belong to the redirected-away copy. Canonical dlamp-data actually has `DLAMPreproc.py` / `SFNOPreproc.py` (README calls it `dlamp_prep.py` loosely), and its stages are download → regrid → diagnostics (ERA5) and forecast → convert → regrid → diagnostics (SFNO).
 
 **Q1 — `train.py` / `predict.py` entry points (grilling 1/4).**
 
@@ -1458,35 +1502,37 @@ DLAMP.tw's two Hydra runners become `[project.scripts]`. Proposed names and CLI 
 - **`dlamp-train`** ← `train.py` (`train_pangu` / `train_diffusion` configs via `--config-name`)
 - **`dlamp-predict`** ← `predict.py` (full inference → NetCDF → analysis pipeline)
 
-CLI surface: Pure Hydra passthrough — i.e. `dlamp-train --config-name train_diffusion <overrides>`, `dlamp-predict ...` — no wrapper flags added. Rationale: keeps behavior identical to today's `python train.py ...` (regression strategy, ticket 10), zero new surface to test.
+CLI surface: pure Hydra passthrough — i.e. `dlamp-train --config-name train_diffusion <overrides>`, `dlamp-predict ...` — no wrapper flags added. Rationale: keeps behavior identical to today's `python train.py ...` (regression strategy, ticket 10), zero new surface to test.
 
-Also four standalone `src/*.py` scripts → entry points (already decided in 03-):
+Also the four standalone `src/*.py` scripts → entry points (already decided in 03-A):
 
 - `export_onnx.py` → **`dlamp-export-onnx`** (`./export/<model>_<date>.onnx`)
 - `inference_onnx.py` → **`dlamp-infer-onnx`** (sample ONNX inference)
 - `generate_const_masks.py` → **`dlamp-gen-const-masks`**
 - `unzip_tgz.py` → **`dlamp-unpack-tgz`** (small utility)
 
-Confirm: **`dlamp-train`, `dlamp-predict` (Hydra passthrough)** + four `dlamp-*` script entry points? Or adjust names/surface?
+Confirm: **`dlamp-train`, `dlamp-predict` (Hydra passthrough)** + the four `dlamp-*` script entry points? Or adjust names/surface?
 
 ---
 
 ## User
-Confirmed
+
+confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 6.5s)
+
 **Q2 — dlamp-data runners as entry points (grilling 2/4).**
 
-Facts: Canonical dlamp-data has `DLAMPreproc.py` (ERA5: download → regrid → diagnostics) and `SFNOPreproc.py` (SFNO: forecast → convert → regrid → diagnostics). Both already take yaml config path (SFNO has argparse; DLAMP uses CWD-relative `yaml_config = f"{DLAMP_DATA_DIR}/config/era5.yaml"`).
+Facts: canonical dlamp-data has `DLAMPreproc.py` (ERA5: download → regrid → diagnostics) and `SFNOPreproc.py` (SFNO: forecast → convert → regrid → diagnostics). Both already take a yaml config path (SFNO has argparse; DLAMP uses the CWD-relative `yaml_config = f"{DLAMP_DATA_DIR}/config/era5.yaml"`).
 
-Proposed: Fold both into `dlamp.data` CLI as separate entry points, not one big unified command:
+Proposed: fold both into the `dlamp.data` CLI as separate entry points, not one big unified command:
 
 - **`dlamp-data-preproc`** ← `DLAMPreproc.py` — ERA5 pipeline. Takes `--config <path>` (or `--config-data-dir`) per ticket 05 Q3.
 - **`dlamp-data-sfno`** ← `SFNOPreproc.py` — SFNO pipeline. Same config injection.
 
-Both keep their current stage toggles (`do_cds_downloader`, `do_dlamp_regridder`, SFNO workflow flags) as-is — behavior-preserving, no unified task subcommands (download/convert/regrid/diagnostics as separate subcommands would be new surface and new work; ticket's "unified CLI" was based on redirected-away repo's task layout, which doesn't exist canonically).
+Both keep their current stage toggles (`do_cds_downloader`, `do_dlamp_regridder`, SFNO workflow flags) as-is — behavior-preserving, no unified task subcommands (download/convert/regrid/diagnostics as separate subcommands would be new surface and new work; the ticket's "unified CLI" was based on the redirected-away repo's task layout, which doesn't exist canonically).
 
 `main.py` → deleted (03-D); `updated.py` → flagged to 09/11 (03-D).
 
@@ -1495,44 +1541,48 @@ Confirm: **two separate entry points `dlamp-data-preproc` / `dlamp-data-sfno`, n
 ---
 
 ## User
+
 OK
 
 ---
 
 ## Assistant (Build · Big Pickle · 8.0s)
+
 **Q3 — Scripts that stay top-level runnable vs library (grilling 3/4).**
 
-Facts: After 03-/Q1/Q2, candidate top-level runnables are: `predict.py`, `train.py` (root) → entry points; `src/export_onnx.py`, `src/inference_onnx.py`, `src/generate_const_masks.py`, `src/unzip_tgz.py` → `dlamp-*` entry points; dlamp-data `DLAMPreproc.py`/`SFNOPreproc.py` → `dlamp-data-*`; `main.py` deleted; `updated.py` flagged.
+Facts: after 03-A/Q1/Q2, the candidate top-level runnables are: `predict.py`, `train.py` (root) → entry points; `src/export_onnx.py`, `src/inference_onnx.py`, `src/generate_const_masks.py`, `src/unzip_tgz.py` → `dlamp-*` entry points; dlamp-data `DLAMPreproc.py`/`SFNOPreproc.py` → `dlamp-data-*`; `main.py` deleted; `updated.py` flagged.
 
-Question: Does anything **remain** as file you run directly (`python ...`), or does everything go through entry points?
+Question: does anything **remain** as a file you run directly (`python ...`), or does everything go through entry points?
 
 Facts to consider:
 
-- `src/inference_onnx.py` is documented in code as " sample code for quickly inference onnx model" — its docstring says sample; it's natural **library function** too (`inference` module per 03-).
-- `src/unzip_tgz.py` has `logging.basicConfig` at module level and is tiny utility.
--  folded dirs (`analysis/`, `visual/`) already contain callables used as libraries (imported by `predict.py`), not standalone scripts.
+- `src/inference_onnx.py` is documented in code as "a sample code for quickly inference onnx model" — its docstring says sample; it's a natural **library function** too (`inference` module per 03-A).
+- `src/unzip_tgz.py` has `logging.basicConfig` at module level and is a tiny utility.
+- The folded dirs (`analysis/`, `visual/`) already contain callables used as libraries (imported by `predict.py`), not standalone scripts.
 
-**My recommendation: everything becomes entry points — no top-level `python <file>.py` remains as supported invocation.** Library callables (e.g. `inference_onnx`'s logic) live in their folded modules (`dlamp.inference`, `dlamp.analysis`) and are importable; `[project.scripts]` thin wrappers are only public CLI. Running `python src/...` directly is unsupported (breaks because relative imports like `from src...` assume package context anyway). This gives one uniform invocation surface (`dlamp-*` / `dlamp-data-*`), which AGENTS.md and docs describe.
+**My recommendation: everything becomes entry points — no top-level `python <file>.py` remains as the supported invocation.** Library callables (e.g. `inference_onnx`'s logic) live in their folded modules (`dlamp.inference`, `dlamp.analysis`) and are importable; the `[project.scripts]` thin wrappers are the only public CLI. Running `python src/...` directly is unsupported (breaks because relative imports like `from src...` assume package context anyway). This gives one uniform invocation surface (`dlamp-*` / `dlamp-data-*`), which AGENTS.md and docs describe.
 
 Confirm: **no top-level runnable files; all invocations via entry points, logic in importable modules**?
 
 ---
 
 ## User
-Top-level runnable files
+
+top-level runnable files
 
 ---
 
 ## Assistant (Build · Big Pickle · 270.2s)
+
 _Thinking:_
 
- user answered "top-level runnable files" — they want some scripts to remain as top-level runnable files, not everything via entry points. clarify which ones. , "top-level runnable files" might mean they want top-level files (train.py, predict.py) to remain runnable as `python train.py` etc., in addition to entry points. Or it could mean they want to keep top-level runnable files rather than converting everything to entry points.
+The user answered "top-level runnable files" — they want some scripts to remain as top-level runnable files, not everything via entry points. Let me clarify which ones. Actually, "top-level runnable files" might mean they want the top-level files (train.py, predict.py) to remain runnable as `python train.py` etc., in addition to entry points. Or it could mean they want to keep top-level runnable files rather than converting everything to entry points.
 
-This is ambiguous — ask which scripts stay runnable, or interpret their intent. Per grilling skill, put decision to them and wait for answer. answer "top-level runnable files" suggests they reject my "everything is entry points, no runnable files" recommendation. They want top-level runnable files preserved.
+This is ambiguous — I need to ask which scripts stay runnable, or interpret their intent. Per grilling skill, I should put the decision to them and wait for answer. The answer "top-level runnable files" suggests they reject my "everything is entry points, no runnable files" recommendation. They want top-level runnable files preserved.
 
-So I should ask: Which top-level runnables stay? Likely `train.py` and `predict.py` ( existing ones), and maybe standalone scripts. ask one focused question.
+So I should ask: which top-level runnables stay? Likely `train.py` and `predict.py` (the existing ones), and maybe the standalone scripts. Let me ask one focused question.
 
- reconsider — user might mean: keep train.py / predict.py runnable as files (`python train.py`), in addition to (or instead of) entry points. Or they may mean only for subset. I'll ask clarifying question offering options.
+Actually let me reconsider — the user might mean: keep train.py / predict.py runnable as files (`python train.py`), in addition to (or instead of) entry points. Or they may mean only for a subset. I'll ask a clarifying question offering options.
 
 Understood — you'd rather keep runnable files than route everything through entry points. Which scripts stay as top-level runnables?
 
@@ -1579,49 +1629,52 @@ User has answered your questions: "Which scripts should remain runnable as files
 ---
 
 ## Assistant (Build · Big Pickle · 8.3s)
+
 _Thinking:_
 
-The user chose: Root runners (train.py, predict.py) + 2 data runners (DLAMPreproc.py, SFNOPreproc.py) runnable as files; 4 src/*.py utility scripts become entry points only.
+The user chose: Root runners (train.py, predict.py) + 2 data runners (DLAMPreproc.py, SFNOPreproc.py) runnable as files; the 4 src/*.py utility scripts become entry points only.
 
- record this and continue grilling. Q3 is now answered. confirm and move to Q4 ( unified CLI question for dlamp.data).
+Let me record this and continue grilling. Q3 is now answered. Let me confirm and move to Q4 (the unified CLI question for dlamp.data).
 
-**Q3 locked:** `train.py`, `predict.py`, `DLAMPreproc.py`, `SFNOPreproc.py` remain runnable as files. 4 `src/*.py` utility scripts → entry points only.
+**Q3 locked:** `train.py`, `predict.py`, `DLAMPreproc.py`, `SFNOPreproc.py` remain runnable as files. The 4 `src/*.py` utility scripts → entry points only.
 
-Note this creates "runnable files" home question: 4 runnable files sit at repo root (train/predict) and where do 2 data runners live? They're currently at dlamp-data root → after fold they'd be in `src/dlamp/data/`... but runnable as files requires them at path you'd `python <file>.py`. Options: keep thin wrappers at repo root, or run them from `src/dlamp/data/`. I'll fold this into Q4.
+Note this creates a "runnable files" home question: the 4 runnable files sit at repo root (train/predict) and where do the 2 data runners live? They're currently at dlamp-data root → after the fold they'd be in `src/dlamp/data/`... but runnable as files requires them at a path you'd `python <file>.py`. Options: keep thin wrappers at repo root, or run them from `src/dlamp/data/`. I'll fold this into Q4.
 
 **Q4 — dlamp.data command surface (grilling 4/4).**
 
-Given Q3 keeps `DLAMPreproc.py`/`SFNOPreproc.py` runnable as files (not `dlamp-data-*` entry points), "unified CLI" question is mostly moot. But runnable-file location needs deciding:
+Given Q3 keeps `DLAMPreproc.py`/`SFNOPreproc.py` runnable as files (not `dlamp-data-*` entry points), the "unified CLI" question is mostly moot. But the runnable-file location needs deciding:
 
 - Today: `yaml_config = f"{DLAMP_DATA_DIR}/config/era5.yaml"` with `DLAMP_DATA_DIR = "./"` — CWD-relative (ticket 05 Q3 said config paths get **injected**).
-- Proposed: 2 runners move into folded package (`src/dlamp/data/preproc/`), and **repo-root thin wrappers** `dlamp_prep.py` / `sfno_prep.py` (or keep names `DLAMPreproc.py`/`SFNOPreproc.py` at root) call into package, injecting config path per 05-Q3. This keeps `python DLAMPreproc.py` working from repo root exactly as today, while logic lives in `dlamp.data.preproc` (importable for tests).
+- Proposed: the 2 runners move into the folded package (`src/dlamp/data/preproc/`), and **repo-root thin wrappers** `dlamp_prep.py` / `sfno_prep.py` (or keep names `DLAMPreproc.py`/`SFNOPreproc.py` at root) call into the package, injecting the config path per 05-Q3. This keeps `python DLAMPreproc.py` working from repo root exactly as today, while the logic lives in `dlamp.data.preproc` (importable for tests).
 
 My recommendation:
 
 - **Runnable files at repo root**: keep names `DLAMPreproc.py` + `SFNOPreproc.py` at root as thin wrappers (delegating to `dlamp.data.preproc`, injecting config path).
-- **No unified task CLI** (no `download/convert/regrid/diagnostics` subcommands) — ticket's task list came from redirected-away layout; canonical has two pipelines.
-- Runner logic stays in `src/dlamp/data/preproc/` (importable), wrappers at root are only root-level runnables besides `train.py`/`predict.py`.
+- **No unified task CLI** (no `download/convert/regrid/diagnostics` subcommands) — the ticket's task list came from the redirected-away layout; canonical has just the two pipelines.
+- Runner logic stays in `src/dlamp/data/preproc/` (importable), wrappers at root are the only root-level runnables besides `train.py`/`predict.py`.
 
-Confirm: **root wrappers `DLAMPreproc.py`/`SFNOPreproc.py` (delegating to package, config injected), no unified CLI**?
+Confirm: **root wrappers `DLAMPreproc.py`/`SFNOPreproc.py` (delegating to the package, config injected), no unified CLI**?
 
 ---
 
 ## User
+
 DLAMPreproc.py = data_prep.py ; SFNOPreproc.py = sfno_downscaling.py
 
 ---
 
 ## Assistant (Build · Big Pickle · 5.4s)
+
 _Thinking:_
 
-The user wants to rename the wrappers: `DLAMPreproc.py` → `data_prep.py` and `SFNOPreproc.py` → `sfno_downscaling.py`. confirm this and continue grilling.
+The user wants to rename the wrappers: `DLAMPreproc.py` → `data_prep.py` and `SFNOPreproc.py` → `sfno_downscaling.py`. Let me confirm this and continue grilling.
 
 So the root wrappers would be:
 
 - `data_prep.py` (was DLAMPreproc.py) — ERA5 pipeline
 - `sfno_downscaling.py` (was SFNOPreproc.py) — SFNO pipeline
 
- confirm this and finish grilling. , this answers Q4's naming question. lock it in and record.
+Let me confirm this and finish the grilling. Actually, this answers Q4's naming question. Let me lock it in and record.
 
 Renaming confirmed:
 
@@ -1653,6 +1706,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 8.4s)
+
 **Tool: edit**
 
 **Input:**
@@ -1674,6 +1728,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 7.3s)
+
 **Tool: edit**
 
 **Input:**
@@ -1695,6 +1750,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 4.3s)
+
 Ticket 04 resolved. Moving to 06 (packaging/deps).
 
 **Tool: read**
@@ -1737,11 +1793,12 @@ Ticket 04 resolved. Moving to 06 (packaging/deps).
 ---
 
 ## Assistant (Build · Big Pickle · 5.6s)
+
 _Thinking:_
 
-Ticket 06. claim it, gather facts on current pyproject, requirements, uv workflow. I have facts from earlier: DLAMP.tw pyproject.toml (uncommitted scaffolding, uv_build backend, torch>=2.4.0, lightning, hydra, numpy<2.0, requires-python ">=3.11, <3.12"), dlamp-data pyproject.toml (uv, name dlamp-data, requires-python >=3.12, earth2studio git dep, pip>=25.3) + requirements.txt (CDS stack).
+Ticket 06. Let me claim it, gather facts on current pyproject, requirements, uv workflow. I have facts from earlier: DLAMP.tw pyproject.toml (uncommitted scaffolding, uv_build backend, torch>=2.4.0, lightning, hydra, numpy<2.0, requires-python ">=3.11, <3.12"), dlamp-data pyproject.toml (uv, name dlamp-data, requires-python >=3.12, earth2studio git dep, pip>=25.3) + requirements.txt (CDS stack).
 
-Let me check the current environment: What's installed, uv present? verify couple facts, then grill.
+Let me check the current environment: what's installed, uv present? Let me verify a couple facts, then grill.
 
 **Tool: edit**
 
@@ -1764,6 +1821,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 35.0s)
+
 **Tool: bash**
 
 **Input:**
@@ -1808,62 +1866,65 @@ earth2studio = { git = "https://github.com/NVIDIA/earth2studio.git", rev = "0.9.
 ---
 
 ## Assistant (Build · Big Pickle · 19.6s)
+
 _Thinking:_
 
 Facts:
 
-- Uv 0.11.21 present
+- uv 0.11.21 present
 - Python 3.11.15 default; 3.12.13 also available
-- Torch 2.13.0+cu130 in default env (but DLAMP.tw pins torch==2.4.0 in its pyproject — pinned version in uncommitted scaffolding)
+- torch 2.13.0+cu130 in default env (but DLAMP.tw pins torch==2.4.0 in its pyproject — the pinned version in the uncommitted scaffolding)
 - DLAMP.tw pyproject: name "dlamp", requires-python ">=3.11, <3.12", uv_build backend, huge dep list (read earlier in ticket 08)
-- Dlamp-data pyproject: name "dlamp-data", requires-python ">=3.12", earth2studio[data,sfno] git dep, pip>=25.3
+- dlamp-data pyproject: name "dlamp-data", requires-python ">=3.12", earth2studio[data,sfno] git dep, pip>=25.3
 
 Tension: DLAMP.tw pins torch==2.4.0, numpy<2.0, py3.11; dlamp-data needs py3.12 and earth2studio (which likely requires newer numpy? torch?).
 
- ticket's merged dep matrix references dlamp-data deps "netcdf4, h5py, zarr, cdo, xarray" — but that was from github/dlamp-data. Canonical dlamp-data (ticket 02) has requirements.txt: pyyaml, cdsapi, xarray, cftime, cfgrib, matplotlib, numpy, scipy, pandas, netCDF4, eccodes, pyproj; plus pyproject: earth2studio[data,sfno], pip>=25.3, py3.12.
+The ticket's merged dep matrix references dlamp-data deps "netcdf4, h5py, zarr, cdo, xarray" — but that was from github/dlamp-data. Canonical dlamp-data (ticket 02) has requirements.txt: pyyaml, cdsapi, xarray, cftime, cfgrib, matplotlib, numpy, scipy, pandas, netCDF4, eccodes, pyproj; plus pyproject: earth2studio[data,sfno], pip>=25.3, py3.12.
 
-So the real merge tension is: DLAMP.tw (py3.11, torch 2.4.0, numpy<2.0) vs dlamp-data (py3.12, earth2studio git, SFNO stage). Earth2studio pulls torch too — probably newer torch. fog item says "dlamp-data was exercised under Python 3.12 while DLAMP.tw pins 3.11 (numpy<2.0, torch==2.4.0); dlamp-data adds netcdf4/h5py/zarr/cdo" — h5py/zarr don't exist canonically. cdo is conda-only.
+So the real merge tension is: DLAMP.tw (py3.11, torch 2.4.0, numpy<2.0) vs dlamp-data (py3.12, earth2studio git, SFNO stage). Earth2studio pulls torch too — probably newer torch. The fog item says "dlamp-data was exercised under Python 3.12 while DLAMP.tw pins 3.11 (numpy<2.0, torch==2.4.0); dlamp-data adds netcdf4/h5py/zarr/cdo" — h5py/zarr actually don't exist canonically. cdo is conda-only.
 
-Let me grill Q1: Build backend & tooling + python version tension.
+Let me grill Q1: build backend & tooling + python version tension.
 
-Facts confirmed: Uv 0.11.21; Python 3.11.15 (default) + 3.12.13 both available; DLAMP.tw scaffolding pins `torch==2.4.0`, `numpy<2.0`, `>=3.11,<3.12` (uv_build backend); canonical dlamp-data needs `>=3.12` + `earth2studio[data,sfno]` (git pin) + pip>=25.3. Note ticket's "h5py, zarr" deps don't exist canonically (ticket 02) — real extras are `cdsapi/cdo/eccodes/pyproj`.
+Facts confirmed: uv 0.11.21; Python 3.11.15 (default) + 3.12.13 both available; DLAMP.tw scaffolding pins `torch==2.4.0`, `numpy<2.0`, `>=3.11,<3.12` (uv_build backend); canonical dlamp-data needs `>=3.12` + `earth2studio[data,sfno]` (git pin) + pip>=25.3. Note the ticket's "h5py, zarr" deps don't exist canonically (ticket 02) — the real extras are `cdsapi/cdo/eccodes/pyproj`.
 
 **Q1 — Build backend, tooling, Python version (grilling 1/4).**
 
-This is hardest tension in whole merge ( map's fog item): DLAMP.tw pins **py3.11 + torch==2.4.0 + numpy<2.0**, dlamp-data was exercised on **py3.12 + earth2studio** (which pins modern torch/numpy).
+This is the hardest tension in the whole merge (the map's fog item): DLAMP.tw pins **py3.11 + torch==2.4.0 + numpy<2.0**, dlamp-data was exercised on **py3.12 + earth2studio** (which pins modern torch/numpy).
 
 Options:
 
-1. **Two workspaces / optional extras** (recommended): keep `dlamp` package on **py3.11** (`>=3.11,<3.12`), and put SFNO stage in **optional extra `dlamp[data]`** that documents py3.12 as its requirement — i.e. base package and SFNO pipeline are **separate uv workspaces** in monorepo (`packages`), each with its own interpreter lock. ERA5/CDS stage (cdsapi/cdo/etc.) stays in base 3.11 set since it's pure download/regrid (no earth2studio).
+1. **Two workspaces / optional extras** (recommended): keep the `dlamp` package on **py3.11** (`>=3.11,<3.12`), and put the SFNO stage in an **optional extra `dlamp[data]`** that documents py3.12 as its requirement — i.e. the base package and the SFNO pipeline are **separate uv workspaces** in the monorepo (`packages`), each with its own interpreter lock. The ERA5/CDS stage (cdsapi/cdo/etc.) stays in the base 3.11 set since it's pure download/regrid (no earth2studio).
 2. **Single py3.12 universe**: bump everything to 3.12 and let resolvers fight it out (torch==2.4.0 may not support 3.12; risky, breaks DLAMP.tw's pinned runtime).
 3. **Single py3.11**: drop earth2studio / SFNO stage (loses functionality).
 
-My recommendation: **option 1** — two uv workspaces: `dlamp` (py3.11, forecasting + ERA5 preproc/diagnostics, deps: torch==2.4.0, numpy<2.0, hydra, lightning, netcdf4, xarray, cdsapi, cdo, eccodes...) and `dlamp[data]` extra / second workspace for SFNO stage (py3.12, earth2studio git pin) — optional, not in base install. This honors both pins and keeps `numpy<2.0` for DLAMP.tw.
+My recommendation: **option 1** — two uv workspaces: `dlamp` (py3.11, forecasting + ERA5 preproc/diagnostics, deps: torch==2.4.0, numpy<2.0, hydra, lightning, netcdf4, xarray, cdsapi, cdo, eccodes...) and `dlamp[data]` extra / second workspace for the SFNO stage (py3.12, earth2studio git pin) — optional, not in the base install. This honors both pins and keeps `numpy<2.0` for DLAMP.tw.
 
 Confirm option 1 (dual-workspace: base py3.11 + SFNO extra on py3.12)?
 
 ---
 
 ## User
+
 先排除 sfno 或是 sfno 選用適合 python3.11 的版本。
 
 ---
 
 ## Assistant (Build · Big Pickle · 7.9s)
+
 _Thinking:_
 
-The user says: "先排除 sfno 或是 sfno 選用適合 python3.11 的版本。" — "First exclude SFNO, or SFNO uses version compatible with Python 3.11."
+The user says: "先排除 sfno 或是 sfno 選用適合 python3.11 的版本。" — "First exclude SFNO, or SFNO uses a version compatible with Python 3.11."
 
 So the user wants to either:
 
 1. Exclude SFNO entirely, OR
-2. SFNO uses version suitable for Python 3.11.
+2. SFNO uses a version suitable for Python 3.11.
 
-This means: Single py3.11 universe. Either drop SFNO, or find earth2studio/SFNO version that works with py3.11.
+This means: single py3.11 universe. Either drop SFNO, or find an earth2studio/SFNO version that works with py3.11.
 
- check if earth2studio supports python 3.11. Earth2studio rev 0.9.0 — check its requires-python. check. This is fact I can research. user is giving direction, and check fact about whether earth2studio 0.9.0 supports py3.11.
+Let me check if earth2studio supports python 3.11. Earth2studio rev 0.9.0 — let me check its requires-python. Actually let me check. This is a fact I can research. The user is giving a direction, and I should check the fact about whether earth2studio 0.9.0 supports py3.11.
 
- check earth2studio repo's pyproject.toml.
+Let me check the earth2studio repo's pyproject.toml.
 
 明白：排除 SFNO 或改用相容 py3.11 的 SFNO 版本，統一單一 py3.11 環境。先查 earth2studio 0.9.0 的 python 相容性。
 
@@ -1895,13 +1956,14 @@ releases with metadata (last 8):
 ---
 
 ## Assistant (Build · Big Pickle · 6.1s)
+
 _Thinking:_
 
- latest earth2studio 0.17.0 says `requires-python: <3.15,>=3.11`. So earth2studio supports Python 3.11. issue is specific rev 0.9.0 git pin. check what requires-python 0.9.0 had.
+The latest earth2studio 0.17.0 says `requires-python: <3.15,>=3.11`. So earth2studio supports Python 3.11. The issue is the specific rev 0.9.0 git pin. Let me check what requires-python 0.9.0 had.
 
- dlamp-data pyproject pins `earth2studio = { git = "https://github.com/NVIDIA/earth2studio.git", rev = "0.9.0" }` — git rev, not PyPI release. check 0.9.0 version's requires-python and its torch/numpy dependencies, since those matter for 3.11 + torch==2.4.0 + numpy<2.0 pin.
+The dlamp-data pyproject pins `earth2studio = { git = "https://github.com/NVIDIA/earth2studio.git", rev = "0.9.0" }` — a git rev, not a PyPI release. Let me check the 0.9.0 version's requires-python and its torch/numpy dependencies, since those matter for the 3.11 + torch==2.4.0 + numpy<2.0 pin.
 
- query pypi for 0.9.0 specifically.
+Let me query pypi for 0.9.0 specifically.
 
 最新版 earth2studio 0.17.0 支援 `>=3.11`。查 0.9.0（dlamp-data 現用 rev）與其 torch/numpy 相依。
 
@@ -1927,9 +1989,10 @@ _Thinking:_
 ---
 
 ## Assistant (Build · Big Pickle · 5.2s)
+
 _Thinking:_
 
-Interesting — 0.9.0 requires_python >=3.10, and its requires_dist is empty in JSON output (or field name differs). check requires_dist properly. output shows no deps listed under 0.9.0 — maybe requires_dist is empty for that release or my slicing failed. check 0.9.0's requires_dist and what torch/numpy it needs. key fact: earth2studio 0.9.0 supports >=3.10, so it's compatible with Python 3.11. verify its torch/numpy constraints.
+Interesting — 0.9.0 requires_python >=3.10, and its requires_dist is empty in the JSON output (or the field name differs). Let me check the requires_dist properly. Actually the output shows no deps listed under 0.9.0 — maybe requires_dist is empty for that release or my slicing failed. Let me check 0.9.0's requires_dist and what torch/numpy it needs. Actually the key fact: earth2studio 0.9.0 supports >=3.10, so it's compatible with Python 3.11. Let me verify its torch/numpy constraints.
 
 **Tool: bash**
 
@@ -1952,18 +2015,19 @@ requires_dist count: 0
 ---
 
 ## Assistant (Build · Big Pickle · 6.0s)
+
 _Thinking:_
 
- 0.9.0 PyPI release has no requires_dist metadata (empty). So earth2studio 0.9.0 supports `>=3.10`, which includes Python 3.11. check its actual dependencies (from GitHub repo for that rev). But note SFNO model in earth2studio depends on torch, torch_harmonics, etc. check actual requirements from git rev 0.9.0 on GitHub.
+The 0.9.0 PyPI release has no requires_dist metadata (empty). So earth2studio 0.9.0 supports `>=3.10`, which includes Python 3.11. Let me check its actual dependencies (from GitHub repo for that rev). But note the SFNO model in earth2studio depends on torch, torch_harmonics, etc. Let me check the actual requirements from the git rev 0.9.0 on GitHub.
 
-I have enough to grill. user's direction: exclude SFNO, or use SFNO version compatible with py3.11. Facts:
+Actually, I have enough to grill. The user's direction: exclude SFNO, or use an SFNO version compatible with py3.11. Facts:
 
-- Earth2studio 0.9.0 ( pinned rev) declares `requires-python: >=3.10` → compatible with 3.11.
+- earth2studio 0.9.0 (the pinned rev) declares `requires-python: >=3.10` → compatible with 3.11.
 - Latest 0.17.0 declares `<3.15,>=3.11` → also 3.11-compatible.
 
-So we can keep single py3.11 universe. But there's deeper tension: DLAMP.tw pins torch==2.4.0 + numpy<2.0. earth2studio depends on torch (its own requirement). check earth2studio git 0.9.0 pyproject dependencies quickly to see if torch pin conflicts with 2.4.0/numpy<2.0.
+So we can keep a single py3.11 universe. But there's a deeper tension: DLAMP.tw pins torch==2.4.0 + numpy<2.0. earth2studio depends on torch (its own requirement). Let me check the earth2studio git 0.9.0 pyproject dependencies quickly to see if torch pin conflicts with 2.4.0/numpy<2.0.
 
- fetch 0.9.0 pyproject.toml from GitHub.
+Let me fetch the 0.9.0 pyproject.toml from GitHub.
 
 **Tool: webfetch**
 
@@ -2367,44 +2431,45 @@ explicit_package_bases = true
 ---
 
 ## Assistant (Build · Big Pickle · 65.3s)
+
 _Thinking:_
 
-Key finding: Earth2studio 0.9.0 requires `torch>=2.5.0` in its base dependencies, but DLAMP.tw pins `torch==2.4.0`. And SFNO extra needs `makani`, `torch-harmonics>=0.8.0`, `scipy`, `moviepy`, `pynvml`, `ruamel-yaml`.
+Key finding: earth2studio 0.9.0 requires `torch>=2.5.0` in its base dependencies, but DLAMP.tw pins `torch==2.4.0`. And the SFNO extra needs `makani`, `torch-harmonics>=0.8.0`, `scipy`, `moviepy`, `pynvml`, `ruamel-yaml`.
 
-So there's direct conflict: earth2studio requires torch>=2.5.0, but DLAMP.tw pins torch==2.4.0. That's real tension. user's instruction: "先排除 sfno 或是 sfno 選用適合 python3.11 的版本。" = "First exclude SFNO, or SFNO uses version suitable for Python 3.11."
+So there's a direct conflict: earth2studio requires torch>=2.5.0, but DLAMP.tw pins torch==2.4.0. That's the real tension. The user's instruction: "先排除 sfno 或是 sfno 選用適合 python3.11 的版本。" = "First exclude SFNO, or SFNO uses a version suitable for Python 3.11."
 
-So user wants single Python 3.11 universe. Given torch conflict (2.4.0 vs >=2.5.0), even earth2studio 0.9.0 on py3.11 conflicts with torch==2.4.0.
+So the user wants a single Python 3.11 universe. Given the torch conflict (2.4.0 vs >=2.5.0), even earth2studio 0.9.0 on py3.11 conflicts with torch==2.4.0.
 
- user's direction: either exclude SFNO, or use SFNO version that works with py3.11. Since earth2studio 0.9.0 itself supports >=3.10 (py3.11 OK), but its torch>=2.5.0 conflicts with DLAMP.tw's torch==2.4.0 pin.
+The user's direction: either exclude SFNO, or use an SFNO version that works with py3.11. Since earth2studio 0.9.0 itself supports >=3.10 (py3.11 OK), but its torch>=2.5.0 conflicts with DLAMP.tw's torch==2.4.0 pin.
 
-Wait — is torch pin in DLAMP.tw 2.4.0? AGENTS.md says `torch==2.4.0`. pyproject.toml scaffolding says `torch>=2.4.0`. So `torch>=2.4.0` in scaffolding allows 2.5.0+... but AGENTS.md says torch==2.4.0. requirements.txt (AGENTS said pinned). check requirements.txt.
+Wait — is the torch pin in DLAMP.tw actually 2.4.0? The AGENTS.md says `torch==2.4.0`. The pyproject.toml scaffolding says `torch>=2.4.0`. So `torch>=2.4.0` in the scaffolding actually allows 2.5.0+... but AGENTS.md says torch==2.4.0. The requirements.txt (AGENTS said pinned). Let me check requirements.txt.
 
- AGENTS.md says: "deps pinned in requirements.txt (`numpy<2.0`, `torch==2.4.0`)". So torch==2.4.0 is runtime pin. scaffolding pyproject says torch>=2.4.0. This tension is real.
+Actually AGENTS.md says: "deps pinned in requirements.txt (`numpy<2.0`, `torch==2.4.0`)". So torch==2.4.0 is the runtime pin. The scaffolding pyproject says torch>=2.4.0. This tension is real.
 
-So user's decision: single py3.11. Two sub-options for SFNO:
-() exclude SFNO entirely — drop SFNO stage (sfno_processor, SFNO config, sfno_downscaling.py wrapper)
-(b) keep SFNO but with py3.11-compatible earth2studio version — but torch conflict remains: earth2studio needs torch>=2.5.0, DLAMP.tw pins torch==2.4.0.
+So the user's decision: single py3.11. Two sub-options for SFNO:
+(a) exclude SFNO entirely — drop the SFNO stage (sfno_processor, SFNO config, sfno_downscaling.py wrapper)
+(b) keep SFNO but with a py3.11-compatible earth2studio version — but torch conflict remains: earth2studio needs torch>=2.5.0, DLAMP.tw pins torch==2.4.0.
 
-So even with py3.11 earth2studio, torch pin conflict remains. If we keep SFNO, we'd need to bump torch to >=2.5.0 which breaks DLAMP.tw's torch==2.4.0 pin (behavior change / regression risk).
+So even with py3.11 earth2studio, the torch pin conflict remains. If we keep SFNO, we'd need to bump torch to >=2.5.0 which breaks DLAMP.tw's torch==2.4.0 pin (behavior change / regression risk).
 
- present this fact to user and ask which of two they want. This is grilling — one decision at time, give recommendation.
+I should present this fact to the user and ask which of the two they want. This is grilling — one decision at a time, give recommendation.
 
-My recommendation: Exclude SFNO from initial merge (option ) — keep pipeline focused on ERA5/CDS path (which is what feeds DLAMP.tw today: OP_ERA5 e5dlamp), and defer SFNO stage as future ticket. This avoids torch conflict entirely and keeps merge behavior-preserving. SFNO code can be parked (e.g. archived in branch or kept in merged history but not wired into entry points/deps).
+My recommendation: exclude SFNO from the initial merge (option a) — keep the pipeline focused on the ERA5/CDS path (which is what actually feeds DLAMP.tw today: OP_ERA5 e5dlamp), and defer the SFNO stage as a future ticket. This avoids the torch conflict entirely and keeps the merge behavior-preserving. The SFNO code can be parked (e.g. archived in a branch or kept in the merged history but not wired into entry points/deps).
 
- — "排除" (exclude) means remove from merged set. But SFNO code is part of dlamp.data history. Options for "exclude": don't include it in merged pyproject deps and don't expose it as entry point, but keep code in history. Or physically strip via filter-repo.
+Actually — "排除" (exclude) means remove from the merged set. But the SFNO code is part of dlamp.data history. Options for "exclude": don't include it in the merged pyproject deps and don't expose it as an entry point, but keep the code in history. Or physically strip via filter-repo.
 
-Let me ask the user: Exclude SFNO entirely (strip or unpublish), or keep with py3.11 earth2studio + accept torch bump. And how to handle existing SFNO code.
+Let me ask the user: exclude SFNO entirely (strip or unpublish), or keep with a py3.11 earth2studio + accept torch bump. And how to handle the existing SFNO code.
 
- present fact clearly and ask.
+Let me present the fact clearly and ask.
 
 查證結果：earth2studio **0.9.0** 本身 `requires-python = ">=3.10"`（py3.11 可用），但關鍵衝突在 torch：
 
-- Earth2studio 0.9.0 base 依賴 **`torch>=2.5.0`**
+- earth2studio 0.9.0 base 依賴 **`torch>=2.5.0`**
 - DLAMP.tw 鎖定 **`torch==2.4.0`**（AGENTS.md / requirements.txt），`numpy<2.0`
 
 即使換成 py3.11 相容的 earth2studio，SFNO 仍會把 torch 抬到 ≥2.5.0，直接撞 DLAMP.tw 的 2.4.0 鎖定（Regression ticket 10 主張行為不變）。另外 SFNO extra 還拖 `makani`、`torch-harmonics>=0.8.0`、`moviepy` 等 git 依賴。
 
-**我的建議：排除 SFNO（選項 ）。** 理由：現在實際餵 DLAMP.tw 的是 ERA5/CDS 路徑（`OP_ERA5` → `e5dlamp_*`），SFNO 是 `OP_E2S` 的實驗分支；排除可完全避開 torch 衝突，維持 3.11 + torch==2.4.0 + numpy<2.0 行為不變。
+**我的建議：排除 SFNO（選項 a）。** 理由：現在實際餵 DLAMP.tw 的是 ERA5/CDS 路徑（`OP_ERA5` → `e5dlamp_*`），SFNO 是 `OP_E2S` 的實驗分支；排除可完全避開 torch 衝突，維持 3.11 + torch==2.4.0 + numpy<2.0 行為不變。
 
 要怎麼處理現有 SFNO 程式碼：
 
@@ -2447,21 +2512,22 @@ User has answered your questions: "SFNO 階段如何處置？"="排除：從歷�
 ---
 
 ## Assistant (Build · Big Pickle · 11.1s)
+
 _Thinking:_
 
- user chose "排除：從歷史中移除" — exclude SFNO and remove it from history entirely via git-filter-repo. So SFNO is removed from merged history. This affects:
+The user chose "排除：從歷史中移除" — exclude SFNO and remove it from history entirely via git-filter-repo. So SFNO is removed from the merged history. This affects:
 
 - `src/preproc/sfno_processor.py` — remove
 - `SFNOPreproc.py` (which becomes `sfno_downscaling.py`) — remove (not needed)
 - `config/sfno.yaml` — remove
 - `README.SFNO.md` — remove (or keep? it's docs... probably remove since it documents SFNO)
-- Earth2studio dep — not included
+- earth2studio dep — not included
 
-Wait — but ticket 04 already decided `sfno_downscaling.py` as top-level runnable. Now SFNO is excluded from history, so `sfno_downscaling.py` is moot. note that as revision to ticket 04's decision.
+Wait — but ticket 04 already decided `sfno_downscaling.py` as a top-level runnable. Now SFNO is excluded from history, so `sfno_downscaling.py` is moot. I need to note that as a revision to ticket 04's decision.
 
-Also, since SFNO is removed from history entirely, py3.12 tension disappears — whole merged repo runs on py3.11. update Q1 decision.
+Also, since SFNO is removed from history entirely, the py3.12 tension disappears — the whole merged repo runs on py3.11. Let me update Q1 decision.
 
- record this and move to Q2 (dependency matrix). Q1 is now settled: single py3.11 universe, SFNO removed from history. confirm and proceed to Q2.
+Let me record this and move to Q2 (dependency matrix). Actually Q1 is now settled: single py3.11 universe, SFNO removed from history. Let me confirm and proceed to Q2.
 
 **Q1 定案：排除 SFNO，並用 `git-filter-repo` 從 dlamp.data 歷史中完整移除。** 影響範圍：`src/preproc/sfno_processor.py`、`SFNOPreproc.py`、`config/sfno.yaml`、`README.SFNO.md`；`sfno_downscaling.py`（04 決定的 runner）與 `dlamp[data]` extra 一併取消。earth2studio 依賴不進 monorepo。合併後單一 **py3.11 + torch==2.4.0 + numpy<2.0** 環境，py3.12 tension 消失。
 
@@ -2497,11 +2563,13 @@ SFNO 排除後，dlamp-data 剩下的依賴只有 ERA5/CDS 路徑。合併矩陣
 ---
 
 ## User
+
 是
 
 ---
 
 ## Assistant (Build · Big Pickle · 6.0s)
+
 _Thinking:_
 
 Q2 confirmed. Moving to Q3 — [project.scripts] block per ticket 04.
@@ -2533,35 +2601,39 @@ dlamp-unpack-tgz = "dlamp.unzip_tgz:main"
 ---
 
 ## User
-Confirmed
+
+confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 5.9s)
+
 **Q4 — LFS/pyproject wiring, non-packaged dirs (grilling 4/4).**
 
 Ticket 03-E locked top-level data dirs as **un-packaged** (referenced by path/env, per 05-Q4). Facts:
 
 - DLAMP.tw scaffolding is `uv_build` backend (no `[tool.setuptools]` section exists).
-- `uv_build` only packages `src/<name>/` package — top-level `assets/`, `config/`, `export/`, `gallery/`, `outputs/`, `checkpoints/` are **excluded from wheel by default** (no setuptools excludes needed). Need to confirm uv_build behavior though.
+- `uv_build` only packages the `src/<name>/` package — top-level `assets/`, `config/`, `export/`, `gallery/`, `outputs/`, `checkpoints/` are **excluded from the wheel by default** (no setuptools excludes needed). Need to confirm uv_build behavior though.
 
 Options:
 
-1. **`uv_build` + trust default exclusion** (recommended): top-level data dirs sit outside `src/`, so they're never in wheel; no `tool.setuptools`/exclude config needed. `.gitattributes` handles LFS (ticket 07). `MANIFEST.in`/`[tool.hatch]` equivalents unnecessary.
+1. **`uv_build` + trust default exclusion** (recommended): the top-level data dirs sit outside `src/`, so they're never in the wheel; no `tool.setuptools`/exclude config needed. `.gitattributes` handles LFS (ticket 07). `MANIFEST.in`/`[tool.hatch]` equivalents unnecessary.
 2. `setuptools` + explicit `[tool.setuptools.package-data]`/`exclude` — more boilerplate, explicit exclusions, but DLAMP.tw already standardized on `uv_build`.
 
-My recommendation: **option 1** — keep `uv_build`, rely on `src/`-only packaging (data dirs excluded by construction), LFS via `.gitattributes` (07). Only add explicit exclusions if future test/CI discovers something leaking into wheel.
+My recommendation: **option 1** — keep `uv_build`, rely on `src/`-only packaging (data dirs excluded by construction), LFS via `.gitattributes` (07). Only add explicit exclusions if a future test/CI discovers something leaking into the wheel.
 
 Confirm: **`uv_build`, default exclusion of top-level data dirs (no explicit exclude config)**?
 
 ---
 
 ## User
-Confirmed
+
+confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 3.9s)
+
 All four grilling questions resolved. Recording and resolving ticket 06.
 
 **Tool: edit**
@@ -2585,6 +2657,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 8.3s)
+
 **Tool: edit**
 
 **Input:**
@@ -2606,7 +2679,8 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 4.4s)
-Now record 04 revision (sfno_downscaling.py cancelled) and update map.
+
+Now let me record the 04 revision (sfno_downscaling.py cancelled) and update the map.
 
 **Tool: edit**
 
@@ -2629,6 +2703,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 7.5s)
+
 **Tool: edit**
 
 **Input:**
@@ -2650,7 +2725,8 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 4.9s)
-Ticket 06 resolved. Also graduating "dependency merge conflicts" fog item (now locked by 06-Q1).
+
+Ticket 06 resolved. Also graduating the "dependency merge conflicts" fog item (now locked by 06-Q1).
 
 **Tool: edit**
 
@@ -2673,6 +2749,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 4.4s)
+
 Ticket 06 resolved. Key decisions:
 
 - **SFNO excluded** — stripped from dlamp.data history (git-filter-repo); earth2studio out; single py3.11 + torch==2.4.0 + numpy<2.0 universe
@@ -2680,7 +2757,7 @@ Ticket 06 resolved. Key decisions:
 - 6-entry `[project.scripts]` block
 - Data dirs excluded from wheel by construction; `sfno_downscaling.py` cancelled (rev to 04)
 
-Moving to **09 (testing spec)** — last of batch.
+Moving to **09 (testing spec)** — the last of the batch.
 
 **Tool: read**
 
@@ -2724,9 +2801,10 @@ Moving to **09 (testing spec)** — last of batch.
 ---
 
 ## Assistant (Build · Big Pickle · 3.7s)
+
 _Thinking:_
 
-Ticket 09 is grilling ticket. claim it and gather facts about existing tests.
+Ticket 09 is a grilling ticket. Let me claim it and gather the facts about existing tests.
 
 **Tool: edit**
 
@@ -2749,6 +2827,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 3.9s)
+
 **Tool: bash**
 
 **Input:**
@@ -2785,29 +2864,30 @@ src/models/architectures/unet_test.py
 ---
 
 ## Assistant (Build · Big Pickle · 5.9s)
+
 _Thinking:_
 
 Facts:
 
-- New scaffolding `tests/test_dlamp.py` (tests starter dlamp package — which is being deleted per 03-B; so this test file goes away too)
+- New scaffolding `tests/test_dlamp.py` (tests the starter dlamp package — which is being deleted per 03-B; so this test file goes away too)
 - Stale unittest files in src/models/architectures: earth_3d_specifics_test.py, glide_unet_test.py, pangu_model_test.py (crashes at import — missing config/model/dlamp_train.yaml), unet_test.py
-- Dlamp-data: no tests at all (ticket 02 confirmed)
+- dlamp-data: no tests at all (ticket 02 confirmed)
 
-Now grill one decision at time.
+Now grill one decision at a time.
 
 Facts gathered:
 
-- New scaffolding `tests/test_dlamp.py` — tests **deleted** starter package (03-B) → must go
+- New scaffolding `tests/test_dlamp.py` — tests the **deleted** starter package (03-B) → must go
 - Stale `unittest` files in `src/models/architectures/`: `earth_3d_specifics_test.py`, `glide_unet_test.py`, `pangu_model_test.py` (**crashes at import** — missing config), `unet_test.py`
-- Dlamp-data: **no tests** (ticket 02)
+- dlamp-data: **no tests** (ticket 02)
 
 **Q1 — `tests/` layout (grilling 1/6).**
 
-**My recommendation: mirror package — single top-level `tests/` with `tests/dlamp/` + `tests/dlamp/data/` subdirs.** Rationale:
+**My recommendation: mirror the package — single top-level `tests/` with `tests/dlamp/` + `tests/dlamp/data/` subdirs.** Rationale:
 
-- `tests/dlamp/<module>_test.py` mirrors `src/dlamp/<module>.py` (per-module subdirs under namespace, matching package tree)
+- `tests/dlamp/<module>_test.py` mirrors `src/dlamp/<module>.py` (per-module subdirs under the namespace, matching the package tree)
 - `tests/dlamp/data/` mirrors `src/dlamp/data/` (preproc, registry)
-- Keeps pytest `pythonpath=["src"]` + `testpaths=["tests"]` (already in scaffolding pyproject)
+- Keeps pytest `pythonpath=["src"]` + `testpaths=["tests"]` (already in the scaffolding pyproject)
 - Where dlamp-data's _existing_ `test/` files move: **none exist** (02) — nothing to migrate. `tests/test_dlamp.py` (tests deleted starter) is **deleted**.
 
 Confirm: `tests/dlamp/` + `tests/dlamp/data/` mirror structure, `testpaths=["tests"]`?
@@ -2815,41 +2895,45 @@ Confirm: `tests/dlamp/` + `tests/dlamp/data/` mirror structure, `testpaths=["tes
 ---
 
 ## User
-Tests/dlamp/ + tests/dlamp/data/, mirror structure, testpaths=["tests"]
+
+tests/dlamp/ + tests/dlamp/data/, mirror structure, testpaths=["tests"]
 
 ---
 
 ## Assistant (Build · Big Pickle · 7.3s)
+
 **Q2 — Test naming/structure conventions & stale-test policy (grilling 2/6).**
 
 **Naming/structure (my recommendation):**
 
-- Files: `test_<module>.py` (pytest style, matches `tests/dlamp/<module>_test.py`... wait — two conventions exist). Clarify: **`<module>_test.py`** (keep DLAMP.tw's existing `*_test.py` suffix) vs **`test_<module>.py`** (pytest convention). Since mirroring `src/dlamp/<module>.py` → `tests/dlamp/<module>_test.py`, I recommend **`<module>_test.py`** for consistency with legacy files that survive.
+- Files: `test_<module>.py` (pytest style, matches `tests/dlamp/<module>_test.py`... wait — two conventions exist). Clarify: **`<module>_test.py`** (keep DLAMP.tw's existing `*_test.py` suffix) vs **`test_<module>.py`** (pytest convention). Since mirroring `src/dlamp/<module>.py` → `tests/dlamp/<module>_test.py`, I recommend **`<module>_test.py`** for consistency with the legacy files that survive.
 - Classes: `Test<Module>`; test methods `test_*`; pytest fixtures in `tests/dlamp/conftest.py` + `tests/dlamp/data/conftest.py`.
 - Doc header per `GEMINI.md` (Google docstring): every test module states purpose + unit under test.
 
-**Stale DLAMP.tw tests policy ( crashing `pangu_model_test.py`):**
+**Stale DLAMP.tw tests policy (the crashing `pangu_model_test.py`):**
 Options:
 
-1. **Adopt-and-fix** (recommended for tests testing real behavior): migrate `unet_test.py`, `glide_unet_test.py`, `earth_3d_specifics_test.py` into `tests/dlamp/models/`, convert to pytest style, fix whatever breaks; **delete** `pangu_model_test.py` (crashes at import on missing config, tests stale model) — no, wait, need your call: keep/fix or delete?
+1. **Adopt-and-fix** (recommended for tests testing real behavior): migrate `unet_test.py`, `glide_unet_test.py`, `earth_3d_specifics_test.py` into `tests/dlamp/models/`, convert to pytest style, fix whatever breaks; **delete** `pangu_model_test.py` (crashes at import on missing config, tests a stale model) — no, wait, need your call: keep/fix or delete?
 2. **Delete all stale `src/models/architectures/*_test.py`** and rebuild from ticket 11's per-module plans.
 3. **Quarantine** (move to `tests/archive/`, not run by default).
 
-**My recommendation:** migrate 3 that test real architecture behavior (`unet`, `glide_unet`, `earth_3d_specifics`) into mirrored layout and fix during 11; **delete** `pangu_model_test.py` (import-crash, stale Pangu path superseded by `export/*.onnx` workflow). Existing `tests/test_dlamp.py` deleted (tests removed starter).
+**My recommendation:** migrate the 3 that test real architecture behavior (`unet`, `glide_unet`, `earth_3d_specifics`) into the mirrored layout and fix during 11; **delete** `pangu_model_test.py` (import-crash, stale Pangu path superseded by `export/*.onnx` workflow). Existing `tests/test_dlamp.py` deleted (tests removed starter).
 
-Confirm: `<module>_test.py` naming, migrate 3 + delete `pangu_model_test.py`? Or different stale-test disposition?
+Confirm: `<module>_test.py` naming, migrate the 3 + delete `pangu_model_test.py`? Or a different stale-test disposition?
 
 ---
 
 ## User
+
 前者
 
 ---
 
 ## Assistant (Build · Big Pickle · 6.8s)
+
 _Thinking:_
 
- user said "前者" ( former) — confirming my recommendation: `<module>_test.py` naming, migrate 3 architecture tests (unet, glide_unet, earth_3d_specifics), delete `pangu_model_test.py`. Also tests/test_dlamp.py deleted.
+The user said "前者" (the former) — confirming my recommendation: `<module>_test.py` naming, migrate the 3 architecture tests (unet, glide_unet, earth_3d_specifics), delete `pangu_model_test.py`. Also tests/test_dlamp.py deleted.
 
 Q2 locked. Moving to Q3 — fixtures convention.
 
@@ -2857,7 +2941,7 @@ Q2 locked. Moving to Q3 — fixtures convention.
 
 **Q3 — Fixtures convention (grilling 3/6).**
 
-Facts: Dlamp-data 沒有 fixtures/`generate_fixtures.py`（02，屬被 redirect 的 `github/dlamp-data`）。DLAMP.tw 的測試依賴真實資料（`DLAMP_DATA_PATH`/`assets/`），`const.py` 的 import-time 驗證（05-Q1）會擋缺檔環境。
+Facts: dlamp-data 沒有 fixtures/`generate_fixtures.py`（02，屬被 redirect 的 `github/dlamp-data`）。DLAMP.tw 的測試依賴真實資料（`DLAMP_DATA_PATH`/`assets/`），`const.py` 的 import-time 驗證（05-Q1）會擋缺檔環境。
 
 **我的建議：**
 
@@ -2871,33 +2955,37 @@ Confirm: `tests/fixtures/` + env-driven large fixtures + `integration` marker (d
 ---
 
 ## User
-Confirmed
+
+confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 5.5s)
+
 **Q4 — Documentation conventions for test code (grilling 4/6).**
 
 **我的建議：**
 
 - Google-style docstrings per `GEMINI.md` on every test module + fixture function.
-- **Module doc header** (each `test_*.py`): purpose of module, unit under test (module path, e.g. `dlamp.models.architectures.unet`), test strategy (unit/integration), external dependencies (env vars/fixtures needed), and how to run it (`python -m pytest tests/dlamp/...` or via Makefile target).
+- **Module doc header** (each `test_*.py`): purpose of the module, unit under test (module path, e.g. `dlamp.models.architectures.unet`), test strategy (unit/integration), external dependencies (env vars/fixtures needed), and how to run it (`python -m pytest tests/dlamp/...` or via Makefile target).
 - Function-level: one-line summary + Args/Returns per Google style (matches `GEMINI.md`).
-- `conftest.py` fixtures documented like any function; shared fixture purpose stated in conftest doc header.
+- `conftest.py` fixtures documented like any function; shared fixture purpose stated in the conftest doc header.
 
 Confirm: Google-style docstrings + required module doc header fields (purpose / unit under test / strategy / dependencies / run command)?
 
 ---
 
 ## User
-Confirmed
+
+confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 6.7s)
+
 **Q5 — Coverage targets & how to run (grilling 5/6).**
 
-Facts: Scaffolding `Makefile` already has `test: uv run pytest --cov=src/dlamp tests/`; `pyproject.toml` has `[tool.pytest.ini_options] testpaths=["tests"] pythonpath=["src"]`. `[tool.ruff] line-length=79`.
+Facts: scaffolding `Makefile` already has `test: uv run pytest --cov=src/dlamp tests/`; `pyproject.toml` has `[tool.pytest.ini_options] testpaths=["tests"] pythonpath=["src"]`. `[tool.ruff] line-length=79`.
 
 **我的建議：**
 
@@ -2909,16 +2997,18 @@ Facts: Scaffolding `Makefile` already has `test: uv run pytest --cov=src/dlamp t
   - `make test` / `make check`（ruff+mypy+radon）沿用，`check` 範圍改為 `src/dlamp`（03 tree）。
 - Coverage 量測：`pytest --cov=src/dlamp --cov-report=term-missing --cov-report=html`（html 進 `htmlcov/`，gitignore）。
 
-Confirm: Baseline-record (no global `--cov-fail-under`; 11 sets per-module), `-m "not integration"` default, Makefile targets as above? Or do you want hard global floor (e.g. 60%)?
+Confirm: baseline-record (no global `--cov-fail-under`; 11 sets per-module), `-m "not integration"` default, Makefile targets as above? Or do you want a hard global floor (e.g. 60%)?
 
 ---
 
 ## User
-Confirmed
+
+confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 5.2s)
+
 **Q6 — Baseline inventory of existing tests (grilling 6/6, final).**
 
 **我的建議：** spec 內含一節「Baseline test inventory」，記錄合併當下的測試現況（即 01/02 調查結果）：
@@ -2928,19 +3018,21 @@ Confirmed
 - `src/models/architectures/glide_unet_test.py` → 遷移至 `tests/dlamp/models/glide_unet_test.py`，11 修正
 - `src/models/architectures/earth_3d_specifics_test.py` → 遷移至 `tests/dlamp/models/earth_3d_specifics_test.py`，11 修正
 - `src/models/architectures/pangu_model_test.py` → **刪除**（import crash、已被 ONNX workflow 取代）
-- Dlamp-data：**無測試**（02）——spec 記「此 repo 原本 0 tests」
+- dlamp-data：**無測試**（02）——spec 記「此 repo 原本 0 tests」
 - 另有完整資料管線（`dlamp.data.preproc`）在合併前**完全無測試** → 11 需為 `cds_downloader`/`dlamp_regridder`/`diagnostic_*` 從零建測試
 
-Confirm this baseline inventory as spec's baseline section?
+Confirm this baseline inventory as the spec's baseline section?
 
 ---
 
 ## User
+
 Confirmed
 
 ---
 
 ## Assistant (Build · Big Pickle · 5.4s)
+
 All six grilling questions resolved. Recording and resolving ticket 09.
 
 **Tool: edit**
@@ -2964,6 +3056,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 8.7s)
+
 **Tool: edit**
 
 **Input:**
@@ -2985,6 +3078,7 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 6.3s)
+
 **Tool: edit**
 
 **Input:**
@@ -3006,34 +3100,41 @@ Edit applied successfully.
 ---
 
 ## Assistant (Build · Big Pickle · 4.3s)
+
 Ticket 09 resolved. Batch complete (04 → 06 → 09):
 
 - **04** — entry-point table: 6 `[project.scripts]` + root runnables (`train.py`, `predict.py`, `data_prep.py`)
 - **06** — SFNO excluded from history, single py3.11 + torch==2.4.0 + numpy<2.0 universe, deduped deps, `uv_build`
 - **09** — testing spec outline: mirrored `tests/`, `<module>_test.py`, migrate-3/delete-2 baseline, `integration` marker, baseline coverage
 
-Frontier now: **10 (regression strategy)** — open, unblocked (its blockers {03,04,06} all resolved). Its regression strategy needs merge behavior-preservation proof, so it's natural next step before 11. Claim it?
+Frontier now: **10 (regression strategy)** — open, unblocked (its blockers {03,04,06} all resolved). Its regression strategy needs the merge behavior-preservation proof, so it's the natural next step before 11. Claim it?
 
 ---
 
 ## User
+
 ---
 
 ## Assistant (Compaction · Big Pickle · 50.7s)
----
-
-## User
-Continue
 
 ---
 
 ## User
-Continue
+
+continue
+
+---
+
+## User
+
+continue
 
 ---
 
 ## Assistant (Compaction · DeepSeek V4 Flash Free)
+
 ---
 
 ## User
+
 ---

@@ -32,6 +32,7 @@ Grilled Q1–Q6, all confirmed by user. Testing-spec outline (`docs/testing/test
 **Q5 — Coverage + run commands:** **no global `--cov-fail-under`**; spec records baseline coverage numbers from `pytest --cov=src/dlamp --cov-report=term-missing`; per-module targets set in 11. Default run: `uv run pytest --cov=src/dlamp tests/ -m "not integration"`. Integration: `uv run pytest tests/ -m integration`. Single module: full path. Makefile `test`/`check` kept, `check` scope → `src/dlamp` (03 tree). HTML report → `htmlcov/` (gitignored).
 
 **Q6 — Baseline inventory (spec section):**
+
 - `tests/test_dlamp.py` → delete (tests deleted starter, 03-B)
 - `src/models/architectures/unet_test.py` → `tests/dlamp/models/unet_test.py`, fix in 11
 - `src/models/architectures/glide_unet_test.py` → `tests/dlamp/models/glide_unet_test.py`, fix in 11

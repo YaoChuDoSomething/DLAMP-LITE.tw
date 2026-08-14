@@ -1,0 +1,800 @@
+{
+  "scaffold-exercises": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/misc/scaffold-exercises/SKILL.md",
+    "category": "misc",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.261190",
+    "brief_english": "Create exercise directory structures with sections, problems, solutions, and explainers that pass linting. Use when user wants to scaffold exercises, create exercise stubs, or set up a new course section.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "migrate-to-shoehorn": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/misc/migrate-to-shoehorn/SKILL.md",
+    "category": "misc",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.262258",
+    "brief_english": "Migrate test files from `as` type assertions to @total-typescript/shoehorn. Use when user mentions shoehorn, wants to replace `as` in tests, or needs partial test data.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "git-guardrails-claude-code": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/misc/git-guardrails-claude-code/SKILL.md",
+    "category": "misc",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.262676",
+    "brief_english": "Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute. Use when user wants to prevent destructive git operations, add git safety hooks, or block git push/reset in Claude Code.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "Should exit with code 2 and print a BLOCKED message to stderr."
+    ],
+    "don_t": [
+      "If the settings file already exists, merge the hook into existing `hooks.PreToolUse` array — don't overwrite other settings."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "setup-pre-commit": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/misc/setup-pre-commit/SKILL.md",
+    "category": "misc",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.262951",
+    "brief_english": "Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. Use when user wants to add pre-commit hooks, set up Husky, configure lint-staged, or add commit-time formatting/typechecking/testing.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [
+      "- `prettier --ignore-unknown` skips files Prettier can't parse (images, etc.)"
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "edit-article": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/personal/edit-article/SKILL.md",
+    "category": "personal",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.263243",
+    "brief_english": "Edit and improve articles by restructuring sections, improving clarity, and tightening prose. Use when user wants to edit, revise, or improve an article draft.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "obsidian-vault": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/personal/obsidian-vault/SKILL.md",
+    "category": "personal",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.263404",
+    "brief_english": "Search, create, and manage notes in the Obsidian vault with wikilinks and index notes. Use when user wants to find, create, or organize notes in Obsidian.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "to-questionnaire": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/in-progress/to-questionnaire/SKILL.md",
+    "category": "in-progress",
+    "tags": [],
+    "status": "in-progress",
+    "last_touched": "2026-08-14T07:54:35.263618",
+    "brief_english": "Turn a decision you can't fully answer into a questionnaire for someone else to fill in.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "A closing catch-all: anything we didn't ask that we should know?"
+    ],
+    "don_t": [
+      "Deadline and rough effort. Partial answers and \"I don't know\" are useful — flag anything you're unsure of rather than skipping it."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "setup-ts-deep-modules": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/in-progress/setup-ts-deep-modules/SKILL.md",
+    "category": "in-progress",
+    "tags": [],
+    "status": "in-progress",
+    "last_touched": "2026-08-14T07:54:35.264075",
+    "brief_english": "Wire dependency-cruiser into a TypeScript repo so each package is a deep module — implementation hidden in subfolders, reachable only through its entry-point files. User-invoked.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [
+      "- The config's `$1` back-references (dependency-cruiser's group matching) are what let a package reach its own internals while outsiders can't — don't flatten them into separate per-package rules."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "writing-shape": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/in-progress/writing-shape/SKILL.md",
+    "category": "in-progress",
+    "tags": [],
+    "status": "in-progress",
+    "last_touched": "2026-08-14T07:54:35.264463",
+    "brief_english": "Writing, exploit — shape raw material into an article, paragraph by paragraph.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "3. **Draft 2–3 candidate openings.** Each opening should imply a different thesis or angle for the article. Show all of them. Force the user to pick or compose a hybrid. The chosen opening defines what the rest of the article must do.",
+      "4. **Grow paragraph by paragraph.** After the opening lands, ask \"given this opening, what does the reader need to hear next?\" Pull material from the pile to answer. The next block may only lean on grounded concepts, and grounds new ones as it lands. Argue about the form the next block takes — a paragraph, a list, a table, a callout, a quote, a code block. Each format choice should be deliberate and defensible.",
+      "- \"Is this prose, or should it be a list? Why prose?\""
+    ],
+    "don_t": [
+      "5. **Append to the article file as you go.** Don't batch. Write each agreed paragraph or block immediately so the user can see the article taking shape."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "writing-beats": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/in-progress/writing-beats/SKILL.md",
+    "category": "in-progress",
+    "tags": [],
+    "status": "in-progress",
+    "last_touched": "2026-08-14T07:54:35.264795",
+    "brief_english": "Writing, exploit — assemble raw material into a journey of beats, grounding each term before a beat leans on it.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [
+      "The big lever is what you make a prerequisite versus what you ground inside the piece. Demand too much up front and you shut out readers who don't have it; ground too much inside and the early beats drown in definitions. Settle this with the user when you establish prerequisites, and revisit it whenever a tempting beat turns out to require a concept nothing has grounded yet — the fix is either a grounding beat before it, or promoting the concept to a prerequisite.",
+      "The article ends when the journey is complete — not when the pile is empty. Most piles will have leftover fragments that don't make it in. That is fine; that is the point of having more raw material than you need."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "writing-fragments": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/in-progress/writing-fragments/SKILL.md",
+    "category": "in-progress",
+    "tags": [],
+    "status": "in-progress",
+    "last_touched": "2026-08-14T07:54:35.265056",
+    "brief_english": "Writing, explore — mine raw fragments, no structure yet.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [
+      "- A sharp sentence you'd want to deploy somewhere but don't yet know where.",
+      "Append silently. Don't ask permission for each fragment. Mention what you added in passing (\"adding that\"), but don't interrupt the conversation with save dialogs."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "wizard": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/in-progress/wizard/SKILL.md",
+    "category": "in-progress",
+    "tags": [],
+    "status": "in-progress",
+    "last_touched": "2026-08-14T07:54:35.265304",
+    "brief_english": "Generate an interactive bash wizard that walks a human through a manual procedure — third-party setup, a one-off migration, an A→B state transition — opening URLs, capturing values, confirming each step, and writing .env files and GitHub Actions secrets.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "A wizard is ephemeral by default — built for one run, saved to a scratch or `scripts/` path, deleted when the job's done. Commit it only when the user wants a repeatable setup path that should live in the repo."
+    ],
+    "don_t": [
+      "Work out every manual step the human must take and every value that gets captured along the way. Read the repo first — don't ask cold:",
+      "For each stage, write the precise path a human follows: which URL to open, what to do there, where a value is shown, which variable it fills — e.g. \"Dashboard → Developers → API keys → Reveal test key → copy\". Where you don't actually know the current UI or the exact command, say so and ask the user or check the docs — never invent steps that may not exist.",
+      "Hold the bar the template sets: open the URL before asking for its value, use `ask_secret` for anything secret, `write_env` every persisted value, `set_secret` only the values CI actually needs, and `confirm` before any irreversible action. Each `stage` clears the screen so only the current step is visible — keep a stage to one focused task so nothing the human needs scrolls away. Don't touch the library above the marker.",
+      "- Don't run it end-to-end yourself — it opens browsers and blocks on human input. Trace it statically instead: every value from step 1 is captured and lands where step 1 said, and every `set_secret` name exactly matches a `secrets.*` reference in CI."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "loop-me": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/in-progress/loop-me/SKILL.md",
+    "category": "in-progress",
+    "tags": [],
+    "status": "in-progress",
+    "last_touched": "2026-08-14T07:54:35.265482",
+    "brief_english": "Grill me about specs for the workflows I want to build, within this workspace.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "batch-grill-me": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/in-progress/batch-grill-me/SKILL.md",
+    "category": "in-progress",
+    "tags": [],
+    "status": "in-progress",
+    "last_touched": "2026-08-14T07:54:35.265597",
+    "brief_english": "A relentless interview that asks every frontier question at once, round by round.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [
+      "Finding *facts* is your job, never the user's. When a frontier question needs a fact from the environment (filesystem, tools, etc.), dispatch a sub-agent to find it — don't ask the user for anything you could look up yourself. Don't block on it: a running exploration is an unsettled prerequisite, so only the questions downstream of it wait for the sub-agent to report — ask the rest of the frontier now. The *decisions* are the user's — put each to them and wait."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "claude-handoff": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/in-progress/claude-handoff/SKILL.md",
+    "category": "in-progress",
+    "tags": [],
+    "status": "in-progress",
+    "last_touched": "2026-08-14T07:54:35.265734",
+    "brief_english": "Hand the current conversation off to a fresh background agent that picks up the work immediately.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "Include a \"suggested skills\" section in the summary, which suggests skills that the agent should invoke.",
+      "Do not duplicate content already captured in other artifacts (PRDs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead."
+    ],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "qa": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/deprecated/qa/SKILL.md",
+    "category": "deprecated",
+    "tags": [],
+    "status": "deprecated",
+    "last_touched": "2026-08-14T07:54:35.266074",
+    "brief_english": "Interactive QA session where user reports bugs or issues conversationally, and the agent files GitHub issues. Explores the codebase in the background for context and domain language. Use when user wants to report bugs, do QA, file issues conversationally, or mentions \"QA session\".",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "Do NOT over-interview. If the description is clear enough to file, move on.",
+      "This context helps you write a better issue — but the issue itself should NOT reference specific files, line numbers, or internal implementation details.",
+      "Issues must be **durable** — they should still make sense after major refactors. Write from the user's perspective.",
+      "- **Prefer many thin issues over few thick ones** — each should be independently fixable and verifiable",
+      "- **Keep it concise** — a developer should be able to read the issue in 30 seconds"
+    ],
+    "don_t": [
+      "[Any extra observations from the user or from codebase exploration that help frame the issue — e.g. \"this only happens when using the Docker layer, not the filesystem layer\" — use domain language but don't cite files]",
+      "Keep going until the user says they're done. Each issue is independent — don't batch them."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "request-refactor-plan": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/deprecated/request-refactor-plan/SKILL.md",
+    "category": "deprecated",
+    "tags": [],
+    "status": "deprecated",
+    "last_touched": "2026-08-14T07:54:35.266365",
+    "brief_english": "Create a detailed refactor plan with tiny commits via user interview, then file it as a GitHub issue. Use when user wants to plan a refactor, create a refactoring RFC, or break a refactor into safe incremental steps.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "This skill will be invoked when the user wants to create a refactor request. You should go through the steps below. You may skip steps if you don't consider them necessary.",
+      "A LONG, detailed implementation plan. Write the plan in plain English, breaking down the implementation into the tiniest commits possible. Each commit should leave the codebase in a working state.",
+      "Do NOT include specific file paths or code snippets. They may end up being outdated very quickly."
+    ],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "design-an-interface": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/deprecated/design-an-interface/SKILL.md",
+    "category": "deprecated",
+    "tags": [],
+    "status": "deprecated",
+    "last_touched": "2026-08-14T07:54:35.266635",
+    "brief_english": "Generate multiple radically different interface designs for a module using parallel sub-agents. Use when user wants to design an API, explore interface options, compare module shapes, or mentions \"design it twice\".",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "- [ ] What should be hidden inside vs exposed?"
+    ],
+    "don_t": [
+      "- Don't let sub-agents produce similar designs - enforce radical difference",
+      "- Don't skip comparison - the value is in contrast",
+      "- Don't implement - this is purely about interface shape",
+      "- Don't evaluate based on implementation effort"
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "ubiquitous-language": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/deprecated/ubiquitous-language/SKILL.md",
+    "category": "deprecated",
+    "tags": [],
+    "status": "deprecated",
+    "last_touched": "2026-08-14T07:54:35.266898",
+    "brief_english": "Extract a DDD-style ubiquitous language glossary from the current conversation, flagging ambiguities and proposing canonical terms. Saves to UBIQUITOUS_LANGUAGE.md. Use when user wants to define domain terms, build a glossary, harden terminology, create a ubiquitous language, or mentions \"domain model\" or \"DDD\".",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "- **Write an example dialogue.** A short conversation (3-5 exchanges) between a dev and a domain expert that demonstrates how the terms interact naturally. The dialogue should clarify boundaries between related concepts and show terms being used precisely."
+    ],
+    "don_t": [
+      "- **Only include terms relevant for domain experts.** Skip the names of modules or classes unless they have meaning in the domain language.",
+      "- **Only include domain terms.** Skip generic programming concepts (array, function, endpoint) unless they have domain-specific meaning.",
+      "- **Group terms into multiple tables** when natural clusters emerge (e.g. by subdomain, lifecycle, or actor). Each group gets its own heading and table. If all terms belong to a single cohesive domain, one table is fine — don't force groupings."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "codebase-design": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/codebase-design/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.267115",
+    "brief_english": "Shared vocabulary for designing deep modules. Use when the user wants to design or improve a module's interface, find deepening opportunities, decide where a seam goes, make code more testable or AI-navigable, or when another skill needs the deep-module vocabulary.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [
+      "Use these terms exactly — don't substitute \"component,\" \"service,\" \"API,\" or \"boundary.\" Consistent language is the whole point.",
+      "- **One adapter means a hypothetical seam. Two adapters means a real one.** Don't introduce a seam unless something actually varies across it.",
+      "1. **Accept dependencies, don't create them.**",
+      "2. **Return results, don't produce side effects.**",
+      "- **Deepening a cluster given its dependencies** — see [DEEPENING.md](DEEPENING.md): dependency categories, seam discipline, and replace-don't-layer testing."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "research": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/research/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.267162",
+    "brief_english": "Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo. Use when the user wants a topic researched, docs or API facts gathered, or reading legwork delegated to a background agent.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "wayfinder": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/wayfinder/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.267463",
+    "brief_english": "Plan a huge chunk of work — more than one agent session can hold — as a shared map of decision tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "**Where the map, its child tickets, blocking, and frontier queries physically live is tracker-specific.** The issue tracker should have been provided to you — run `/setup-matt-pocock-skills` if not. Consult the tracker doc's \"Wayfinding operations\" section for how _this_ repo expresses them. If no tracker has been provided, default to the local-markdown tracker.",
+      "<domain; skills every session should consult; standing preferences for this effort>",
+      "- **Prototype** (HITL): Raise the fidelity of the discussion by making a cheap, rough, concrete artifact to react to — an outline, a rough take, a stub, or UI/logic code via the /prototype skill. Links the prototype as an asset. Use when \"how should it look\" or \"how should it behave\" is the key question."
+    ],
+    "don_t": [
+      "## Plan, don't do",
+      "Every map and ticket is an issue, so it has a **name** — its title. In everything the human reads — narration, the map's Decisions-so-far — refer to it by that name, never by a bare id, number, or slug. A wall of `#42, #43, #44` is illegible; names read at a glance. The id and URL don't vanish — a name wraps its link — but they ride *inside* the name, never stand in for it.",
+      "A session **claims** a ticket by assigning it to the dev driving the map, **first**, before any work, so concurrent sessions skip it. That assignee _is_ the claim: an open, unassigned ticket is unclaimed.",
+      "The map is _deliberately_ incomplete: don't chart what you can't yet see. Beyond the live tickets lies the **fog of war** — the dim view of decisions and investigations you can tell are coming but can't yet pin down, because they hang on questions still open. Resolving a ticket clears the fog ahead of it, graduating whatever's now specifiable into fresh tickets — one at a time, until the way to the destination is clear and no tickets remain.",
+      "- **Not yet specified when** you can't yet phrase it that sharply. Don't pre-slice the fog into ticket-sized pieces: it's coarser than a ticket, and one patch may graduate into several tickets, or none, once the frontier reaches it."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "to-spec": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/to-spec/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.267580",
+    "brief_english": "Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you've already discussed.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "The issue tracker and triage label vocabulary should have been provided to you — run `/setup-matt-pocock-skills` if not.",
+      "2. Sketch out the seams at which you're going to test the feature. Existing seams should be preferred to new ones. Use the highest seam possible. If new seams are needed, propose them at the highest point you can. The fewer seams across the codebase, the better - the ideal number is one.",
+      "A LONG, numbered list of user stories. Each user story should be in the format of:",
+      "This list of user stories should be extremely extensive and cover all aspects of the feature.",
+      "Do NOT include specific file paths or code snippets. They may end up being outdated very quickly."
+    ],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "triage": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/triage/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.267767",
+    "brief_english": "Move issues and external PRs through a state machine of triage roles — categorise, verify, grill if needed, and write agent-ready briefs.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [
+      "5. **Apply the outcome:**"
+    ],
+    "best_practice": [
+      "For a PR, the same states read against the attached code: `ready-for-agent` means a brief is attached and an agent should take the next step on the diff; `ready-for-human` means it's ready for a human to merge.",
+      "Every triaged issue should carry exactly one category role and one state role. If state roles conflict, flag it and ask the maintainer before doing anything else.",
+      "These are canonical role names — the actual label strings used in the issue tracker may differ. The mapping should have been provided to you - run `/setup-matt-pocock-skills` if not."
+    ],
+    "don_t": [
+      "1. **Gather context.** Read the full issue or PR (body, comments, labels, author, dates; for a PR, the diff too). Parse any prior triage notes so you don't re-ask resolved questions. Explore the codebase using the project's domain glossary, respecting ADRs in the area. Run two checks against the codebase: (a) **redundancy** — search for an existing implementation of the requested behavior by domain concept (not just the request's wording), and report where you looked. If found, it's an already-implemented `wontfix` (step 5). (b) **prior rejection** — read `.out-of-scope/*.md` and surface any that resembles this request.",
+      "If the maintainer says \"move #42 to ready-for-agent\", trust them and apply the role directly. Confirm what you're about to do (role changes, comment, close), then act. Skip grilling. If moving to `ready-for-agent` without a grilling session, ask whether they want to write an agent brief.",
+      "If prior triage notes exist on the issue or PR, read them, check whether the reporter has answered any outstanding questions, and present an updated picture before continuing. Don't re-ask resolved questions."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "to-tickets": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/to-tickets/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.267957",
+    "brief_english": "Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in one file per ticket locally, or native blocking links on a real tracker.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "The issue tracker and triage label vocabulary should have been provided to you — run `/setup-matt-pocock-skills` if not.",
+      "If you have not already explored the codebase, do so to understand the current state of the code. Ticket titles and descriptions should use the project's domain glossary vocabulary, and respect ADRs in the area you're touching.",
+      "- Any prefactoring should be done first",
+      "- Should any tickets be merged or split further?",
+      "Do NOT close or modify any parent issue."
+    ],
+    "don_t": [
+      "**Wide refactors are the exception to vertical slicing.** A **wide refactor** is one mechanical change — rename a column, retype a shared symbol — whose **blast radius** fans across the whole codebase, so a single edit breaks thousands of call sites at once and no vertical slice can land green. Don't force it into a tracer bullet; sequence it as **expand–contract**. First expand: add the new form beside the old so nothing breaks. Then migrate the call sites over in batches sized by blast radius (per package, per directory), each batch its own ticket blocked by the expand, keeping CI green batch to batch because the old form still exists. Finally contract: delete the old form once no caller remains, in a ticket blocked by every migrate batch. When even the batches can't stay green alone, keep the sequence but let them share an integration branch that all block a final integrate-and-verify ticket — green is promised only there."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "improve-codebase-architecture": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/improve-codebase-architecture/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.268124",
+    "brief_english": "Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "- The domain language in `CONTEXT.md` gives names to good seams; ADRs in `docs/adr/` record decisions this command should not re-litigate.",
+      "Do NOT propose interfaces yet. After the file is written, ask the user: \"Which of these would you like to explore?\""
+    ],
+    "don_t": [
+      "- Run the `/codebase-design` skill for the architecture vocabulary (**module**, **interface**, **depth**, **seam**, **adapter**, **leverage**, **locality**) and its principles (the deletion test, \"the interface is the test surface\", \"one adapter = hypothetical seam, two = real\"). Use these terms exactly in every suggestion — don't drift into \"component,\" \"service,\" \"API,\" or \"boundary.\"",
+      "- If the user named a direction — a module, a subsystem, a pain point — take it, and skip the inference below.",
+      "Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:",
+      "**ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly in the card (e.g. a warning callout: _\"contradicts ADR-0007 — but worth reopening because…\"_). Don't list every theoretical refactor an ADR forbids.",
+      "- **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _\"Want me to record this as an ADR so future architecture reviews don't re-suggest it?\"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons (\"not worth it right now\") and self-evident ones."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "resolving-merge-conflicts": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/resolving-merge-conflicts/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.268170",
+    "brief_english": "Use when you need to resolve an in-progress git merge/rebase conflict.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "domain-modeling": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/domain-modeling/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.268302",
+    "brief_english": "Build and sharpen a project's domain model. Use when the user wants to pin down domain terminology or a ubiquitous language, record an architectural decision, or when another skill needs to maintain the domain model.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "`CONTEXT.md` should be totally devoid of implementation details. Do not treat `CONTEXT.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else."
+    ],
+    "don_t": [
+      "When a term is resolved, update `CONTEXT.md` right there. Don't batch these up — capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).",
+      "If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md)."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "tdd": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/tdd/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.268402",
+    "brief_english": "Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions \"red-green-refactor\", or wants integration tests.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "Tests verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't. A good test reads like a specification — \"user can checkout with valid cart\" tells you exactly what capability exists — and survives refactors because it doesn't care about internal structure.",
+      "Ask: \"What's the public interface, and which seams should we test?\""
+    ],
+    "don_t": [
+      "- **Red before green.** Write the failing test first, then only enough code to pass it. Don't anticipate future tests or add speculative features."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "grill-with-docs": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/grill-with-docs/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.268430",
+    "brief_english": "A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "code-review": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/code-review/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.268605",
+    "brief_english": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?). Runs both reviews in parallel sub-agents and reports them side by side. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to \"review since X\".",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [
+      "End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes — that's the reranking the separation exists to prevent.",
+      "Reporting them separately stops one axis from masking the other."
+    ],
+    "best_practice": [
+      "The issue tracker should have been provided to you — run `/setup-matt-pocock-skills` if `docs/agents/issue-tracker.md` is missing.",
+      "Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here — not inside two parallel sub-agents.",
+      "Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md`.",
+      "- **Message Chains** — long `a.b().c().d()` navigation the caller shouldn't depend on. → hide the walk behind one method on the first object."
+    ],
+    "don_t": [
+      "Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.",
+      "4. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent will skip and report \"no spec available\".",
+      "- **Always a judgement call.** Each smell is a labelled heuristic (\"possible Feature Envy\"), never a hard violation — and, like any standard here, skip anything tooling already enforces.",
+      "- The brief: \"Report — per file/hunk where relevant — (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls — documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words.\"",
+      "If the spec is missing, skip the Spec sub-agent and note this in the final report."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "implement": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/implement/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.268636",
+    "brief_english": "Implement a piece of work based on a spec or set of tickets.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "prototype": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/prototype/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.268709",
+    "brief_english": "Build a throwaway prototype to answer a design question. Use when the user wants to sanity-check whether a state model or logic feels right, or explore what a UI should look like.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "- **\"What should this look like?\"** → [UI.md](UI.md). Generate several radically different UI variations on a single route, switchable via a URL search param and a floating bottom bar.",
+      "3. **No persistence by default.** State lives in memory. Persistence is the thing the prototype is _checking_, not something it should depend on. If the question explicitly involves a database, hit a scratch DB or a local file with a clear \"PROTOTYPE — wipe me\" name."
+    ],
+    "don_t": [
+      "1. **Throwaway from day one, and clearly marked as such.** Locate the prototype code close to where it will actually be used (next to the module or page it's prototyping for) so context is obvious — but name it so a casual reader can see it's a prototype, not production. For throwaway UI routes, obey whatever routing convention the project already uses; don't invent a new top-level structure.",
+      "4. **Skip the polish.** No tests, no error handling beyond what makes the prototype _runnable_, no abstractions. The point is to learn something fast."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "setup-matt-pocock-skills": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/setup-matt-pocock-skills/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.268892",
+    "brief_english": "Configure this repo for the engineering skills — set up its issue tracker, triage label vocabulary, and domain doc layout. Run once before first use of the other engineering skills.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [
+      "Look at the current repo to understand its starting state. Read whatever exists; don't assume:",
+      "Lead each section with the recommended answer so the user can accept it in a word. Give a one-line explainer only when the choice genuinely branches; skip the section entirely when exploration already settled it (Section B when `triage` isn't installed, Section C when there's no monorepo).",
+      "Record the choice in `docs/agents/issue-tracker.md`. The GitHub and GitLab templates carry a \"PRs as a request surface\" flag, defaulted **off** — leave it off and don't raise it; a user who wants external PRs in the triage queue can flip the flag in the file later.",
+      "**Section B — Triage label vocabulary.** Skip this section entirely if the `triage` skill isn't installed (exploration told you) — an uninstalled skill needs no labels.",
+      "- If neither exists, ask the user which one to create — don't pick for them."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "ask-matt": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/ask-matt/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.269086",
+    "brief_english": "Ask which skill or flow fits your situation. A router over the skills in this repo.",
+    "brief_traditional": "",
+    "precondition": [
+      "## Precondition"
+    ],
+    "postcondition": [],
+    "best_practice": [
+      "- **`/prototype`** — a small, throwaway program that answers one design question: does this state model feel right, or what should this UI look like. Throwaway from day one — keep the answer, delete the code. It's the detour in step 2 of the main flow, but reach for it any time a design question is hard to settle on paper."
+    ],
+    "don_t": [
+      "You don't remember every skill, so ask.",
+      "Keep steps 1–3 in **one unbroken context window** — don't compact or clear until after `/to-tickets` — so the grilling, spec, and tickets all build on the same thinking. Each `/implement` then starts fresh, working from the ticket.",
+      "The limit on this is the **[smart zone](https://www.aihero.dev/ai-coding-dictionary/smart-zone)**: the window (~120k tokens on state-of-the-art models) within which the model still reasons sharply. If a session approaches it before `/to-tickets`, don't push on degraded — `/handoff` and continue in a fresh thread.",
+      "Triage is only for issues **you didn't create** — bug reports, incoming feature requests, anything that arrives raw. Tickets that `/to-tickets` produced are already agent-ready, so **don't triage them**.",
+      "When the map clears, **it hands off, it doesn't build**: merge onto the main flow at **`/to-spec`**, which collapses the map's linked decisions into a buildable plan, then `/to-tickets` and `/implement` as usual. Looping the map straight into `/implement` skips that collapse and throws the linked detail away — go straight to `/implement` only when the effort turned out genuinely small."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "diagnosing-bugs": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/engineering/diagnosing-bugs/SKILL.md",
+    "category": "engineering",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.269310",
+    "brief_english": "Diagnosis loop for hard bugs and performance regressions. Use when the user says \"diagnose\"/\"debug this\", or reports something broken/throwing/failing/slow.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "Do not proceed until you have reproduced **and** minimised."
+    ],
+    "don_t": [
+      "A discipline for hard bugs. Skip phases only when explicitly justified.",
+      "**This is the skill.** Everything else is mechanical. If you have a **tight** pass/fail signal for the bug — one that goes red on _this_ bug — you will find the cause; bisection, hypothesis-testing, and instrumentation all just consume it. If you don't have one, no amount of staring at code will save you.",
+      "- Can I make it faster? (Cache setup, skip unrelated init, narrow the test scope.)",
+      "**Show the ranked list to the user before testing.** They often have domain knowledge that re-ranks instantly (\"we just deployed a change to #3\"), or know hypotheses they've already ruled out. Cheap checkpoint, big time saver. Don't block on it — proceed with your ranking if the user is AFK."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "grilling": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/productivity/grilling/SKILL.md",
+    "category": "productivity",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.269355",
+    "brief_english": "Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, or uses any 'grill' trigger phrases.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "Do not act on it until I confirm we have reached a shared understanding."
+    ],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "grill-me": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/productivity/grill-me/SKILL.md",
+    "category": "productivity",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.269419",
+    "brief_english": "A relentless interview to sharpen a plan or design.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  },
+  "teach": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/productivity/teach/SKILL.md",
+    "category": "productivity",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.269672",
+    "brief_english": "Teach the user a new skill or concept, within this workspace.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "- `MISSION.md`: A document capturing the _reason_ the user is interested in the topic. This should be used to ground all teaching. Use the format in [MISSION-FORMAT.md](./MISSION-FORMAT.md).",
+      "- `./reference/*.html`: A directory of reference materials. These are the compressed learnings from the lessons - cheat sheets, reference algorithms, syntax, yoga poses, glossaries. They are the raw units of learning. They should be beautiful documents which print out well, and are designed for quick reference.",
+      "- `./learning-records/*.md`: A directory of learning records, which capture what the user has learned. These are loosely equivalent to architectural decision records in software development - they capture non-obvious lessons and key insights that may need to be revised later, or drive future sessions. These should be used to calculate the zone of proximal development. They are titled `0001-<dash-case-name>.md`, where the number increments each time. Use the format in [LEARNING-RECORD-FORMAT.md](./LEARNING-RECORD-FORMAT.md).",
+      "Before the `RESOURCES.md` is well-populated, your focus should be to find high-quality resources which will help the user acquire knowledge. Never trust your parametric knowledge.",
+      "You should be careful to split between two types of learning:"
+    ],
+    "don_t": [
+      "The user may specify an exact thing they want to learn. If they don't, figure out their zone of proximal development by:"
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "writing-great-skills": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/productivity/writing-great-skills/SKILL.md",
+    "category": "productivity",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.270172",
+    "brief_english": "Reference for writing and editing skills well — the vocabulary and principles that make a skill predictable.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "A model-invoked **description** does two jobs — state what the skill is, and list the **branches** that should trigger it. Every word increases **context load**, so a description earns even harder pruning than the body:",
+      "- **By invocation** — split off a **model-invoked** skill when you have a distinct **leading word** that should trigger it on its own, or another skill must reach it. You pay **context load** for the new always-loaded **description**, so that independent reach has to be worth it.",
+      "Then hunt **no-ops** sentence by sentence, not just line by line: run the no-op test on each sentence in isolation, and when one fails, delete the whole sentence rather than trim words from it. Be aggressive — most prose that fails should go, not be rewritten."
+    ],
+    "don_t": [
+      "- **Negation** — steering by prohibition backfires: _don't think of an elephant_ names the elephant and makes it more available, not less. Prompt the **positive** — state the target behaviour so the banned one is never spoken; keep a prohibition only as a hard guardrail you can't phrase positively, and even then pair it with what to do instead."
+    ],
+    "error_handling": [],
+    "testing": []
+  },
+  "handoff": {
+    "markdown_source": "/galab/yaochu/atmos/mattpocock-skills/skills/productivity/handoff/SKILL.md",
+    "category": "productivity",
+    "tags": [],
+    "status": "active",
+    "last_touched": "2026-08-14T07:54:35.270303",
+    "brief_english": "Compact the current conversation into a handoff document for another agent to pick up.",
+    "brief_traditional": "",
+    "precondition": [],
+    "postcondition": [],
+    "best_practice": [
+      "Include a \"suggested skills\" section in the document, which suggests skills that the agent should invoke.",
+      "Do not duplicate content already captured in other artifacts (specs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead."
+    ],
+    "don_t": [],
+    "error_handling": [],
+    "testing": []
+  }
+}

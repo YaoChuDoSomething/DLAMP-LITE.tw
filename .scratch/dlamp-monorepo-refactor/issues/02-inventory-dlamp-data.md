@@ -25,6 +25,7 @@ Inventory: `assets/02-dlamp-data-inventory.md`.
 Key finding: the ticket's assumed layout belongs to the other copy (`github/dlamp-data`). The nested repo is a **separate ERA5/SFNO preprocessing pipeline** — `src/preproc/` (CDS downloader, regridder, SFNO processor) + `src/registry/` (31 diagnostic functions, importlib loader, dependency-sorted execution), driven by `config/{era5,sfno,dataDownloader}.yaml` and runners `DLAMPreproc.py`/`SFNOPreproc.py` (no `[project.scripts]`; run from repo root). 55 commits, flat mainline + sfno feature branches; no tests; no LFS; `target.nc`/`uv.lock` gitignored; Python 3.12 (conflicts with DLAMP.tw 3.11 pin).
 
 Consequences:
+
 - `src/preproc/*` → `dlamp.data.{download,regrid,sfno}`, `src/registry/*` → `dlamp.data.registry`; runners are the `[project.scripts]` candidates.
 - Merged deps must reconcile uv pyproject (`earth2studio[data,sfno]` git) vs `requirements.txt` (CDS stack) vs DLAMP.tw pins; `cdo`/`eccodes` are conda-only.
 - Output naming is a contract with DLAMP.tw: `e5dlamp_%Y%m%d_%H%M.nc` ↔ `src/utils/file_util.py:209`; `sfnodlamp`/`e2s_sfno_dlamp` ↔ `file_util.py:214`.

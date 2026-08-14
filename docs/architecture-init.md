@@ -6,7 +6,7 @@
 
 ## 1. 系統架構與管線分析 (Architecture Pipelines)
 
-```
+```text
                               DLAMP Pipeline Architecture
                               
  [ ERA5 / RWRF NetCDF Data ] 

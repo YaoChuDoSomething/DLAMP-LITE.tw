@@ -24,7 +24,8 @@ Grilled Q1–Q4, confirmed by user.
 **Q2 — Dependency matrix (single set, deduped):** numpy `<2.0`, torch `==2.4.0`, lightning `>=2.0.0`, hydra-core `>=1.3.0`, xarray `>=2026.7.0`, netcdf4 `>=1.7.3`, h5netcdf `>=1.8.1`, cdsapi `>=0.7.7`, cdo `>=1.6.1`, eccodes (conda-only), pyproj (added, regrid), cfgrib, scipy, pandas (added, dlamp-data), pyyaml, cftime, matplotlib, dask, onnx, openvino, onnxruntime-gpu, etc. (rest of DLAMP.tw pyproject). Single `[project] dependencies`; **`dlamp[dev]` extra kept** (ruff/mypy/radon/pytest/pytest-cov/pre-commit). Build backend **`uv_build`** (already used in scaffolding). `cdo`/`eccodes` remain conda-forge install notes in README, not pyproject.
 
 **Q3 — `[project.scripts]` block:**
-```
+
+```text
 dlamp-train = "dlamp.train:main"
 dlamp-predict = "dlamp.predict:main"
 dlamp-export-onnx = "dlamp.export_onnx:main"
@@ -32,6 +33,7 @@ dlamp-infer-onnx = "dlamp.inference_onnx:main"
 dlamp-gen-const-masks = "dlamp.generate_const_masks:main"
 dlamp-unpack-tgz = "dlamp.unzip_tgz:main"
 ```
+
 Root runnable `data_prep.py` stays out of the scripts block (04-Q3/Q4); SFNO entries cancelled. Verify Hydra `@hydra.main` main()s work as console entry points during execution.
 
 **Q4 — LFS/packaging:** `uv_build` packages only `src/<name>/` — top-level `assets/ config/ export/ gallery/ outputs/ checkpoints/` excluded from wheel **by construction**; no `[tool.setuptools]`/exclude config needed. LFS via `.gitattributes` (ticket 07). Add explicit exclusions only if a test/CI later proves a leak.

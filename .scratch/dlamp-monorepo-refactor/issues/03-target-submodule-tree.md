@@ -20,7 +20,7 @@ Grill one branch at a time; the decision is the approved tree diagram, recorded 
 
 Grilled all 5 branches, confirmed by the user. Approved tree:
 
-```
+```text
 dlamp-monorepo/
 ├── src/dlamp/                      # package `dlamp` (DLAMP.tw side)
 │   ├── const.py                    # dlamp.const (hub, from src/const.py)
@@ -49,6 +49,7 @@ dlamp-monorepo/
 ```
 
 Branch decisions:
+
 - **A** — 8 legacy dirs fold in preserving structure (`dlamp.{analysis,inference,visual,models,datasets,utils,managers,debug}`); `src/const.py`→`dlamp.const`, `src/standardization.py`→`dlamp.standardization`; 4 standalone scripts (`export_onnx`, `generate_const_masks`, `inference_onnx`, `unzip_tgz`) → `[project.scripts]` (ticket 04).
 - **B** — starter `src/dlamp/` toy-MLP scaffold (`model/datamodule/lightning_module/train/config`) **deleted** (no runtime deps on it); its `tests/` disposition → ticket 11.
 - **C** — nested `externals/dlamp-data` (untracked) **deleted** from DLAMP.tw at archiving; canonical pipeline enters the monorepo via ticket 07's merged history, not as a copy/submodule.
