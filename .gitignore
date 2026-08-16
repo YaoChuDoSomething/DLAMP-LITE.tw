@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# mypy / coverage caches
+.mypy_cache/
+.coverage
+
 # Hydra logs
 outputs/
 

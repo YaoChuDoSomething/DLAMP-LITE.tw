@@ -10,10 +10,12 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from ..runtime_config import RuntimeConfig
-from ..utils.data_compose import DataCompose
+
+if TYPE_CHECKING:
+    from ..utils.data_compose import DataCompose
 
 
 class DataSourceStrategy(Protocol):
