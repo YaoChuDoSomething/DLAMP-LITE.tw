@@ -22,8 +22,6 @@ from matplotlib.axes import Axes
 from matplotlib.colors import CenteredNorm, LogNorm, PowerNorm, TwoSlopeNorm
 from matplotlib.figure import Figure
 from omegaconf import DictConfig
-from pyproj import Geod
-from scipy.interpolate import griddata
 
 from dlamp.analysis.data_manager import AnalysisDataManager
 from dlamp.analysis.plot_meta import ANALYSIS_PLOT_CONFIGS
@@ -31,25 +29,6 @@ from dlamp.runtime_config import get_runtime_config
 from dlamp.utils.data_type import DataType, Level
 
 logger = logging.getLogger(__name__)
-
-R_D = 287.0  # gas constant of dry air (J kg-1 K-1)
-C_P = 1004.0  # specific heat of dry air at constant pressure (J kg-1 K-1)
-
-_GEOD = Geod(ellps="WGS84")
-
-
-def _great_circle_distance(point_a: tuple[float, float], point_b: tuple[float, float]) -> float:
-    """Return the great-circle distance between two lat/lon points in km.
-
-    Args:
-        point_a (Tuple[float, float]): (latitude, longitude) of the first point.
-        point_b (Tuple[float, float]): (latitude, longitude) of the second point.
-
-    Returns:
-        float: The great-circle distance in kilometers.
-    """
-    _fwd_az, _back_az, dist_m = _GEOD.inv(point_a[1], point_a[0], point_b[1], point_b[0])
-    return dist_m / 1000.0
 
 
 class WeatherPlotter:
@@ -158,12 +137,12 @@ class WeatherPlotter:
         colorbar_gamma: float | None = config.get("colorbar_gamma")
         colorbar_center: float | None = config.get("colorbar_center")
 
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
         wspd_fc: np.ndarray = self.manager.get_wind_speed(step, level, is_gt=False)
         u_fc, v_fc = self.manager._get_wind_components(step, level)
 
         time: datetime = self.manager.get_forecast_time(step)
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
         wspd_gt: np.ndarray = self.manager.get_wind_speed(step, level, is_gt=True)
         u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
 
@@ -212,12 +191,12 @@ class WeatherPlotter:
 
         u_fc, v_fc = self.manager._get_wind_components(step, level)
         vort_fc: np.ndarray = self.manager.get_relative_vorticity(step, level, False) * 1e6
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
 
         time: datetime = self.manager.get_forecast_time(step)
         u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
         vort_gt: np.ndarray = self.manager.get_relative_vorticity(step, level, True) * 1e6
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
 
         self._generic_grid_plot(
             ax_fc,
@@ -267,13 +246,13 @@ class WeatherPlotter:
 
         # Forecast fields
         thetae_fc: np.ndarray = self.manager.get_equivalent_potential_temperature(step, level, is_gt=False)
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
         u_fc, v_fc = self.manager._get_wind_components(step, level)
 
         # Ground-truth fields
         time: datetime = self.manager.get_forecast_time(step)
         thetae_gt: np.ndarray = self.manager.get_equivalent_potential_temperature(step, level, is_gt=True)
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
         u_gt, v_gt = self.manager._get_gt_wind_components(time, level)
 
         # Plot: FC (theta-e shading + Z contours + streamlines)
@@ -323,12 +302,12 @@ class WeatherPlotter:
         colorbar_center: float | None = config.get("colorbar_center")
 
         t_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.TK, level)
-        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.Z, level)
+        z_fc: np.ndarray = self.manager.get_forecast_data(step, DataType.PH, level)
         u10_fc, v10_fc = self.manager._get_wind_components(step, Level.Meter10)
 
         time: datetime = self.manager.get_forecast_time(step)
         t_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.TK, level)
-        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.Z, level)
+        z_gt: np.ndarray = self.manager.get_ground_truth_data(time, DataType.PH, level)
         u10_gt, v10_gt = self.manager._get_gt_wind_components(time, Level.Meter10)
 
         self._generic_grid_plot(
@@ -574,157 +553,3 @@ class WeatherPlotter:
         ax.set_aspect("equal", adjustable="box")
         ax.set_xticks([])
         ax.set_yticks([])
-
-    def create_cross_section_figure(
-        self,
-        start_point: tuple[float, float],
-        end_point: tuple[float, float],
-        forecast_step: int,
-        is_gt: bool = False,
-        band_width_km: float = 0.0,
-        num_points: int = 100,
-    ) -> Path:
-        """
-        繪製指定兩點連線的垂直剖面圖。
-        填色圖(contourf)為 Qv (水氣混和比)，等高線(contour)為位溫。
-
-        Args:
-            start_point (Tuple[float, float]): 起始點 (緯度, 經度)。
-            end_point (Tuple[float, float]): 結束點 (緯度, 經度)。
-            forecast_step (int): 預報步長 (0-indexed)。
-            is_gt (bool): 是否使用 ground truth 資料。
-            band_width_km (float): 剖面帶寬(km)。若為 0，則為"一刀切"剖面。
-                                   若大於 0，則在剖面線法線方向上取此寬度的平均值。
-            num_points (int): 剖面線上取樣點的數量。
-
-        Returns:
-            Path: 儲存的圖片路徑。
-        """
-        logger.info(f"Generating cross section from {start_point} to {end_point}...")
-
-        # 1. 準備網格和資料
-        model_lon: np.ndarray = self.manager.results["lon"]
-        model_lat: np.ndarray = self.manager.results["lat"]
-        points = np.vstack((model_lon.ravel(), model_lat.ravel())).T
-
-        levels_enum = self.manager.levels
-        pressure_levels = np.array([float(l.value.replace("hPa", "")) for l in levels_enum])
-
-        # 獲取所有垂直層的 3D 資料
-        all_level_qv = []
-        all_level_t = []
-        time = self.manager.get_forecast_time(forecast_step)
-
-        for level in levels_enum:
-            if is_gt:
-                qv = self.manager.get_ground_truth_data(time, DataType.Qt, level)
-                t = self.manager.get_ground_truth_data(time, DataType.TK, level)
-            else:
-                qv = self.manager.get_forecast_data(forecast_step, DataType.Qt, level)
-                t = self.manager.get_forecast_data(forecast_step, DataType.TK, level)
-            all_level_qv.append(qv)
-            all_level_t.append(t)
-
-        qv_3d = np.stack(all_level_qv)
-        t_3d = np.stack(all_level_t)
-
-        # 2. 定義剖面路徑
-        lats = np.linspace(start_point[0], end_point[0], num_points)
-        lons = np.linspace(start_point[1], end_point[1], num_points)
-        path_points = list(zip(lats, lons))
-
-        distances = [0.0]
-        for i in range(1, len(path_points)):
-            dist = _great_circle_distance(path_points[i - 1], path_points[i])
-            distances.append(distances[-1] + dist)
-
-        # 3. 內插資料到剖面路徑上
-        cross_section_qv = np.zeros((len(pressure_levels), num_points))
-        cross_section_theta = np.zeros((len(pressure_levels), num_points))
-
-        for i, (lat, lon) in enumerate(path_points):
-            query_points = np.array([[lon, lat]])
-
-            if band_width_km <= 0:  # "一刀切"模式
-                for level_idx in range(len(pressure_levels)):
-                    grid_qv = griddata(points, qv_3d[level_idx].ravel(), query_points, method="linear")
-                    grid_t = griddata(points, t_3d[level_idx].ravel(), query_points, method="linear")
-                    cross_section_qv[level_idx, i] = grid_qv[0]
-                    cross_section_theta[level_idx, i] = grid_t[0] * (1000.0 / pressure_levels[level_idx]) ** (R_D / C_P)
-            else:  # 帶寬平均模式
-                # 計算剖面線的法線方向
-                if i < num_points - 1:
-                    d_lat = lats[i + 1] - lats[i]
-                    d_lon = lons[i + 1] - lons[i]
-                else:  # 最後一點使用前一點的方向
-                    d_lat = lats[i] - lats[i - 1]
-                    d_lon = lons[i] - lons[i - 1]
-
-                # 法線向量 (注意經度在赤道附近與距離的換算)
-                norm_vec = np.array([-d_lon * np.cos(np.deg2rad(lat)), d_lat])
-                norm_vec /= np.linalg.norm(norm_vec)
-
-                # 在法線方向上取樣5個點進行平均
-                sample_points_ll = []
-                for s in np.linspace(-0.5, 0.5, 5):
-                    # 將帶寬轉換為經緯度偏移量 (近似)
-                    offset_lat = s * (band_width_km / 111.0) * norm_vec[1]
-                    offset_lon = s * (band_width_km / (111.0 * np.cos(np.deg2rad(lat)))) * norm_vec[0]
-                    sample_points_ll.append([lon + offset_lon, lat + offset_lat])
-
-                for level_idx in range(len(pressure_levels)):
-                    grid_qv = griddata(points, qv_3d[level_idx].ravel(), sample_points_ll, method="linear")
-                    grid_t = griddata(points, t_3d[level_idx].ravel(), sample_points_ll, method="linear")
-
-                    cross_section_qv[level_idx, i] = np.nanmean(grid_qv)
-                    theta = np.nanmean(grid_t) * (1000.0 / pressure_levels[level_idx]) ** (R_D / C_P)
-                    cross_section_theta[level_idx, i] = theta
-
-        # 4. 繪圖
-        fig, ax = plt.subplots(figsize=(12, 6))
-
-        # 繪製 Qv (水氣) 填色圖
-        # 註: 請求是 contourf: Qv 和 contour: Qv，但目前資料只有 Qv。
-        # 我們用位溫 theta 做 contour，這是更常見且有意義的物理剖面圖。
-        qv_levels = np.linspace(0, 0.02, 21)  # kg/kg
-        cf = ax.contourf(distances, pressure_levels, cross_section_qv, levels=qv_levels, cmap="GnBu", extend="max")
-        fig.colorbar(cf, ax=ax, label="Specific Humidity (Qv) [kg kg-1]")
-
-        # 繪製位溫等高線
-        theta_levels = np.arange(280, 400, 4)  # K
-        cs = ax.contour(
-            distances, pressure_levels, cross_section_theta, levels=theta_levels, colors="k", linewidths=0.8
-        )
-        ax.clabel(cs, inline=True, fontsize=8, fmt="%1.0f")
-
-        ax.set_ylim(1000, 150)  # Y軸反轉，地面在下
-        ax.set_yscale("log")
-        ax.set_yticks([1000, 850, 700, 500, 300, 200])
-        ax.get_yaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
-        ax.set_ylabel("Pressure (hPa)")
-        ax.set_xlabel("Distance (km)")
-
-        title_prefix = "Ground Truth" if is_gt else "Forecast"
-        valid_time = self.manager.get_forecast_time(forecast_step).strftime("%Y-%m-%d %H:%M Z")
-        ax.set_title(
-            f"{title_prefix} Cross Section at {valid_time}\n"
-            f"From ({start_point[0]:.2f}, {start_point[1]:.2f}) to ({end_point[0]:.2f}, {end_point[1]:.2f})"
-        )
-
-        # 在 X 軸上標示起點和終點
-        ax.set_xticks(np.linspace(0, distances[-1], 5))
-        secax = ax.secondary_xaxis("top")
-        secax.set_xticks([distances[0], distances[-1]])
-        secax.set_xticklabels(
-            [f"Start\n({start_point[0]:.1f}, {start_point[1]:.1f})", f"End\n({end_point[0]:.1f}, {end_point[1]:.1f})"]
-        )
-
-        ax.grid(True, linestyle="--", alpha=0.6)
-
-        # 5. 儲存圖片
-        filename = f"cross_section_{'gt' if is_gt else 'fc'}_{forecast_step:03d}.png"
-        output_path = self.output_dir / filename
-        fig.savefig(output_path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
-        logger.info(f"Saved cross section plot to {output_path}")
-        return output_path

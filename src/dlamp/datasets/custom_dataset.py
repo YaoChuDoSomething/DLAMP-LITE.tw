@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 
-from ..standardizer import get_standardizer
+from ..standardizer import Standardizer, get_standardizer
 from ..utils import DataCompose, DataGenerator, Level, TimeUtil
 
 
@@ -23,6 +23,7 @@ class CustomDataset(Dataset):
         add_time_features: bool,
         use_Kth_hour_pred: int | None,
         is_train_or_valid: bool,
+        standardizer: Standardizer | None = None,
     ):
         super().__init__()
         self._ilen = inp_len
@@ -35,6 +36,7 @@ class CustomDataset(Dataset):
         self.add_time_features = add_time_features
         self.use_Kth_hour_pred = use_Kth_hour_pred
         self._is_train_or_valid = is_train_or_valid
+        self._standardizer = standardizer or get_standardizer()
 
     def __len__(self):
         """
@@ -85,9 +87,8 @@ class CustomDataset(Dataset):
         # via traversing data_list, the levels/vars are in the the same order as the
         # order in `config/data/data_config.yaml`
         data_dict = self._data_gnrt.yield_data(dt, self._data_list, use_Kth_hour_pred=self.use_Kth_hour_pred)
-        standardizer = get_standardizer()
         for var_level_str, data in data_dict.items():
-            data = standardizer.standardize(var_level_str, data)
+            data = self._standardizer.standardize(var_level_str, data)
             _, level = DataCompose.retrive_var_level_from_string(var_level_str)
             if level.is_surface():
                 pre_output[Level.Surface].append(data)

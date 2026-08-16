@@ -140,8 +140,8 @@ class VizWind(TwBackground):
 
 if __name__ == "__main__":
     target_time = datetime(2022, 10, 16, 0, tzinfo=UTC)
-    u850 = gen_data(target_time, DataCompose(DataType.U, Level.Hpa850))
-    v850 = gen_data(target_time, DataCompose(DataType.V, Level.Hpa850))
+    u850 = gen_data(target_time, DataCompose(DataType.UM, Level.Hpa850))
+    v850 = gen_data(target_time, DataCompose(DataType.VM, Level.Hpa850))
     data_lat = gen_data(target_time, DataCompose(DataType.Lat, Level.Surface))
     data_lon = gen_data(target_time, DataCompose(DataType.Lon, Level.Surface))
 

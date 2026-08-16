@@ -104,7 +104,9 @@ class PredictionRunner:
         dc_lat: DataCompose
         dc_lon: DataCompose
         dc_mask: DataCompose
-        dc_lat, dc_lon, dc_mask = DataCompose.from_config({"Lat": ["NoRule"], "Lon": ["NoRule"], "MASK": ["NoRule"]})
+        dc_lat, dc_lon, dc_mask = DataCompose.from_config(
+            {"Lat": ["NoRule"], "Lon": ["NoRule"], "MASK": ["NoRule"]}
+        )
         start_time: datetime = datetime.strptime(self.cfg.data.start_time, self.cfg.data.format).replace(
             tzinfo=UTC
         )
@@ -153,7 +155,7 @@ def main(cfg: DictConfig) -> None:
         OmegaConf.set_struct(cfg, True)
         out_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
         logger.info("Start workflow -> %s", out_dir)
-        print("cfg = ", cfg)
+        logger.info("cfg = %s", cfg)
 
         # Build runtime config eagerly (validates model code paths)
         runtime_config = RuntimeConfig.from_env()

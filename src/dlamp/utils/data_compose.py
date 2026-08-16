@@ -25,7 +25,7 @@ class DataCompose:
         This method is called automatically after an instance of the class is created.
 
         It sets the `level` attribute to `Level.NoRule` if the `var_name` attribute is
-        either `DataType.dBZ`, `DataType.XLAT`, or `DataType.XLON`.
+        either `DataType.dBZ`, `DataType.Radar`, `DataType.Lat`, or `DataType.Lon`.
 
         Args:
             self (DataCompose): The instance of the class.
@@ -33,9 +33,9 @@ class DataCompose:
         Returns:
             None
         """
-        if self.var_name in [DataType.dBZ, DataType.XLAT, DataType.XLON]:
+        if self.var_name in [DataType.dBZ, DataType.Radar, DataType.Lat, DataType.Lon]:
             self.level = Level.NoRule
-        if self.var_name in [DataType.Td2m, DataType.RH]:
+        if self.var_name in [DataType.Td, DataType.RH]:
             self.level = Level.Meter2
 
         self.basename = f"{self.level.code}{self.var_name.short_name}{VAR_SUFFIX}"
@@ -58,15 +58,15 @@ class DataCompose:
         if self.level not in [Level.Meter2, Level.Meter10, Level.Meter100]:
             return self.var_name.nc_key
 
-        if self.var_name in [DataType.Td2m, DataType.RH]:
+        if self.var_name in [DataType.Td, DataType.RH]:
             return f"{self.var_name.nc_key}{self.level.nc_key}"
 
-        if self.var_name in [DataType.U10m, DataType.V10m]:
+        if self.var_name in [DataType.UM, DataType.VM]:
             prefix = self.var_name.nc_key.split("_")[0]
             return f"{prefix}{self.level.nc_key}"
 
-        if self.var_name in [DataType.T2m, DataType.Qv]:
-            prefix = self.var_name.short_name[0]
+        if self.var_name in [DataType.TK, DataType.Qv]:
+            prefix = self.var_name.name[0]
             return f"{prefix}{self.level.nc_key}"
 
         return self.var_name.nc_key

@@ -55,6 +55,7 @@ class GlideBuilder(BaseBuilder):
                 ckpt_path=self.kwargs.regressoin_ckpt_path,
                 data_list=self.data_list,
                 image_shape=self.kwargs.image_shape,
+                add_time_features=getattr(self.kwargs, "add_time_features", False),
             )
         else:
             raise ValueError("Either regression_onnx_path or regressoin_ckpt_path must be provided.")

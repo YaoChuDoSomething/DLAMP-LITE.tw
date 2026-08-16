@@ -8,14 +8,14 @@ NetCDF metadata (or an extended definition where CF has no exact match).
 
 ## Column reference
 
-| Column         | Meaning                                                       |
-| -------------- | ------------------------------------------------------------- |
-| enum           | Machine member name for code dispatch                         |
-| shortname      | Canonical short symbol used in `nc_key` pattern               |
+| Column         | Meaning                                                           |
+| -------------- | ----------------------------------------------------------------- |
+| enum           | Machine member name for code dispatch                             |
+| shortname      | Canonical short symbol used in `nc_key` pattern                   |
 | standard_name  | CF-Conventions `standard_name` (or extended form, prefixed `cf:`) |
-| description    | CF `long_name` descriptive text                               |
-| units          | CF `units` (UDUNITS), `-` when dimensionless/flag               |
-| nc_key         | NetCDF output variable name (naming scheme below)             |
+| description    | CF `long_name` descriptive text                                   |
+| units          | CF `units` (UDUNITS), `-` when dimensionless/flag                 |
+| nc_key         | NetCDF output variable name (naming scheme below)                 |
 
 ## nc_key naming scheme
 
@@ -32,25 +32,26 @@ Patterns (level-stamped fields reuse the same `shortname`, level varies):
 | Other horizontal-layer field           | `{shortname}`                      | `RAINNC`|
 
 Coordinate notes:
+
 - `lat`/`lon` MUST be 1-D, strictly monotonic in a single direction.
 - `XLAT`/`XLON` are 2-D meshgrid projections of `lat`/`lon`.
 
 ## Pressure-level fields (3-D: lat × lon × level)
 
-| enum | shortname | standard_name               | description            | units    | nc_key pattern |
-| ---- | --------- | --------------------------- | ---------------------- | -------- | -------------- |
-| TK   | TK        | `air_temperature`           | Temperature            | `K`      | `TK_{hPa}`     |
-| Z    | Z         | `geopotential_height`       | Geopotential height    | `m`      | `Z_{hPa}`      |
-| UM   | UM        | `eastward_wind`             | U-wind component       | `m s-1`  | `UM_{hPa}`     |
-| VM   | VM        | `northward_wind`            | V-wind component       | `m s-1`  | `VM_{hPa}`     |
-| WA   | WA        | `upward_air_velocity`       | W-wind (vertical) comp.| `m s-1`  | `WA_{hPa}`     |
-| RH   | RH        | `relative_humidity`         | Relative humidity      | `%`      | `RH_{hPa}`     |
-| Qv   | Qv        | `water_vapor_mixing_ratio`  | Water-vapor mixing ratio | `kg kg-1` | `Qv_{hPa}`  |
-| Qc   | Qc        | `cloud_water_mixing_ratio`  | Cloud-water mix ratio  | `kg kg-1`| `Qc_{hPa}`     |
-| Qi   | Qi        | `cf:cloud_ice_mixing_ratio` | Cloud-ice mix ratio   | `kg kg-1`| `Qi_{hPa}`     |
-| Qr   | Qr        | `cf:rain_water_mixing_ratio`| Rain-water mix ratio  | `kg kg-1`| `Qr_{hPa}`     |
-| Qs   | Qs        | `cf:snow_mixing_ratio`      | Snow mix ratio         | `kg kg-1`| `Qs_{hPa}`     |
-| Qg   | Qg        | `cf:graupel_mixing_ratio`   | Graupel mix ratio      | `kg kg-1`| `Qg_{hPa}`     |
+| enum | shortname | standard_name                | description              | units     | nc_key pattern |
+| ---- | --------- | ---------------------------- | ------------------------ | --------- | -------------- |
+| TK   | TK        | `air_temperature`            | Temperature              | `K`       | `TK_{hPa}`     |
+| Z    | Z         | `geopotential_height`        | Geopotential height      | `m`       | `Z_{hPa}`      |
+| UM   | UM        | `eastward_wind`              | U-wind component         | `m s-1`   | `UM_{hPa}`     |
+| VM   | VM        | `northward_wind`             | V-wind component         | `m s-1`   | `VM_{hPa}`     |
+| WA   | WA        | `upward_air_velocity`        | W-wind (vertical) comp.  | `m s-1`   | `WA_{hPa}`     |
+| RH   | RH        | `relative_humidity`          | Relative humidity        | `%`       | `RH_{hPa}`     |
+| Qv   | Qv        | `water_vapor_mixing_ratio`   | Water-vapor mixing ratio | `kg kg-1` | `Qv_{hPa}`     |
+| Qc   | Qc        | `cloud_water_mixing_ratio`   | Cloud-water mix ratio    | `kg kg-1` | `Qc_{hPa}`     |
+| Qi   | Qi        | `cf:cloud_ice_mixing_ratio`  | Cloud-ice mix ratio      | `kg kg-1` | `Qi_{hPa}`     |
+| Qr   | Qr        | `cf:rain_water_mixing_ratio` | Rain-water mix ratio     | `kg kg-1` | `Qr_{hPa}`     |
+| Qs   | Qs        | `cf:snow_mixing_ratio`       | Snow mix ratio           | `kg kg-1` | `Qs_{hPa}`     |
+| Qg   | Qg        | `cf:graupel_mixing_ratio`    | Graupel mix ratio        | `kg kg-1` | `Qg_{hPa}`     |
 
 > Qt (total hydrometeors mixing ratio) is a **model input**, not an output. It
 > MUST be read directly from the source data, never derived from other variables.
@@ -60,28 +61,30 @@ Coordinate notes:
 
 ## AGL fields (height above ground level)
 
-| enum | shortname | standard_name        | description        | units   | nc_key       |
-| ---- | --------- | -------------------- | ------------------ | ------- | ------------ |
-| T2m  | T         | `air_temperature`    | Air temperature    | `K`     | `T_2m`       |
-| Td2m | Td        | `dew_point_temperature` | Dew-point temperature | `K`  | `Td_2m`   |
-| U10m | U         | `eastward_wind`      | U-wind component   | `m s-1` | `U_10m`      |
-| V10m | V         | `northward_wind`     | V-wind component   | `m s-1` | `V_10m`      |
+| enum    | shortname | standard_name           | description           | units   | nc_key   |
+| ------- | --------- | ----------------------- | --------------------- | ------- | -------- |
+| TH_2m   | TH        | `air_temperature`       | Air temperature       | `K`     | `T_2m`   |
+| Td_2m   | Td        | `dew_point_temperature` | Dew-point temperature | `K`     | `Td_2m`  |
+| UM_10m  | UM        | `eastward_wind`         | U-wind component      | `m s-1` | `U_10m`  |
+| VM_10m  | VM        | `northward_wind`        | V-wind component      | `m s-1` | `V_10m`  |
+| UM_100m | UM        | `eastward_wind`         | U-wind component      | `m s-1` | `U_100m` |
+| VM_100m | VM        | `northward_wind`        | V-wind component      | `m s-1` | `V_100m` |
 
 ## Other horizontal-layer fields (single level)
 
-| enum    | shortname | standard_name                       | description                         | units      | nc_key |
-| ------- | --------- | ----------------------------------- | ----------------------------------- | ---------- | ------ |
-| SLP     | SLP       | `air_pressure_at_sea_level`         | Sea-level pressure                  | `Pa`       | SLP    |
-| PSFC    | PSFC      | `surface_air_pressure`              | Surface pressure                    | `Pa`       | PSFC   |
-| SST     | SST       | `sea_surface_temperature`           | Sea-surface temperature             | `K`        | SST    |
-| PW      | PW        | `atmosphere_mass_content_of_water_vapor` | Precipitable-water column     | `kg m-2`   | PW     |
-| PBLH    | PBLH      | `atmosphere_boundary_layer_thickness` | Planetary boundary-layer height    | `m`        | PBLH   |
-| RAINNC  | RAINNC    | `precipitation_amount`              | Accumulated precipitation           | `kg m-2`   | RAINNC |
-| SWDOWN  | SWDOWN    | `surface_downwelling_shortwave_flux_in_air` | Downward shortwave flux    | `W m-2`    | SWDOWN |
-| OLR     | OLR       | `toa_outgoing_longwave_flux`        | Outgoing longwave radiation         | `W m-2`    | OLR    |
-| HGT     | HGT       | `surface_altitude`                  | Terrain height                      | `m`        | HGT    |
-| MASKLAND| MASKLAND  | `cf:land_binary_mask`               | Land-sea mask (bool: true land, false sea) | `1`    | LANDMASK |
-| dBZ     | REFL      | `radar_reflectivity`                | Max column radar reflectivity | `dBZ`      | REFL   |
+| enum    | shortname | standard_name                               | description                         | units      | nc_key |
+| ------- | --------- | ------------------------------------------- | ----------------------------------- | ---------- | ------ |
+| SLP     | SLP       | `air_pressure_at_sea_level`                 | Sea-level pressure                  | `Pa`       | SLP    |
+| PSFC    | PSFC      | `surface_air_pressure`                      | Surface pressure                    | `Pa`       | PSFC   |
+| SST     | SST       | `sea_surface_temperature`                   | Sea-surface temperature             | `K`        | SST    |
+| PW      | PW        | `atmosphere_mass_content_of_water_vapor`    | Precipitable-water                  | `kg m-2`   | PW     |
+| PBLH    | PBLH      | `atmosphere_boundary_layer_thickness`       | Planetary boundary-layer height     | `m`        | PBLH   |
+| RAINNC  | RAINNC    | `precipitation_amount`                      | Accumulated precipitation           | `kg m-2`   | RAINNC |
+| SWDOWN  | SWDOWN    | `surface_downwelling_shortwave_flux_in_air` | Downward shortwave flux             | `W m-2`    | SWDOWN |
+| OLR     | OLR       | `toa_outgoing_longwave_flux`                | Outgoing longwave radiation         | `W m-2`    | OLR    |
+| HGT     | HGT       | `surface_altitude`                          | Terrain height                      | `m`        | HGT    |
+| MASK    | LANDMASK  | `cf:land_binary_mask`                       | Land-sea mask (true land, false sea) | `1`         | LANDMASK |
+| REFL    | REFL      | `radar_reflectivity`                        | Max column radar reflectivity       | `dBZ`      | REFL   |
 
 ## Coordinates
 

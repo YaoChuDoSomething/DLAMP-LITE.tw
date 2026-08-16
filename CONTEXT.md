@@ -36,6 +36,9 @@ The origin of reanalysis inputs: `OP_ERA5`, `OP_E2S`, `CWA_RWRF`, `NEO171_RWRF`.
 **Standardization**:
 Per-variable z-score normalization (mean/std) applied during data loading. Statistics are precomputed per model code and stored in `assets/standardization/z_score_3h_{code}.json`. `Qt` uses log-transform: `log(array * 1e5 + 1)`.
 
+**Unstandardized Variable** (decision):
+A variable intentionally excluded from `Standardization Statistics` because it is not z-scored. An absent `DataCompose` in the statistics is legal and means *identity* — `standardize` and `destandardize` both pass the array through unchanged (never zeroed, never error). Statistics and the data config must still agree on belonging/absence; a `DataCompose` whose stats are absent by accident is caught by schema checks, not by zeroing.
+
 **Standardizer**:
 The module (`standardizer.py`) that loads statistics once and provides `standardize()` (per-variable, input side) and `destandardize()` (full stacked array, output side) through a single shared seam.
 
@@ -77,6 +80,26 @@ Terrain height grid in meters. Stored as `topography_mask_4km.npy`.
 
 **County Shapefile**:
 Taiwan administrative boundaries for plotting (`COUNTY_MOI_1090820.shp`).
+
+### Testing
+
+**Test**:
+A codebase artifact that verifies the behaviour of a `dlamp` module. Not part of the shipped package.
+
+**Test Suite**:
+The complete set of tests for the project. Lives exclusively under `tests/`, mirroring the package structure: `tests/dlamp/<path>` ↔ `src/dlamp/<path>` (e.g., `src/dlamp/data/preproc` ↔ `tests/dlamp/data/preproc`). All test work — test files, fixtures, `conftest.py` — belongs under `tests/`, never inside `src/`.
+
+**Unit Test**:
+A test exercising a single module in isolation, with no external data dependency. Default pytest target.
+
+**Integration Test**:
+A test requiring real sample data in `DLAMP_DATA_PATH` (e.g., ERA5). Skipped by default (`@pytest.mark.integration`).
+
+**Regression Test**:
+A test comparing output against a golden baseline in `DLAMP_DATA_PATH/regression_golden`. Run via `make regression` (`@pytest.mark.regression`).
+
+**Test Fixture**:
+A reusable test input (or session-scoped setup) defined in `tests/conftest.py` or a `tests/fixtures/` entry. Small fixtures committed; large data fixtures referenced by path via `DLAMP_DATA_PATH`.
 
 ### Evaluation
 
@@ -140,6 +163,7 @@ WRF-compatible NetCDF file per forecast step, containing all variables at their 
 | **Model** (unqualified) | Say **Backbone** (nn.Module), **Lightning Module**, or **Model Code** (experiment ID) |
 | **Eval** | Say **Evaluation Case** |
 | **Boundary** (unqualified) | Say **Boundary Swapping** (technique) or **Boundary Region** (spatial extent) |
+| **Test inside `src/`** | Test files must live under `tests/`, never under `src/dlamp/` |
 
 ### Subheadings
 
@@ -150,6 +174,7 @@ WRF-compatible NetCDF file per forecast step, containing all variables at their 
 - **Post-Processing**: Boundary Swapping, Boundary Feedback Inference
 - **Static Assets**: Land-Sea Mask, Topography Mask, County Shapefile
 - **Evaluation**: Evaluation Case, Blacklist
+- **Testing**: Test, Test Suite, Unit Test, Integration Test, Regression Test, Test Fixture
 - **Architecture**: Pangu, Glide, Backbone, Lightning Module
 - **Data Flow**: Data Generator, Data Manager, Datetime Manager, Custom Dataset, Inference Machine, Prediction Runner
 - **Output**: Analysis Plot, NetCDF Forecast

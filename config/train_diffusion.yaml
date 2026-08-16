@@ -14,8 +14,8 @@ hydra:
         level: DEBUG
 
 defaults:
-  - data: rwrf_202409
-  - lightning: diffusion_rwrf_202409
-  - model: diffusion_rwrf_202409
+  - data: rwrf_20250627
+  - lightning: diffusion_rwrf_20250627
+  - model: diffusion_rwrf_20250627
   - _self_
   - override hydra/job_logging: default

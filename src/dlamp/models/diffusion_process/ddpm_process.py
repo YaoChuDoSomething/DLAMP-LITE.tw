@@ -50,14 +50,16 @@ class DDPMProcess:
             β̃ₜ = (1 - ᾱₜ₋₁) / (1 - ᾱₜ) * βₜ
         """
         self.device_check(xt.device)
-        if t == 0:
-            beta_t_hat = 0
+        if simple_var:
+            beta_t_hat = self.betas[t]
         else:
-            if simple_var:
-                beta_t_hat = self.betas[t]
-            else:
-                beta_t_hat = (1 - self.alpha_bars[t - 1]) / (1 - self.alpha_bars[t]) * self.betas[t]
-        sigma_t = torch.sqrt(beta_t_hat) if beta_t_hat != 0 else 0
+            beta_t_hat = (
+                (1 - self.alpha_bars[(t - 1).clamp(min=0)])
+                / (1 - self.alpha_bars[t])
+                * self.betas[t]
+            )
+        beta_t_hat = torch.where(t == 0, torch.zeros_like(beta_t_hat), beta_t_hat)
+        sigma_t = torch.sqrt(beta_t_hat)
         noise = torch.randn_like(xt) * sigma_t
 
         mean = (xt - (1 - self.alphas[t]) / torch.sqrt(1 - self.alpha_bars[t]) * eps_model) / torch.sqrt(self.alphas[t])
@@ -74,23 +76,5 @@ class DDPMProcess:
         self.alpha_bars = torch.cumprod(self.alphas, dim=0)
 
     @staticmethod
-    def cosine_beta_schedule(timesteps, min_beta=0.0001, max_beta=0.9999, s=0.008):
-        steps = timesteps + 1
-        x = torch.linspace(0, timesteps, steps)
-        alphas_cumprod = torch.cos(((x / timesteps) + s) / (1 + s) * torch.pi * 0.5) ** 2
-        alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
-        betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
-        return torch.clip(betas, min_beta, max_beta)
-
-    @staticmethod
     def linear_beta_schedule(timesteps, min_beta, max_beta):
         return torch.linspace(min_beta, max_beta, timesteps)
-
-    @staticmethod
-    def quadratic_beta_schedule(timesteps, min_beta, max_beta):
-        return torch.linspace(min_beta**0.5, max_beta**0.5, timesteps) ** 2
-
-    @staticmethod
-    def sigmoid_beta_schedule(timesteps, min_beta, max_beta):
-        betas = torch.linspace(-6, 6, timesteps)
-        return torch.sigmoid(betas) * (max_beta - min_beta) + min_beta

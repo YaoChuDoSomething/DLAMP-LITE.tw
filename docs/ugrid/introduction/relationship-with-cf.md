@@ -1,16 +1,17 @@
-# UGRID 与 CF Conventions 的关系
+# UGRID 與 CF Conventions 的關係
 
-## 🔗 官方集成状态
+## 🔗 官方整合狀態
 
-**UGRID Conventions 已被 CF Conventions 官方集成！**
+**UGRID Conventions 已被 CF Conventions 官方整合！**
 
-自 **CF v1.11** 起，UGRID 1.0 已成为 CF 规范的正式组成部分。这意味着 UGRID 不再是一个独立的扩展，而是 CF 的一部分。
+自 **CF v1.11** 起，UGRID 1.0 已成為 CF 規範的正式組成部分。這意味著 UGRID 不再是一個獨立的擴充套件，而是 CF 的一部分。
 
-## 📋 官方声明
+## 📋 官方宣告
 
-来自 CF v1.12 文档的官方声明：
+來自 CF v1.12 文件的官方宣告：
 
 > ### 1.6. UGRID Conventions
+>
 > These conventions implicitly incorporate parts of the UGRID conventions for storing unstructured (or flexible mesh) data in netCDF files using mesh topologies [[UGRID](#UGRID)]. **Only version 1.0 of the UGRID conventions is allowed.** The UGRID conventions description is referenced from, rather than rewritten into, this document and the canonical description of how to store mesh topologies is only to be found at [[UGRID](#UGRID)].
 
 ---
@@ -21,239 +22,253 @@
 
 > The UGRID conventions have their own conformance document, which should be used in conjunction with the CF conformance document when checking the validity of datasets.
 
-## 🔄 集成时间线
+## 🔄 整合時間線
 
-| CF 版本 | 发布日期 | UGRID 状态 | Conventions 属性要求 |
-|----------|----------|------------|--------------------|
-| CF-1.0-1.5 | 2003-2011 | ❌ 未集成 | 需要独立工具支持 |
+| CF 版本 | 釋出日期 | UGRID 狀態 | Conventions 屬性要求 |
+| ---------- | ---------- | ------------ | -------------------- |
+| CF-1.0-1.5 | 2003-2011 | ❌ 未整合 | 需要獨立工具支援 |
 | CF-1.6 | 2011-12-05 | ✅ 引用 | `Conventions = "CF-1.6, UGRID-1.0"` |
 | CF-1.7 | 2017-08-07 | ✅ 引用 | `Conventions = "CF-1.7, UGRID-1.0"` |
 | CF-1.8 | 2020-02-11 | ✅ 引用 | `Conventions = "CF-1.8, UGRID-1.0"` |
 | CF-1.9 | 2021-09-10 | ✅ 引用 | `Conventions = "CF-1.9, UGRID-1.0"` |
 | CF-1.10 | 2022-08-31 | ✅ 引用 | `Conventions = "CF-1.10, UGRID-1.0"` |
-| **CF-1.11** | **2023-12-05** | **✅ 完全集成** | **`Conventions = "CF-1.11"`** ✅ |
-| CF-1.12 | 2024-12-04 | ✅ 完全集成 | `Conventions = "CF-1.12"` |
-| CF-1.13 | 2025-12-17 | ✅ 完全集成 | `Conventions = "CF-1.13"` |
-| CF-1.14-draft | 2026-07-30 | ✅ 完全集成 | `Conventions = "CF-1.14-draft"` |
+| **CF-1.11** | **2023-12-05** | **✅ 完全整合** | **`Conventions = "CF-1.11"`** ✅ |
+| CF-1.12 | 2024-12-04 | ✅ 完全整合 | `Conventions = "CF-1.12"` |
+| CF-1.13 | 2025-12-17 | ✅ 完全整合 | `Conventions = "CF-1.13"` |
+| CF-1.14-draft | 2026-07-30 | ✅ 完全整合 | `Conventions = "CF-1.14-draft"` |
 
-## 🎯 关键转变
+## 🎯 關鍵轉變
 
 ### CF v1.10 及之前
 
-在 CF v1.10 及之前，UGRID 是一个 **独立的扩展**，需要显式声明：
+在 CF v1.10 及之前，UGRID 是一個 **獨立的擴充套件**，需要顯式宣告：
 
 ```netcdf
 :Conventions = "CF-1.8, UGRID-1.0" ;
 ```
 
-**特点**：
-- UGRID 是 CF 的扩展
-- 需要单独维护符合性
-- 工具需要同时支持 CF 和 UGRID
+**特點**：
 
-### CF v1.11 及之后 ✅
+- UGRID 是 CF 的擴充套件
+- 需要單獨維護符合性
+- 工具需要同時支援 CF 和 UGRID
 
-从 CF v1.11 开始，UGRID 1.0 **完全集成到 CF 规范中**：
+### CF v1.11 及之後 ✅
+
+從 CF v1.11 開始，UGRID 1.0 **完全整合到 CF 規範中**：
 
 ```netcdf
-:Conventions = "CF-1.11" ;  // 自动支持 UGRID 1.0
+:Conventions = "CF-1.11" ;  // 自動支援 UGRID 1.0
 ```
 
-**特点**：
+**特點**：
+
 - UGRID 1.0 是 CF 的一部分
-- 不需要显式声明 UGRID
-- 使用 CF v1.11+ 的文件自动支持网格拓扑
-- 符合性检查统一
+- 不需要顯式宣告 UGRID
+- 使用 CF v1.11+ 的檔案自動支援網格拓撲
+- 符合性檢查統一
 
-## 📐 CF 中的 UGRID 集成点
+## 📐 CF 中的 UGRID 整合點
 
-### 1. 属性标准化 (Appendix A & K)
+### 1. 屬性標準化 (Appendix A & K)
 
-CF 文档在 **Appendix A (Attributes)** 和 **Appendix K (Mesh Topology Attributes)** 中列出了所有 UGRID 标准化的属性：
+CF 文件在 **Appendix A (Attributes)** 和 **Appendix K (Mesh Topology Attributes)** 中列出了所有 UGRID 標準化的屬性：
 
-**UGRID 标准化属性包括**：
+**UGRID 標準化屬性包括**：
 
-#### 网格拓扑属性 (Mesh Topology Attributes)
-- `cf_role` - 定义变量的角色 (如 `mesh_topology`, `edge_node_connectivity`)
-- `topology_dimension` - 网格的最高维度
-- `node_coordinates` - 指向节点坐标变量
-- `edge_node_connectivity` - 指向边-节点连接性变量
-- `face_node_connectivity` - 指向面-节点连接性变量
-- `volume_node_connectivity` - 指向体积-节点连接性变量
-- `face_dimension` - 面的维度
-- `edge_dimension` - 边的维度
-- `volume_dimension` - 体积的维度
-- `face_edge_connectivity` - 指向面-边连接性变量
-- `face_face_connectivity` - 指向面-面连接性变量
-- `edge_face_connectivity` - 指向边-面连接性变量
-- `boundary_node_connectivity` - 指向边界-节点连接性变量
-- `volume_shape_type` - 体积形状类型
+#### 網格拓撲屬性 (Mesh Topology Attributes)
+
+- `cf_role` - 定義變數的角色 (如 `mesh_topology`, `edge_node_connectivity`)
+- `topology_dimension` - 網格的最高維度
+- `node_coordinates` - 指向節點座標變數
+- `edge_node_connectivity` - 指向邊-節點連線性變數
+- `face_node_connectivity` - 指向面-節點連線性變數
+- `volume_node_connectivity` - 指向體積-節點連線性變數
+- `face_dimension` - 面的維度
+- `edge_dimension` - 邊的維度
+- `volume_dimension` - 體積的維度
+- `face_edge_connectivity` - 指向面-邊連線性變數
+- `face_face_connectivity` - 指向面-面連線性變數
+- `edge_face_connectivity` - 指向邊-面連線性變數
+- `boundary_node_connectivity` - 指向邊界-節點連線性變數
+- `volume_shape_type` - 體積形狀型別
 - `start_index` - 索引起始值 (0 或 1)
 
-#### 数据位置属性
-- `mesh` - 指向关联的网格拓扑变量
-- `location` - 数据定义的位置 (node, edge, face, volume)
+#### 資料位置屬性
+
+- `mesh` - 指向關聯的網格拓撲變數
+- `location` - 資料定義的位置 (node, edge, face, volume)
 - `location_index_set` - 位置索引集
 
-### 2. 网格拓扑变量 (Section 5.9)
+### 2. 網格拓撲變數 (Section 5.9)
 
-CF v1.11+ 在 **Section 5.9 "Mesh Topology Variables"** 中详细描述了网格拓扑变量的要求和用法。
+CF v1.11+ 在 **Section 5.9 "Mesh Topology Variables"** 中詳細描述了網格拓撲變數的要求和用法。
 
 **核心要求**：
-- 网格拓扑变量必须有 `cf_role = "mesh_topology"`
-- 必须有 `topology_dimension` 属性
-- 必须有 `node_coordinates` 属性
-- 必须有至少一个 `*_node_connectivity` 属性
+
+- 網格拓撲變數必須有 `cf_role = "mesh_topology"`
+- 必須有 `topology_dimension` 屬性
+- 必須有 `node_coordinates` 屬性
+- 必須有至少一個 `*_node_connectivity` 屬性
 
 ### 3. 符合性要求
 
-UGRID 保留了自己的符合性文档，但 CF 文档现在也包含了相关的符合性要求：
+UGRID 保留了自己的符合性文件，但 CF 文件現在也包含了相關的符合性要求：
 
-- UGRID 符合性文档应该与 CF 符合性文档一起使用
-- 使用 CF v1.11+ 检查 UGRID 文件时，两个文档都需要参考
+- UGRID 符合性文件應該與 CF 符合性文件一起使用
+- 使用 CF v1.11+ 檢查 UGRID 檔案時，兩個文件都需要參考
 
-## 🔧 技术集成详情
+## 🔧 技術整合詳情
 
-### 1. 属性集成
+### 1. 屬性整合
 
-UGRID 的所有标准化属性都被 CF v1.11+ 采纳，这意味着：
+UGRID 的所有標準化屬性都被 CF v1.11+ 採納，這意味著：
 
-- ✅ CF 工具可以识别 UGRID 属性
-- ✅ UGRID 属性在 CF 文档中有定义
-- ✅ 不会与 CF 现有属性冲突
-- ✅ 属性的语义在 CF 和 UGRID 中一致
+- ✅ CF 工具可以識別 UGRID 屬性
+- ✅ UGRID 屬性在 CF 文件中有定義
+- ✅ 不會與 CF 現有屬性衝突
+- ✅ 屬性的語義在 CF 和 UGRID 中一致
 
-### 2. 规范引用
+### 2. 規範引用
 
-CF v1.11+ 文档 **引用** UGRID 规范，而不是重写：
+CF v1.11+ 文件 **引用** UGRID 規範，而不是重寫：
 
 > "The UGRID conventions description is referenced from, rather than rewritten into, this document and the canonical description of how to store mesh topologies is only to be found at [[UGRID](#UGRID)]."
 
-这意味着：
-- UGRID 的官方定义在 [ugrid-conventions.github.io](https://ugrid-conventions.github.io/ugrid-conventions/)
-- CF 文档提供了 UGRID 的概述和集成方式
-- 详细的技术细节仍然在 UGRID 文档中
+這意味著：
+
+- UGRID 的官方定義在 [ugrid-conventions.github.io](https://ugrid-conventions.github.io/ugrid-conventions/)
+- CF 文件提供了 UGRID 的概述和整合方式
+- 詳細的技術細節仍然在 UGRID 文件中
 
 ### 3. 版本限制
 
-CF v1.11+ **只允许 UGRID v1.0**：
+CF v1.11+ **只允許 UGRID v1.0**：
 
 > "Only version 1.0 of the UGRID conventions is allowed."
 
-这意味着：
-- ✅ UGRID v1.0 是官方支持的版本
-- ❌ UGRID v0.9 及更早版本不被 CF v1.11+ 支持
-- ⚠️ 未来的 UGRID v2.0 需要 CF 的更新
+這意味著：
+
+- ✅ UGRID v1.0 是官方支援的版本
+- ❌ UGRID v0.9 及更早版本不被 CF v1.11+ 支援
+- ⚠️ 未來的 UGRID v2.0 需要 CF 的更新
 
 ## 📊 UGRID 在 CF 中的定位
 
-### CF 的扩展机制
+### CF 的擴充套件機制
 
-CF 采用了 **引用扩展** 的机制来集成 UGRID：
+CF 採用了 **引用擴充套件** 的機制來整合 UGRID：
 
-1. **引用外部标准**: CF 文档引用 UGRID 规范
-2. **采纳属性定义**: CF 采纳 UGRID 的标准化属性
-3. **提供集成指导**: CF 提供如何在 CF 文件中使用 UGRID
-4. **统一符合性**: CF 和 UGRID 的符合性检查可以一起使用
+1. **引用外部標準**: CF 文件引用 UGRID 規範
+2. **採納屬性定義**: CF 採納 UGRID 的標準化屬性
+3. **提供整合指導**: CF 提供如何在 CF 檔案中使用 UGRID
+4. **統一符合性**: CF 和 UGRID 的符合性檢查可以一起使用
 
-### UGRID 相对于 CF 的其他部分
+### UGRID 相對於 CF 的其他部分
 
-| CF 组件 | UGRID 集成 | 说明 |
-|----------|------------|------|
-| 核心属性 | ✅ 完全集成 | 如 `Conventions`, `title`, `history` |
-| 坐标变量 | ✅ 完全集成 | UGRID 使用 CF 的坐标变量定义 |
-| 坐标系统 | ✅ 完全集成 | 支持各种坐标系统 |
-| 单位定义 | ✅ 完全集成 | 使用 CF 的单位定义 |
-| 标准名称 | ✅ 完全集成 | 使用 CF 的标准名称表 |
-| 时间坐标 | ✅ 完全集成 | 使用 CF 的时间坐标定义 |
-| 网格拓扑 | ✅ **UGRID 扩展** | UGRID 提供的功能 |
-| 非结构化网格 | ✅ **UGRID 扩展** | UGRID 的核心功能 |
+| CF 元件 | UGRID 整合 | 說明 |
+| ---------- | ------------ | ------ |
+| 核心屬性 | ✅ 完全整合 | 如 `Conventions`, `title`, `history` |
+| 座標變數 | ✅ 完全整合 | UGRID 使用 CF 的座標變數定義 |
+| 座標系統 | ✅ 完全整合 | 支援各種座標系統 |
+| 單位定義 | ✅ 完全整合 | 使用 CF 的單位定義 |
+| 標準名稱 | ✅ 完全整合 | 使用 CF 的標準名稱表 |
+| 時間座標 | ✅ 完全整合 | 使用 CF 的時間座標定義 |
+| 網格拓撲 | ✅ **UGRID 擴充套件** | UGRID 提供的功能 |
+| 非結構化網格 | ✅ **UGRID 擴充套件** | UGRID 的核心功能 |
 
-## ✅ 最佳实践
+## ✅ 最佳實踐
 
-### 对于数据生产者
+### 對於資料生產者
 
 1. **使用最新的 CF 版本**
+
    ```netcdf
-   :Conventions = "CF-1.12" ;  // 推荐
+   :Conventions = "CF-1.12" ;  // 推薦
    ```
 
-2. **不需要显式声明 UGRID**
+2. **不需要顯式宣告 UGRID**
+
    ```netcdf
-   // ✅ 正确 (CF v1.11+)
+   // ✅ 正確 (CF v1.11+)
    :Conventions = "CF-1.12" ;
    
    // ❌ 不必要 (CF v1.11+)
    :Conventions = "CF-1.12, UGRID-1.0" ;
    ```
 
-3. **确保符合 UGRID v1.0**
+3. **確保符合 UGRID v1.0**
    - 使用 `cf_role = "mesh_topology"`
-   - 定义 `topology_dimension`
-   - 定义 `node_coordinates`
-   - 定义连接性变量
+   - 定義 `topology_dimension`
+   - 定義 `node_coordinates`
+   - 定義連線性變數
 
-4. **验证文件符合性**
-   - 使用 CF 符合性检查器
-   - 使用 UGRID 符合性检查器
-   - 确保同时满足 CF 和 UGRID 的要求
+4. **驗證檔案符合性**
+   - 使用 CF 符合性檢查器
+   - 使用 UGRID 符合性檢查器
+   - 確保同時滿足 CF 和 UGRID 的要求
 
-### 对于数据使用者
+### 對於資料使用者
 
-1. **检查 CF 版本**
+1. **檢查 CF 版本**
+
    ```python
    import netCDF4
    nc = netCDF4.Dataset('file.nc')
    conventions = nc.Conventions
    
    if 'CF-1.11' in conventions or 'CF-1.12' in conventions:
-       # 支持 UGRID
+       # 支援 UGRID
        supports_ugrid = True
    else:
-       # 需要检查是否显式声明 UGRID
+       # 需要檢查是否顯式宣告 UGRID
        supports_ugrid = 'UGRID' in conventions
    ```
 
-2. **查找网格拓扑变量**
+2. **查詢網格拓撲變數**
+
    ```python
-   # 查找 cf_role = "mesh_topology" 的变量
+   # 查詢 cf_role = "mesh_topology" 的變數
    for var in nc.variables.values():
        if hasattr(var, 'cf_role') and var.cf_role == 'mesh_topology':
            mesh_var = var
            break
    ```
 
-3. **使用 UGRID 相关工具**
+3. **使用 UGRID 相關工具**
    - xarray + cf-xarray
-   - NetCDF-Fortran 库
+   - NetCDF-Fortran 庫
    - ParaView
    - VisIt
 
-## 🔍 兼容性检查
+## 🔍 相容性檢查
 
-### 检查文件是否支持 UGRID
+### 檢查檔案是否支援 UGRID
 
-1. **检查 Conventions 属性**
+1. **檢查 Conventions 屬性**
+
    ```bash
    ncdump -h file.nc | grep Conventions
    ```
 
-2. **检查网格拓扑变量**
+2. **檢查網格拓撲變數**
+
    ```bash
    ncdump -h file.nc | grep cf_role
    ```
 
-3. **使用 Python 检查**
+3. **使用 Python 檢查**
+
    ```python
    import netCDF4
    
    def is_ugrid_compliant(filepath):
        nc = netCDF4.Dataset(filepath)
        
-       # 检查 Conventions
+       # 檢查 Conventions
        conventions = getattr(nc, 'Conventions', '')
        if 'CF-1.11' in conventions or 'UGRID' in conventions:
-           # 检查网格拓扑变量
+           # 檢查網格拓撲變數
            for var in nc.variables.values():
                if hasattr(var, 'cf_role') and var.cf_role == 'mesh_topology':
                    if hasattr(var, 'topology_dimension') and hasattr(var, 'node_coordinates'):
@@ -261,77 +276,86 @@ CF 采用了 **引用扩展** 的机制来集成 UGRID：
        return False
    ```
 
-### 验证 UGRID 符合性
+### 驗證 UGRID 符合性
 
-1. **官方 UGRID 符合性检查器**
+1. **官方 UGRID 符合性檢查器**
    - [ugrid-conventions/conformance](https://github.com/ugrid-conventions/ugrid-conventions/tree/master/conformance)
 
-2. **CF 符合性检查器**
+2. **CF 符合性檢查器**
    - [cf-checker](https://github.com/cedadev/cf-checker)
    - [Compliance Checker](https://compliance.ioos.us/)
 
-3. **在线验证工具**
+3. **線上驗證工具**
    - [IOOS Compliance Checker](https://compliance.ioos.us/)
 
-## 📖 CF 文档中的 UGRID 参考
+## 📖 CF 文件中的 UGRID 參考
 
-### CF v1.12 中的 UGRID 相关部分
+### CF v1.12 中的 UGRID 相關部分
 
 1. **Section 1.6 - UGRID Conventions**
-   - UGRID 集成的概述
+   - UGRID 整合的概述
    - 版本要求
-   - 符合性说明
+   - 符合性說明
 
 2. **Section 5.9 - Mesh Topology Variables**
-   - 网格拓扑变量的定义
-   - 必需和可选属性
+   - 網格拓撲變數的定義
+   - 必需和可選屬性
    - 示例
 
 3. **Appendix A - Attributes**
-   - UGRID 标准化属性的定义
-   - 属性值和用法
+   - UGRID 標準化屬性的定義
+   - 屬性值和用法
 
 4. **Appendix K - Mesh Topology Attributes**
-   - 所有 UGRID 属性的详细定义
-   - 属性之间的关系
+   - 所有 UGRID 屬性的詳細定義
+   - 屬性之間的關係
 
-## 🔗 重要链接
+## 🔗 重要連結
 
-### CF 官方资源
-- [CF Conventions 官方网站](https://cfconventions.org/)
-- [CF v1.12 文档](https://cfconventions.org/cf-conventions/cf-conventions.html)
-- [CF GitHub 仓库](https://github.com/cf-convention/cf-conventions)
+### CF 官方資源
 
-### UGRID 官方资源
-- [UGRID Conventions 官方文档](https://ugrid-conventions.github.io/ugrid-conventions/)
-- [UGRID GitHub 仓库](https://github.com/ugrid-conventions/ugrid-conventions)
-- [UGRID 符合性文档](https://ugrid-conventions.github.io/ugrid-conventions/conformance/)
+- [CF Conventions 官方網站](https://cfconventions.org/)
+- [CF v1.12 文件](https://cfconventions.org/cf-conventions/cf-conventions.html)
+- [CF GitHub 倉庫](https://github.com/cf-convention/cf-conventions)
 
-### 集成资源
-- [CF 文档中关于 UGRID 的部分](https://cfconventions.org/cf-conventions/cf-conventions.html#ugrid-conventions)
-- [CF 文档中关于网格拓扑的部分](https://cfconventions.org/cf-conventions/cf-conventions.html#mesh-topology-variables)
+### UGRID 官方資源
+
+- [UGRID Conventions 官方文件](https://ugrid-conventions.github.io/ugrid-conventions/)
+- [UGRID GitHub 倉庫](https://github.com/ugrid-conventions/ugrid-conventions)
+- [UGRID 符合性文件](https://ugrid-conventions.github.io/ugrid-conventions/conformance/)
+
+### 整合資源
+
+- [CF 文件中關於 UGRID 的部分](https://cfconventions.org/cf-conventions/cf-conventions.html#ugrid-conventions)
+- [CF 文件中關於網格拓撲的部分](https://cfconventions.org/cf-conventions/cf-conventions.html#mesh-topology-variables)
 - [CF Appendix K - Mesh Topology Attributes](https://cfconventions.org/cf-conventions/cf-conventions.html#appendix-mesh-topology-attributes)
 
-## ❓ 常见问题
+## ❓ 常見問題
 
-### Q1: CF v1.11+ 是否完全兼容 UGRID v1.0？
-**A**: 是的。CF v1.11+ 完全集成了 UGRID v1.0，所有 UGRID v1.0 的功能都被支持。
+### Q1: CF v1.11+ 是否完全相容 UGRID v1.0？
 
-### Q2: 我是否可以在 CF v1.8 文件中使用 UGRID？
-**A**: 可以，但需要显式声明：`Conventions = "CF-1.8, UGRID-1.0"`。
+**A**: 是的。CF v1.11+ 完全整合了 UGRID v1.0，所有 UGRID v1.0 的功能都被支援。
 
-### Q3: 使用 CF v1.12 时是否还需要声明 UGRID？
-**A**: 不需要。CF v1.11+ 自动支持 UGRID 1.0，只需要声明 CF 版本即可。
+### Q2: 我是否可以在 CF v1.8 檔案中使用 UGRID？
 
-### Q4: 我如何知道我的文件是否符合 UGRID 标准？
-**A**: 使用 UGRID 符合性检查器，或者检查是否有 `cf_role = "mesh_topology"` 变量和相应的属性。
+**A**: 可以，但需要顯式宣告：`Conventions = "CF-1.8, UGRID-1.0"`。
 
-### Q5: UGRID 是否支持 4D 网格？
-**A**: UGRID v1.0 支持 1D、2D、3D 网格。4D 网格（如时间变化的网格）在当前版本中支持有限，属于未来发展方向。
+### Q3: 使用 CF v1.12 時是否還需要宣告 UGRID？
 
-### Q6: 我可以使用 UGRID v0.9 吗？
-**A**: 在 CF v1.11+ 中，只有 UGRID v1.0 被官方支持。UGRID v0.9 被认为是过时的。
+**A**: 不需要。CF v1.11+ 自動支援 UGRID 1.0，只需要宣告 CF 版本即可。
+
+### Q4: 我如何知道我的檔案是否符合 UGRID 標準？
+
+**A**: 使用 UGRID 符合性檢查器，或者檢查是否有 `cf_role = "mesh_topology"` 變數和相應的屬性。
+
+### Q5: UGRID 是否支援 4D 網格？
+
+**A**: UGRID v1.0 支援 1D、2D、3D 網格。4D 網格（如時間變化的網格）在當前版本中支援有限，屬於未來發展方向。
+
+### Q6: 我可以使用 UGRID v0.9 嗎？
+
+**A**: 在 CF v1.11+ 中，只有 UGRID v1.0 被官方支援。UGRID v0.9 被認為是過時的。
 
 ---
 
-*下一步*: [概述](overview.md) | [历史](history.md)
+*下一步*: [概述](overview.md) | [歷史](history.md)

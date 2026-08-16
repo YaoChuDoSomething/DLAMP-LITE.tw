@@ -79,9 +79,11 @@ def diag_z_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
 
         case "RWRF":
             data = np.squeeze(ds["z_p"].values)
+            nc_key = "z_p"
 
         case _:
             data = np.nan
+            nc_key = "z"
 
     return _create_dataarray(data, ds, nc_key, "Geopotential Height", "m")
 

@@ -65,7 +65,7 @@ def plot_bdy_blending_verification(
     fig.colorbar(im, ax=axes[1, 2])
 
     os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, f"debug_{{dt.strftime('%Y%m%d%H')}}_{method}_L{l}_C{c}.png")
+    save_path = os.path.join(save_dir, f"debug_{dt.strftime('%Y%m%d%H')}_{method}_L{l}_C{c}.png")
     plt.savefig(save_path)
     plt.close(fig)
 
@@ -251,6 +251,6 @@ def plot_fft_blending_debug(
 
     # Save the figure
     os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, f"debug_fft_{{dt.strftime('%Y%m%d%H')}}_{method}_L{l}_C{c}.png")
+    save_path = os.path.join(save_dir, f"debug_fft_{dt.strftime('%Y%m%d%H')}_{method}_L{l}_C{c}.png")
     plt.savefig(save_path)
     plt.close(fig_fft)

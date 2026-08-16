@@ -40,46 +40,41 @@ class DataType(Enum):
     # Coordinates
     # fmt: off
     # (short_name, standard_name, description, units, nc_key)
-    Lat   = ("lat",   "latitude",  "Latitude (1-D, monotonic increasing)",  "degrees_north", "lat")
-    Lon   = ("lon",   "longitude", "Longitude (1-D, monotonic increasing)", "degrees_east",  "lon")
-    XLAT  = ("XLAT",  "latitude",  "Latitude meshgrid (2-D)",               "degrees_north", "XLAT")
-    XLON  = ("XLON",  "longitude", "Longitude meshgrid (2-D)",              "degrees_east",  "XLON")
+    Lat  = ("Lat",  "latitude",  "Latitude",                      "degrees_north", "XLAT")
+    Lon  = ("Lon",  "longitude", "Longitude",                     "degrees_east",  "XLONG")
 
-    # Pressure-level fields (nc_key = {shortname}_{hPa})
-    TK  = ("TK",  "air_temperature",                  "Temperature",                      "K",       "TK")
-    Z   = ("Z",   "geopotential_height",              "Geopotential height",              "m",       "Z")
-    UM  = ("UM",  "eastward_wind",                    "U-wind component",                 "m s-1",   "UM")
-    VM  = ("VM",  "northward_wind",                   "V-wind component",                 "m s-1",   "VM")
-    WA  = ("WA",  "upward_air_velocity",              "W-wind (vertical) component",      "m s-1",   "WA")
-    RH  = ("RH",  "relative_humidity",                "Relative humidity",                "%",       "RH")
-    Qv  = ("Qv",  "water_vapor_mixing_ratio",         "Water-vapor mixing ratio",         "kg kg-1", "Qv")
-    Qc  = ("Qc",  "cloud_water_mixing_ratio",         "Cloud-water mixing ratio",         "kg kg-1", "Qc")
-    Qi  = ("Qi",  "cf:cloud_ice_mixing_ratio",        "Cloud-ice mixing ratio",           "kg kg-1", "Qi")
-    Qr  = ("Qr",  "cf:rain_water_mixing_ratio",       "Rain-water mixing ratio",          "kg kg-1", "Qr")
-    Qs  = ("Qs",  "cf:snow_mixing_ratio",             "Snow mixing ratio",                "kg kg-1", "Qs")
-    Qg  = ("Qg",  "cf:graupel_mixing_ratio",          "Graupel mixing ratio",             "kg kg-1", "Qg")
+    # Pressure-level fields
+    PH  = ("PH",  "geopotential_height",          "Geopotential height",             "m",       "z_p")
+    TK  = ("TK",  "air_temperature",              "Temperature",                      "K",       "tk_p")
+    UM  = ("UM",  "eastward_wind",                "U-wind component",                 "m s-1",   "umet_p")
+    VM  = ("VM",  "northward_wind",               "V-wind component",                 "m s-1",   "vmet_p")
+    WA  = ("WA",  "upward_air_velocity",          "W-wind (vertical) component",      "m s-1",   "wa_p")
+    RH  = ("RH",  "relative_humidity",            "Relative humidity",                "%",       "rh")
+    Qv  = ("Qv",  "water_vapor_mixing_ratio",     "Water-vapor mixing ratio",         "kg kg-1", "QVAPOR_p")
+    Qc  = ("Qc",  "cloud_water_mixing_ratio",     "Cloud-water mixing ratio",         "kg kg-1", "QCLOUD_p")
+    Qi  = ("Qi",  "cf:cloud_ice_mixing_ratio",    "Cloud-ice mixing ratio",           "kg kg-1", "QICE_p")
+    Qr  = ("Qr",  "cf:rain_water_mixing_ratio",   "Rain-water mixing ratio",          "kg kg-1", "QRAIN_p")
+    Qs  = ("Qs",  "cf:snow_mixing_ratio",         "Snow mixing ratio",                "kg kg-1", "QSNOW_p")
+    Qg  = ("Qg",  "cf:graupel_mixing_ratio",      "Graupel mixing ratio",             "kg kg-1", "QGRAUP_p")
+    Qt  = ("Qt",  "cf:total_hydrometeor_mixing_ratio",
+                  "Total hydrometeor mixing ratio",              "kg kg-1", "QTOTAL_p")
 
-    # AGL fields (nc_key = {shortname}_{height_in_m}m)
-    T2m  = ("T",  "air_temperature",        "Air temperature",           "K",       "T_2m")
-    Td2m = ("Td", "dew_point_temperature",  "Dew-point temperature",     "K",       "Td_2m")
-    U10m = ("U",  "eastward_wind",          "U-wind component",          "m s-1",   "U_10m")
-    V10m = ("V",  "northward_wind",         "V-wind component",          "m s-1",   "V_10m")
+    # AGL fields
+    Td  = ("Td",  "dew_point_temperature",        "Dew-point temperature",            "K",       "td")
 
     # Other single-level horizontal fields
-    SLP      = ("SLP",     "air_pressure_at_sea_level",         "Sea-level pressure",            "Pa",      "SLP")
-    PSFC     = ("PSFC",    "surface_air_pressure",              "Surface pressure",              "Pa",      "PSFC")
-    SST      = ("SST",     "sea_surface_temperature",           "Sea-surface temperature",       "K",       "SST")
-    PW       = ("PW",      "atmosphere_mass_content_of_water_vapor", "Precipitable-water column", "kg m-2",  "PW")
+    SLP      = ("SLP",     "air_pressure_at_sea_level",         "Sea-level pressure",           "Pa",      "slp")
+    PSFC     = ("PSFC",    "surface_air_pressure",              "Surface pressure",             "Pa",      "PSFC")
+    SST      = ("SST",     "sea_surface_temperature",           "Sea-surface temperature",      "K",       "SST")
+    PW       = ("PW",      "atmosphere_mass_content_of_water_vapor", "Precipitable-water column", "kg m-2", "PW")
     PBLH     = ("PBLH",    "atmosphere_boundary_layer_thickness", "Planetary boundary-layer height", "m",  "PBLH")
-    RAINNC   = ("RAINNC",  "precipitation_amount",              "Accumulated precipitation",     "kg m-2",  "RAINNC")
+    RAINNC   = ("RAINNC",  "precipitation_amount",              "Accumulated precipitation",    "kg m-2",  "RAINNC")
     SWDOWN   = ("SWDOWN",  "surface_downwelling_shortwave_flux_in_air", "Downward shortwave flux", "W m-2",  "SWDOWN")
-    OLR      = ("OLR",     "toa_outgoing_longwave_flux",        "Outgoing longwave radiation",   "W m-2",   "OLR")
-    HGT      = ("HGT",     "surface_altitude",                  "Terrain height",                "m",       "HGT")
-    MASKLAND = ("MASKLAND", "cf:land_binary_mask",              "Land-sea mask (bool)",          "1",       "LANDMASK")
-    dBZ      = ("REFL",    "radar_reflectivity",                "Max column radar reflectivity", "dBZ",     "REFL")
-
-    # Model input: read directly from source, never derived (no diagnostic).
-    Qt = ("Qt", "cf:total_hydrometeor_mixing_ratio", "Total hydrometeor mixing ratio", "kg kg-1", "Qt")
+    OLR      = ("OLR",     "toa_outgoing_longwave_flux",        "Outgoing longwave radiation",  "W m-2",   "OLR")
+    HGT      = ("HGT",     "surface_altitude",                  "Terrain height",               "m",       "HGT")
+    MASK     = ("MASK",    "cf:land_binary_mask",               "Land-sea mask (bool)",         "1",       "LANDMASK")
+    dBZ      = ("dBZ",     "radar_reflectivity",                "Radar reflectivity",           "dBZ",     "REFL_p")
+    Radar    = ("Radar",   "radar_reflectivity",                "Maximum radar reflectivity",   "dBZ",     "MAX_REFL")
 
     # Pressure coordinate (not a model output): source pressure-level array, used
     # only to map a level to its index when reading a pressure-level field.

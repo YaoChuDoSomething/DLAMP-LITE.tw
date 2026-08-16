@@ -22,6 +22,6 @@ data_prep:
   method: extract_from_nc
 
 defaults:
-  - data: rwrf_20250729
+  - data: rwrf_20250627
   - _self_
   - override hydra/job_logging: default

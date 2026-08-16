@@ -44,6 +44,10 @@ dependencies = [
     "geopandas>=1.1.4",
     "einops>=0.8.2",
     "rasterio>=1.4.4",
+    "playwright>=1.62.0",
+    "uxarray>=2026.6.0",
+    "pygrib>=2.1.8",
+    "opencc>=1.4.1",
 ]
 
 [project.scripts]

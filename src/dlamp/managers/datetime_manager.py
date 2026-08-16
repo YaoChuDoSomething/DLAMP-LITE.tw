@@ -3,16 +3,16 @@ from __future__ import annotations
 import logging
 import random
 import time
-from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
 
 from ..const import BLACKLIST_PATH, EVAL_CASES
+from ..data.source_strategy import NEO171RwrDataSource, get_data_source
 from ..runtime_config import get_runtime_config
 from ..utils import DataCompose, TimeUtil, gen_path
+from .split_strategies import get_split_strategy
 
 log = logging.getLogger(__name__)
 
@@ -151,53 +151,8 @@ class DatetimeManager:
         s = time.time()
         assert len(ratios) == 3, f"ratios should be [train_r, valid_r, test_r], but {ratios}"
 
-        ratios = np.array(ratios) / np.array(ratios).sum()
-
-        time_list = self.time_list.copy()
-        if split_method == "random":
-            random.seed(1000)
-            random.shuffle(time_list)
-            ratios *= len(time_list)
-            for category, category_idx in {"train": 0, "valid": 1, "test": 2}.items():
-                start_idx = np.sum(ratios[:category_idx], dtype=int)
-                end_idx = np.sum(ratios[: category_idx + 1], dtype=int)
-                self.__setattr__(f"{category}_time", set(time_list[start_idx:end_idx]))
-        elif split_method == "sequential":
-            ratios = np.round(ratios * 10).astype(int)
-            chunk_size = ratios.sum()
-            time_list_array = np.array(time_list)
-            for i in range(chunk_size):
-                tmp = time_list_array[i::chunk_size]
-                if i < ratios[0]:
-                    self.train_time.update(tmp)
-                elif i >= chunk_size - ratios[-1]:
-                    self.test_time.update(tmp)
-                else:
-                    self.valid_time.update(tmp)
-        elif split_method == "half_month":
-            # Group datetimes by half-month periods
-            half_month_groups = defaultdict(list)
-            for dt in time_list:
-                half = "1st_half" if dt.day <= 15 else "2nd_half"
-                group_key = f"{dt.strftime('%b')}_{half}"  # e.g. "Jan_1st_half"
-                half_month_groups[group_key].append(dt)
-
-            # Randomly shuffle groups
-            groups = list(half_month_groups.values())
-            random.seed(1000)
-            random.shuffle(groups)
-            num_groups = len(groups)
-            train_end = int(num_groups * ratios[0])
-            valid_end = int(num_groups * (ratios[0] + ratios[1]))
-
-            # Assign groups to splits
-            for i, group in enumerate(groups):
-                if i < train_end:
-                    self.train_time.update(group)
-                elif i < valid_end:
-                    self.valid_time.update(group)
-                else:
-                    self.test_time.update(group)
+        strategy = get_split_strategy(split_method)
+        self.train_time, self.valid_time, self.test_time = strategy.split(self.time_list, ratios)
 
         log.debug(f"{self.BC} Split data in {time.time() - s:.5f} sec.")
         log.debug(f"train_time size (original): {len(self.train_time)}")
@@ -252,29 +207,20 @@ class DatetimeManager:
             bool: True if all target data files exist, False otherwise.
         """
         config = get_runtime_config()
-        match config.data_source:
-            case "NEO171_RWRF":
-                data_filename_generator = (gen_path(dt, data) for data in data_list)
-                while True:
-                    try:
-                        data_filename = next(data_filename_generator)
-                        if not data_filename.exists():
-                            return False
-                    except StopIteration:
-                        return True
-            case "CWA_RWRF":
-                # since CWA prepared the data for us, we believe all variables are consistent
-                # in every netCDF file. Thus, we only check the file existence here.
-                data_filename = gen_path(dt, use_Kth_hour_pred=use_Kth_hour_pred)
-                return bool(data_filename.exists())
-            case "RWRF_ERA5":
-                # since CWA prepared the data for us, we believe all variables are consistent
-                # in every netCDF file. Thus, we only check the file existence here.
-                data_filename = gen_path(dt)
-                return bool(data_filename.exists())
-            case _:
-                log.error(f"Invalid data_source: {config.data_source}")
-                raise ValueError(f"Invalid data_source: {config.data_source}")
+        source = get_data_source(config.data_source)
+        if isinstance(source, NEO171RwrDataSource):
+            data_filename_generator = (gen_path(dt, data) for data in data_list)
+            while True:
+                try:
+                    data_filename = next(data_filename_generator)
+                    if not data_filename.exists():
+                        return False
+                except StopIteration:
+                    return True
+        else:
+            # CWA/ERA5 prepared data is self-consistent in every NetCDF file,
+            # so only the file existence is checked here.
+            return source.gen_path(dt, config, use_Kth_hour_pred=use_Kth_hour_pred).exists()
 
     def swap_eval_cases_from_train_valid(self) -> DatetimeManager:
         """

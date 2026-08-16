@@ -63,7 +63,7 @@ class VizSwdown(TwBackground):
             tmp_ax = ax[0, j]
             time_title = all_init_times[j].strftime("%Y%m%d_%H%M") if all_init_times else ""
             fig, tmp_ax = self.plot_bg(fig, tmp_ax, grid_on)
-            fig, tmp_ax = self._plot_pressure(fig, tmp_ax, lon, lat, ground_truth[j], time_title)
+            fig, tmp_ax = self._plot_swdown(fig, tmp_ax, lon, lat, ground_truth[j], time_title)
 
         # prediction
         for j in range(columns):
@@ -105,13 +105,12 @@ class VizSwdown(TwBackground):
         data: np.ndarray,
         title: str = "",
     ) -> tuple[Figure, Axes]:
-        data = np.round(data / 100)  # pa to hpa
         conf = ax.contourf(
             lon,
             lat,
             data,
             cmap="viridis",
-            levels=np.arange(-40, 400, 40),  # SWDOWN
+            levels=np.arange(0, 1000, 100),  # SWDOWN (W m-2)
             # levels=np.arange(0, 300, 30),  # OLR
             zorder=0,
             extend="both",

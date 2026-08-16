@@ -1,5 +1,5 @@
 infer_type: "onnx"
-onnx_path: "./export/Pangu_model_20250729.onnx"
+onnx_path: "./export/Pangu_model_250627.onnx"
 bdy_swap_method:
   name: "exp_decay"
   n_of_grid: 10

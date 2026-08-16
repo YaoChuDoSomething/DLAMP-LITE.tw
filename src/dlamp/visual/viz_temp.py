@@ -139,8 +139,8 @@ class VizTemp(TwBackground):
 if __name__ == "__main__":
     target_time = datetime(2022, 10, 16, 0, tzinfo=UTC)
     t850 = gen_data(target_time, DataCompose(DataType.TK, Level.Hpa850))
-    data_lat = gen_data(target_time, DataCompose(DataType.XLAT, Level.Surface))
-    data_lon = gen_data(target_time, DataCompose(DataType.XLON, Level.Surface))
+    data_lat = gen_data(target_time, DataCompose(DataType.Lat, Level.Surface))
+    data_lon = gen_data(target_time, DataCompose(DataType.Lon, Level.Surface))
 
     viz = VizTemp("Hpa850")
     fig, ax = viz.plot_1x1(data_lon, data_lat, t850)

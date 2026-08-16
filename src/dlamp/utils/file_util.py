@@ -209,7 +209,7 @@ def convert_hydra_dir_to_timestamp(hydra_dir: Path | str) -> str:
         ValueError: If the hydra directory path cannot be parsed into a datetime object.
     """
     try:
-        path = cast(Path, hydra_dir)
+        path = Path(hydra_dir) if isinstance(hydra_dir, str) else cast(Path, hydra_dir)
         dt = datetime.strptime(f"{path.parent.name} {path.name}", "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     except ValueError:
         if isinstance(hydra_dir, str):

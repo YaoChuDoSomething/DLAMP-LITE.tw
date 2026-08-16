@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import UTC, datetime
 
@@ -10,6 +11,8 @@ from dlamp.const import REPO_ROOT
 from dlamp.managers import DataManager
 from dlamp.standardizer import get_standardizer
 from dlamp.utils import DataCompose
+
+logger = logging.getLogger(__name__)
 
 """
 This is a sample code for quickly inference onnx model.
@@ -32,7 +35,7 @@ def main(cfg: DictConfig) -> None:
 
     # onnxruntime settings
     assert "CUDAExecutionProvider" in ort.get_available_providers()
-    print(f"ort device: {ort.get_device()}")
+    logger.info("ort device: %s", ort.get_device())
 
     # An issue about onnxruntime for cuda12.x
     # ref: https://github.com/microsoft/onnxruntime/issues/8313#issuecomment-1486097717
@@ -64,8 +67,8 @@ def main(cfg: DictConfig) -> None:
     standardizer = get_standardizer()
     pred_upper = standardizer.destandardize(pred_upper)
     pred_surface = standardizer.destandardize(pred_surface)
-    print(type(pred_upper), pred_upper.shape, pred_surface.shape)
-    print(f"execution time: {time.time() - start:.5f} sec")
+    logger.info("pred shapes: %s %s %s", type(pred_upper), pred_upper.shape, pred_surface.shape)
+    logger.info("execution time: %.5f sec", time.time() - start)
 
 
 if __name__ == "__main__":
