@@ -61,8 +61,8 @@ class PredictionRunner:
         """
         infer_type: str = self.cfg.inference.infer_type
         INFERENCE_CLASSES = {
-            "ckpt": ("inference.batch_inference_ckpt", "BatchInferenceCkpt"),
-            "onnx": ("inference.batch_inference_onnx", "BatchInferenceOnnx"),
+            "ckpt": ("dlamp.inference.batch_inference_ckpt", "BatchInferenceCkpt"),
+            "onnx": ("dlamp.inference.batch_inference_onnx", "BatchInferenceOnnx"),
         }
 
         if infer_type not in INFERENCE_CLASSES:
