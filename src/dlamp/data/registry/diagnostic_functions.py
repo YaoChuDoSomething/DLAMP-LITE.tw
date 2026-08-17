@@ -854,6 +854,41 @@ def _calc_dbz(
     return 10.0 * np.log10(z_e)
 
 
+def _load_refl_inputs(source_dataset: str, ds: xr.Dataset) -> tuple[np.ndarray, ...]:
+    """Load CALCDBZ input fields for a source dataset.
+
+    Returns a tuple of (tmk, qvp, qra, qsn, qgr, qcl, qci, prs) arrays.
+    Missing optional hydrometeors (graupel, cloud water, cloud ice)
+    degrade to zeros or ``None`` as appropriate.
+    """
+    if source_dataset == "ERA5":
+        tmk = np.squeeze(ds["t"].values)
+        qvp = np.squeeze(ds["q"].values) / (1 - np.squeeze(ds["q"].values))
+        qra = np.squeeze(ds["crwc"].values / (1 - ds["crwc"].values))
+        qsn = np.squeeze(ds["cswc"].values / (1 - ds["cswc"].values))
+        qgr = np.zeros(np.shape(tmk))
+        qcl = np.squeeze(ds["clwc"].values / (1 - ds["clwc"].values)) if "clwc" in ds else None
+        qci = np.squeeze(ds["ciwc"].values / (1 - ds["ciwc"].values)) if "ciwc" in ds else None
+    elif source_dataset == "RWRF":
+        tmk = np.squeeze(ds["tk_p"].values)
+        qvp = np.squeeze(ds["QVAPOR_p"].values)
+        qra = np.squeeze(ds["QRAIN_p"].values)
+        qsn = np.squeeze(ds["QSNOW_p"].values)
+        qgr = np.squeeze(ds["QGRAUP_p"].values) if "QGRAUP_p" in ds else np.zeros(np.shape(tmk))
+        qcl = np.squeeze(ds["QCLOUD_p"].values) if "QCLOUD_p" in ds else None
+        qci = np.squeeze(ds["QICE_p"].values) if "QICE_p" in ds else None
+    else:
+        template = ds["t" if "t" in ds else "tk_p"].values
+        nan_array = np.full(np.shape(np.squeeze(template)), np.nan)
+        return (nan_array,) * 8
+
+    prs = np.zeros(np.shape(tmk))
+    plev = np.squeeze(ds["pres_levels"].values)
+    for pl in range(len(plev)):
+        prs[pl, :, :] = plev[pl] * 100
+    return tmk, qvp, qra, qsn, qgr, qcl, qci, prs
+
+
 def diag_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
     Emulated Radar Reflectivity
@@ -862,37 +897,9 @@ def diag_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
 
     """
 
-    match source_dataset:
-        case "ERA5":
-            tmk = np.squeeze(ds["t"].values)
-            qvp = np.squeeze(ds["q"].values) / (1 - np.squeeze(ds["q"].values))
-            qra = np.squeeze(ds["crwc"].values / (1 - ds["crwc"].values))
-            qsn = np.squeeze(ds["cswc"].values / (1 - ds["cswc"].values))
-            qgr = np.zeros(np.shape(tmk))
-            qcl = np.squeeze(ds["clwc"].values / (1 - ds["clwc"].values)) if "clwc" in ds else None
-            qci = np.squeeze(ds["ciwc"].values / (1 - ds["ciwc"].values)) if "ciwc" in ds else None
-            prs = np.zeros(np.shape(tmk))
-            plev = np.squeeze(ds["pres_levels"].values)
-            for pl in range(len(plev)):
-                prs[pl, :, :] = plev[pl] * 100
-
-        case "RWRF":
-            tmk = np.squeeze(ds["tk_p"].values)
-            qvp = np.squeeze(ds["QVAPOR_p"].values)
-            qra = np.squeeze(ds["QRAIN_p"].values)
-            qsn = np.squeeze(ds["QSNOW_p"].values)
-            qgr = np.squeeze(ds["QGRAUP_p"].values) if "QGRAUP_p" in ds else np.zeros(np.shape(tmk))
-            qcl = np.squeeze(ds["QCLOUD_p"].values) if "QCLOUD_p" in ds else None
-            qci = np.squeeze(ds["QICE_p"].values) if "QICE_p" in ds else None
-            prs = np.zeros(np.shape(tmk))
-            plev = np.squeeze(ds["pres_levels"].values)
-            for pl in range(len(plev)):
-                prs[pl, :, :] = plev[pl] * 100.0
-
-        case _:
-            template_shape = ds["t" if "t" in ds else "tk_p"].values.shape
-            data = np.full(np.squeeze(template_shape), np.nan)
-            return _create_dataarray(data, ds, "REFL", "Emulated Radar Reflectivity", "dBZ")
+    tmk, qvp, qra, qsn, qgr, qcl, qci, prs = _load_refl_inputs(source_dataset, ds)
+    if np.isnan(tmk).all():
+        return _create_dataarray(tmk, ds, "REFL", "Emulated Radar Reflectivity", "dBZ")
 
     data = _calc_dbz(
         prs,
