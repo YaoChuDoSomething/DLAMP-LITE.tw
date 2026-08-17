@@ -79,9 +79,11 @@ def diag_z_p(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
 
         case "RWRF":
             data = np.squeeze(ds["z_p"].values)
+            nc_key = "z_p"
 
         case _:
             data = np.nan
+            nc_key = "z"
 
     return _create_dataarray(data, ds, nc_key, "Geopotential Height", "m")
 
@@ -719,9 +721,144 @@ def diag_OLR(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     return _create_dataarray(data, ds, "OLR", "Outgoing Longwave Radiation", "W m-2")
 
 
+def _calc_dbz(
+    prs: np.ndarray,
+    tmk: np.ndarray,
+    qvp: np.ndarray,
+    qra: np.ndarray,
+    qsn: np.ndarray,
+    qgr: np.ndarray,
+    qcl: np.ndarray | None = None,
+    qci: np.ndarray | None = None,
+    *,
+    sn0: int = 0,
+    ivarint: int = 1,
+    iliqskin: int = 1,
+) -> np.ndarray:
+    """Compute equivalent radar reflectivity factor (dBZ).
+
+    Vectorized port of the RIP ``CALCDBZ`` Fortran routine
+    (``wrf_user_dbz.f``, Stoelinga 2005), as wrapped by NCL ``wrf_dbz``,
+    extended to optionally include cloud water (``qcl``) and cloud ice
+    (``qci``) mixing ratios.
+
+    Args:
+        prs: Pressure (Pa), shape (..., ny, nx).
+        tmk: Air temperature (K).
+        qvp: Water-vapor mixing ratio (kg kg-1).
+        qra: Rain-water mixing ratio (kg kg-1).
+        qsn: Snow mixing ratio (kg kg-1).
+        qgr: Graupel mixing ratio (kg kg-1).
+        qcl: Cloud-water mixing ratio (kg kg-1), optional.
+        qci: Cloud-ice mixing ratio (kg kg-1), optional.
+        sn0: If 0, rain is converted to snow below freezing.
+        ivarint: If 1, use Thompson (2004) variable intercept parameters.
+        iliqskin: If 1, use liquid-skin (wet) snow/graupel factor above freezing.
+
+    Returns:
+        Equivalent radar reflectivity factor (dBZ) of same shape as ``prs``.
+    """
+    pi = np.pi
+    gamma_seven = 720.0
+    rho_r = 1000.0
+    rho_s = 100.0
+    rho_g = 400.0
+    alpha = 0.224
+    rhowat = 1000.0
+    celkel = 273.15
+    r1 = 1.0e-15
+    rd = 287.04
+    rn0_r = 8.0e6
+    rn0_s = 2.0e7
+    rn0_g = 4.0e6
+    ron_min = 8.0e6
+
+    qvp = np.maximum(qvp, 0.0)
+    qra = np.maximum(qra, 0.0)
+    qsn = np.maximum(qsn, 0.0)
+    qgr = np.maximum(qgr, 0.0)
+
+    if sn0 == 0:
+        frozen = tmk < celkel
+        qsn = np.where(frozen, qra, qsn)
+        qra = np.where(frozen, 0.0, qra)
+
+    virtual_t = tmk * (0.622 + qvp) / (0.622 * (1.0 + qvp))
+    rho_air = prs / (rd * virtual_t)
+
+    factor_r = gamma_seven * 1e18 * (1.0 / (pi * rho_r)) ** 1.75
+    factor_s = gamma_seven * 1e18 * (1.0 / (pi * rho_s)) ** 1.75 * (rho_s / rhowat) ** 2 * alpha
+    factor_g = gamma_seven * 1e18 * (1.0 / (pi * rho_g)) ** 1.75 * (rho_g / rhowat) ** 2 * alpha
+
+    if iliqskin == 1:
+        wet = tmk > celkel
+        factorb_s = np.where(wet, factor_s / alpha, factor_s)
+        factorb_g = np.where(wet, factor_g / alpha, factor_g)
+    else:
+        factorb_s = factor_s
+        factorb_g = factor_g
+
+    if ivarint == 1:
+        temp_c = np.minimum(-0.001, tmk - celkel)
+        sonv = np.minimum(2.0e8, 2.0e6 * np.exp(-0.12 * temp_c))
+
+        gon = 5.0e7
+        with np.errstate(divide="ignore", invalid="ignore"):
+            gonv = np.where(
+                qgr > r1,
+                np.maximum(
+                    np.minimum(
+                        2.38 * (pi * rho_g / (rho_air * qgr)) ** 0.92,
+                        gon,
+                    ),
+                    1.0e4,
+                ),
+                gon,
+            )
+
+        ron2 = 1.0e10
+        ron_qr0 = 1.0e-4
+        ron_delqr0 = 0.25 * ron_qr0
+        ron_const1r = (ron2 - ron_min) * 0.5
+        ron_const2r = (ron2 + ron_min) * 0.5
+        ronv = np.where(
+            qra > r1,
+            ron_const1r * np.tanh((ron_qr0 - qra) / ron_delqr0) + ron_const2r,
+            ron2,
+        )
+    else:
+        sonv = np.full_like(qsn, rn0_s)
+        gonv = np.full_like(qgr, rn0_g)
+        ronv = np.full_like(qra, rn0_r)
+
+    z_e = (
+        factor_r * (rho_air * qra) ** 1.75 / ronv**0.75
+        + factorb_s * (rho_air * qsn) ** 1.75 / sonv**0.75
+        + factorb_g * (rho_air * qgr) ** 1.75 / gonv**0.75
+    )
+
+    if qcl is not None:
+        qcl = np.maximum(qcl, 0.0)
+        n0_c = 1.0e8
+        factor_c = gamma_seven * 1e18 * (1.0 / (pi * rhowat)) ** 1.75
+        z_e = z_e + factor_c * (rho_air * qcl) ** 1.75 / n0_c**0.75
+
+    if qci is not None:
+        qci = np.maximum(qci, 0.0)
+        n0_i = 1.0e6
+        rho_i = 890.0
+        factor_i = gamma_seven * 1e18 * (1.0 / (pi * rho_i)) ** 1.75 * (rho_i / rhowat) ** 2 * alpha
+        z_e = z_e + factor_i * (rho_air * qci) ** 1.75 / n0_i**0.75
+
+    z_e = np.maximum(z_e, 0.001)
+    return 10.0 * np.log10(z_e)
+
+
 def diag_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
     """
     Emulated Radar Reflectivity
+
+    Five-hydrometeor (Qc, Qi, Qr, Qs, Qg) equivalent reflectivity factor.
 
     """
 
@@ -732,6 +869,8 @@ def diag_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
             qra = np.squeeze(ds["crwc"].values / (1 - ds["crwc"].values))
             qsn = np.squeeze(ds["cswc"].values / (1 - ds["cswc"].values))
             qgr = np.zeros(np.shape(tmk))
+            qcl = np.squeeze(ds["clwc"].values / (1 - ds["clwc"].values)) if "clwc" in ds else None
+            qci = np.squeeze(ds["ciwc"].values / (1 - ds["ciwc"].values)) if "ciwc" in ds else None
             prs = np.zeros(np.shape(tmk))
             plev = np.squeeze(ds["pres_levels"].values)
             for pl in range(len(plev)):
@@ -742,7 +881,9 @@ def diag_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
             qvp = np.squeeze(ds["QVAPOR_p"].values)
             qra = np.squeeze(ds["QRAIN_p"].values)
             qsn = np.squeeze(ds["QSNOW_p"].values)
-            qgr = np.squeeze(ds["QGRAUP_p"].values)
+            qgr = np.squeeze(ds["QGRAUP_p"].values) if "QGRAUP_p" in ds else np.zeros(np.shape(tmk))
+            qcl = np.squeeze(ds["QCLOUD_p"].values) if "QCLOUD_p" in ds else None
+            qci = np.squeeze(ds["QICE_p"].values) if "QICE_p" in ds else None
             prs = np.zeros(np.shape(tmk))
             plev = np.squeeze(ds["pres_levels"].values)
             for pl in range(len(plev)):
@@ -753,33 +894,19 @@ def diag_REFL(source_dataset: str, ds: xr.Dataset) -> xr.DataArray:
             data = np.full(np.squeeze(template_shape), np.nan)
             return _create_dataarray(data, ds, "REFL", "Emulated Radar Reflectivity", "dBZ")
 
-    sn0 = 1
-    ivarint = 1
-    qvp = np.maximum(qvp, 0)
-    qra = np.maximum(qra, 0)
-    qsn = np.maximum(qsn, 0)
-    qgr = np.maximum(qgr, 0)
-
-    if sn0 == 1:
-        mask = tmk < 273.15
-        qsn[mask] = qra[mask]
-        qra[mask] = 0
-
-    virtual_t = tmk * (1 + 0.61 * qvp)
-
-    rhoair = prs / (287.04 * virtual_t)  # prs_val.values 假設可以自動廣播
-
-    factor_r = 720 * 1e18 * (1 / (np.pi * 1000)) ** 1.75
-    factor_s = factor_r * (0.224 * (100 / 1000) ** 2)
-    factor_g = factor_r * (0.224 * (400 / 1000) ** 2)
-
-    z_e = (
-        factor_r * (rhoair * qra) ** 1.75 / (8e6 if ivarint == 0 else 1e10) ** 0.75
-        + factor_s * (rhoair * qsn) ** 1.75 / (2e7 if ivarint == 0 else 2e8) ** 0.75
-        + factor_g * (rhoair * qgr) ** 1.75 / (4e6 if ivarint == 0 else 5e7) ** 0.75
+    data = _calc_dbz(
+        prs,
+        tmk,
+        qvp,
+        qra,
+        qsn,
+        qgr,
+        qcl=qcl,
+        qci=qci,
+        sn0=0,
+        ivarint=1,
+        iliqskin=1,
     )
-
-    data = 10 * np.log10(np.maximum(z_e, 0.001))
 
     return _create_dataarray(data, ds, "REFL", "Emulated Radar Reflectivity", "dBZ")
 

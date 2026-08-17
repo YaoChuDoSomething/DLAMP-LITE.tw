@@ -1,5 +1,8 @@
-from collections.abc import Callable, Sequence
+from __future__ import annotations
+
+from collections.abc import Callable
 from datetime import datetime
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -11,19 +14,22 @@ from .file_util import gen_data
 
 
 class DataGenerator:
-    def __init__(self, data_shape: list[int], image_shape: list[int]):
+    def __init__(self, data_shape: list[int], image_shape: list[int]) -> None:
         self._data_shp = data_shape
         self._img_shp = image_shape
         self.preprocess = self._preprocess()
 
-    def yield_data_hook(fn: Callable) -> Callable:
+    @staticmethod
+    def yield_data_hook(
+        fn: Callable[[Any, np.ndarray, bool], torch.Tensor | np.ndarray],
+    ) -> Callable[..., torch.Tensor | np.ndarray | dict[str, np.ndarray]]:
         def wrapper(
-            self,
+            self: DataGenerator,
             target_time: datetime,
             data_compose: DataCompose | list[DataCompose],
             to_numpy: bool = True,
-            **kwargs,
-        ) -> Sequence | dict[str, Sequence]:
+            **kwargs: Any,
+        ) -> torch.Tensor | np.ndarray | dict[str, np.ndarray]:
             """
             A wrapper function that handles data generation and preprocessing. The output can be either
             a single sequence data or a dictionary of sequences depending on the type of input data_compose.
@@ -47,8 +53,9 @@ class DataGenerator:
                 return fn(self, data, to_numpy)
             elif isinstance(data, dict):
                 for key, np_data in data.items():
-                    data[key] = fn(self, np_data, to_numpy)
+                    data[key] = cast(np.ndarray, fn(self, np_data, to_numpy))
                 return data
+            raise AssertionError("unreachable")
 
         return wrapper
 
@@ -90,7 +97,7 @@ class DataGenerator:
             ]
         )
 
-    def _data_shape_check(self, target_dt: datetime, data: np.ndarray):
+    def _data_shape_check(self, target_dt: datetime, data: np.ndarray) -> None:
         """
         Check if the shape of the given data matches the original data shape.
 

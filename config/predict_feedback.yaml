@@ -41,9 +41,9 @@ lightning:
   workers: 4
 
 defaults:
-  - data: rwrf_20250729
-  - lightning: pangu_rwrf_20250729
-  - model: pangu_rwrf_20250729
+  - data: rwrf_20250627
+  - lightning: pangu_rwrf_20250627
+  - model: pangu_rwrf_20250627
   - inference: pangu_rwrf_onnx   # provides non-null bdy_swap_method by default
   - plot: pangu_rwrf
   - _self_

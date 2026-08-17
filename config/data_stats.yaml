@@ -23,6 +23,6 @@ stats:
   num_criteria: 1000                # min samples to keep a variable's stats
 
 defaults:
-  - data: rwrf_20250729
+  - data: rwrf_20250627
   - _self_
   - override hydra/job_logging: default

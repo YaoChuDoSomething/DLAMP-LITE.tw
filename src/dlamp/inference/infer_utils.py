@@ -10,12 +10,15 @@ from torch import nn
 
 from dlamp.const import REPO_ROOT
 from dlamp.models.builders.pangu_builder import PanguBuilder
-from dlamp.standardizer import get_standardizer
+from dlamp.runtime_config import get_runtime_config
+from dlamp.standardizer import Standardizer, get_standardizer
 from dlamp.utils import DataCompose
 
 
 def prediction_postprocess(
-    trainer_output: list[list[np.ndarray]], mapping: dict[int, str]
+    trainer_output: list[list[np.ndarray]],
+    mapping: dict[int, str],
+    standardizer: Standardizer | None = None,
 ) -> defaultdict[str, np.ndarray]:
     """
     Perform post-processing on the trainer output predictions by combining all the batches.
@@ -39,7 +42,7 @@ def prediction_postprocess(
         defaultdict: Processed predictions in shape: {product_type: (B, lv, h, w, c)...}
     """
     predictions = defaultdict(list)
-    standardizer = get_standardizer()
+    standardizer = standardizer or get_standardizer()
     for epoch_id in range(len(trainer_output)):
         for key, value in mapping.items():
             predictions[key].append(trainer_output[epoch_id][value])
@@ -109,7 +112,10 @@ def init_ort_instance(gpu_id: int, onnx_path: str) -> ort.InferenceSession:
 
 
 def load_pangu_model(
-    ckpt_path: str, data_list: list[DataCompose], image_shape: list[int, int]
+    ckpt_path: str,
+    data_list: list[DataCompose],
+    image_shape: list[int, int],
+    add_time_features: bool = False,
 ) -> Callable[[torch.device], nn.Module]:
     """Load a Pangu model from a PyTorch Lightning checkpoint.
 
@@ -118,6 +124,8 @@ def load_pangu_model(
         data_list (list[DataCompose]): Variable composition list used at
             training time.
         image_shape (list[int, int]): Spatial dimensions ``[H, W]``.
+        add_time_features (bool): Whether the model concatenates time
+            features to the surface input (must match training).
 
     Returns:
         Callable[[torch.device], nn.Module]: A closure that moves the
@@ -127,15 +135,23 @@ def load_pangu_model(
         FileNotFoundError: If either the model or lightning YAML config
             cannot be found under ``REPO_ROOT / 'config'``.
     """
-    model_cfg_path = REPO_ROOT / "config" / "model" / "pangu_rwrf.yaml"
-    lightning_cfg_path = REPO_ROOT / "config" / "lightning" / "pangu_rwrf.yaml"
+    model_code = get_runtime_config().model_code
+    model_cfg_path = REPO_ROOT / "config" / "model" / f"pangu_rwrf_{model_code}.yaml"
+    lightning_cfg_path = REPO_ROOT / "config" / "lightning" / f"pangu_rwrf_{model_code}.yaml"
     with open(model_cfg_path) as stream:
         cfg_model = yaml.safe_load(stream)
     with open(lightning_cfg_path) as stream:
         cfg_lightning = yaml.safe_load(stream)
 
     # build model
-    pangu_builder = PanguBuilder("dummy", data_list, image_shape=image_shape, **cfg_model, **cfg_lightning)
+    pangu_builder = PanguBuilder(
+        "dummy",
+        data_list,
+        image_shape=image_shape,
+        add_time_features=add_time_features,
+        **cfg_model,
+        **cfg_lightning,
+    )
     model = pangu_builder._backbone_model()
 
     # load weights from checkpoint

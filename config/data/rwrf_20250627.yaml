@@ -1,7 +1,7 @@
 start_time: "2018-01-01 00:00"
 end_time: "2025-05-31 23:59"
 format: "%Y-%m-%d %H:%M"
-time_interval: 
+time_interval:
   hours: 1
 data_shape: [450, 450]
 image_shape: [224, 224]
@@ -11,7 +11,7 @@ grid_spacing:
 add_time_features: True
 use_Kth_hour_pred: 0
 train_data:
-  Z:
+  PH:
     - Hpa50
     - Hpa100
     - Hpa150
@@ -25,7 +25,7 @@ train_data:
     - Hpa850
     - Hpa925
     - Hpa1000
-  T:
+  TK:
     - Hpa50
     - Hpa100
     - Hpa150
@@ -40,7 +40,7 @@ train_data:
     - Hpa925
     - Hpa1000
     - Meter2
-  U:
+  UM:
     - Hpa50
     - Hpa100
     - Hpa150
@@ -55,7 +55,7 @@ train_data:
     - Hpa925
     - Hpa1000
     - Meter10
-  V:
+  VM:
     - Hpa50
     - Hpa100
     - Hpa150
@@ -70,7 +70,7 @@ train_data:
     - Hpa925
     - Hpa1000
     - Meter10
-  W:
+  WA:
     - Hpa50
     - Hpa100
     - Hpa150
@@ -99,7 +99,7 @@ train_data:
     - Hpa925
     - Hpa1000
     - Meter2
-  Qw:
+  Qt:
     - Hpa50
     - Hpa100
     - Hpa150
@@ -113,12 +113,15 @@ train_data:
     - Hpa850
     - Hpa925
     - Hpa1000
-    # - Meter2
+  SLP:
+    - SeaSurface
   SST:
     - SeaSurface
   PSFC:
     - Surface
+  PW:
+    - Surface
   SWDOWN:
     - Surface
   OLR:
-    - NoRule
+    - TOA

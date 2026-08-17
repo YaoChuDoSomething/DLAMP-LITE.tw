@@ -5,6 +5,7 @@ import lightning as L
 from torch.utils.data import DataLoader
 
 from ..datasets import CustomDataset
+from ..standardizer import Standardizer, get_standardizer
 from ..utils import DataCompose, DataGenerator
 from .datetime_manager import DatetimeManager
 
@@ -16,6 +17,7 @@ class DataManager(L.LightningDataModule):
         self,
         data_list: list[DataCompose],
         init_time_list: list[datetime] | None = None,
+        standardizer: Standardizer | None = None,
         **kwargs,
     ):
         super().__init__()
@@ -24,6 +26,7 @@ class DataManager(L.LightningDataModule):
         # internal property
         self.data_list = data_list
         self.init_time_list = init_time_list
+        self._standardizer = standardizer or get_standardizer()
         self._train_dataset = None
         self._valid_dataset = None
         self._test_dataset = None
@@ -130,6 +133,7 @@ class DataManager(L.LightningDataModule):
             self.hparams.add_time_features,
             getattr(self.hparams, "use_Kth_hour_pred", None),
             is_train_or_valid=stage in ["train", "valid"],
+            standardizer=self._standardizer,
         )
 
     def train_dataloader(self):

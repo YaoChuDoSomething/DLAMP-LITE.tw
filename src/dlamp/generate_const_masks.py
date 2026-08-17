@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime
 
 import geopandas as gpd
@@ -7,6 +8,8 @@ import rasterio
 import xarray as xr
 import yaml
 from scipy.interpolate import RegularGridInterpolator
+
+logger = logging.getLogger(__name__)
 from tqdm import trange
 
 from dlamp.runtime_config import get_runtime_config
@@ -62,7 +65,7 @@ def gen_TW_only_terrain():
         config.standardization_path.parent / "constant_masks" / "land_sea_mask_4km.npy",
         np.where(terrain_mask > 0.5, 1, 0),
     )
-    print("done")
+    logger.info("done")
 
 
 def gen_TW_CN_terrain():
@@ -92,9 +95,9 @@ def gen_TW_CN_terrain():
         # Read the data
         terrain_data = src.read(1)
         # Display basic information
-        print(f"Width: {src.width}, Height: {src.height}")
-        print(f"Coordinate Reference System: {src.crs}")
-        print(f"Bounds: {src.bounds}")
+        logger.info("Width: %s, Height: %s", src.width, src.height)
+        logger.info("Coordinate Reference System: %s", src.crs)
+        logger.info("Bounds: %s", src.bounds)
         # Gen Interpolator
         geo_lat = np.linspace(40, -10, src.height)
         geo_lon = np.linspace(100, 140, src.width)
@@ -102,7 +105,7 @@ def gen_TW_CN_terrain():
 
     # Flatten the meshgrid for interpolation
     points = np.column_stack((target_lat.ravel(), target_lon.ravel()))
-    print("Interpolating...")
+    logger.info("Interpolating...")
     terrain_mask = interp(points)
     terrain_mask = terrain_mask.reshape(target_lon.shape)
     terrain_mask = np.where(terrain_mask < 0, 0, terrain_mask)
@@ -113,7 +116,7 @@ def gen_TW_CN_terrain():
         config.standardization_path.parent / "constant_masks" / "land_sea_mask_4km.npy",
         np.where(terrain_mask > 0.5, 1, 0),
     )
-    print("done")
+    logger.info("done")
 
 
 def extract_landmask_from_ncfile():
@@ -139,7 +142,7 @@ def extract_landmask_from_ncfile():
     # save npy
     np.save(config.standardization_path.parent / "constant_masks" / "topography_mask_4km.npy", terrain_mask)
     np.save(config.standardization_path.parent / "constant_masks" / "land_sea_mask_4km.npy", landsea_mask)
-    print("done")
+    logger.info("done")
 
 
 def find_closest_value(input_array: np.ndarray, target: float) -> float:

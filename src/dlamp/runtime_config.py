@@ -74,9 +74,8 @@ class RuntimeConfig:
             data_config_path=data_config_path,
         )
 
-    @property
-    def standardization_json_path(self) -> Path:
-        return self.standardization_path
+
+_singleton: RuntimeConfig | None = None
 
 
 def get_runtime_config() -> RuntimeConfig:
@@ -88,13 +87,7 @@ def get_runtime_config() -> RuntimeConfig:
     .. note:: If multiple entrypoints are run in the same process
               (e.g. tests), the last call wins.
     """
-    if not hasattr(get_runtime_config, "_singleton"):
-        get_runtime_config._singleton = RuntimeConfig.from_env()
-    return get_runtime_config._singleton
-
-
-def get_runtime_config_error() -> str | None:
-    """Return the last validation error raised by
-    ``RuntimeConfig.from_env()``. Only has a value after a failed
-    instantiation."""
-    return getattr(get_runtime_config, "_last_error", None)
+    global _singleton
+    if _singleton is None:
+        _singleton = RuntimeConfig.from_env()
+    return _singleton

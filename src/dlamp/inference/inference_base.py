@@ -14,11 +14,17 @@ from dlamp.debug.boundary_plots import (
     plot_fft_blending_debug,
 )
 from dlamp.managers import DataManager, DatetimeManager
+from dlamp.standardizer import Standardizer, get_standardizer
 from dlamp.utils import DataCompose, DataGenerator, DataType, Level
 
 
 class InferenceBase(metaclass=abc.ABCMeta):
-    def __init__(self, cfg: DictConfig, eval_cases: list[datetime] | None = None):
+    def __init__(
+        self,
+        cfg: DictConfig,
+        eval_cases: list[datetime] | None = None,
+        standardizer: Standardizer | None = None,
+    ):
         # args
         self.cfg = cfg
         self.eval_cases = eval_cases
@@ -39,6 +45,7 @@ class InferenceBase(metaclass=abc.ABCMeta):
             **self.cfg.data,
             **self.cfg.lightning,
             init_time_list=self.init_time_list,
+            standardizer=standardizer or get_standardizer(),
         )
         self.data_manager.setup("predict")
 

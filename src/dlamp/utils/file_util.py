@@ -1,15 +1,17 @@
 import warnings
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import xarray as xr
 
-from ..runtime_config import get_runtime_config
+from ..data.source_strategy import NEO171RwrDataSource, get_data_source
+from ..runtime_config import RuntimeConfig, get_runtime_config
 from .data_compose import DataCompose, DataType
 
 
-def _get_config():
+def _get_config() -> RuntimeConfig:
     return get_runtime_config()
 
 
@@ -32,31 +34,34 @@ def gen_data(
 
     Returns:
         The generated data.
-
     """
     config = _get_config()
-    match config.data_source:
-        case "NEO171_RWRF":
-            if isinstance(data_compose, DataCompose):
-                file_name = gen_path(target_time, data_compose)
-                return read_cwa_npfile(file_name, data_compose.is_radar, dtype)
-            elif isinstance(data_compose, list):
-                ret = {}
-                for ele in data_compose:
-                    file_name = gen_path(target_time, ele)
-                    ret[str(ele)] = read_cwa_npfile(file_name, ele.is_radar, dtype)
-                return ret
-        case "CWA_RWRF":
-            file_name = gen_path(target_time, use_Kth_hour_pred=use_Kth_hour_pred)
-            return read_cwa_ncfile(file_name, data_compose, dtype)
-        case "OP_ERA5":
-            file_name = gen_path(target_time)
-            return read_cwa_ncfile(file_name, data_compose, dtype)
-        case "OP_E2S":
-            file_name = gen_path(target_time)
-            return read_cwa_ncfile(file_name, data_compose, dtype)
-        case _:
-            raise ValueError(f"Unknown data source: {config.data_source}")
+    source = get_data_source(config.data_source)
+    is_neo = isinstance(source, NEO171RwrDataSource)
+    if isinstance(data_compose, DataCompose):
+        file_name = source.gen_path(
+            target_time,
+            config,
+            data_compose=data_compose,
+            use_Kth_hour_pred=use_Kth_hour_pred,
+        )
+        if is_neo:
+            return read_cwa_npfile(file_name, data_compose.is_radar, dtype)
+        return read_cwa_ncfile(file_name, data_compose, dtype)
+    else:
+        ret = {}
+        for ele in data_compose:
+            file_name = source.gen_path(
+                target_time,
+                config,
+                data_compose=ele,
+                use_Kth_hour_pred=use_Kth_hour_pred,
+            )
+            if is_neo:
+                ret[str(ele)] = read_cwa_npfile(file_name, ele.is_radar, dtype)
+            else:
+                ret[str(ele)] = read_cwa_ncfile(file_name, ele, dtype)
+        return ret
 
 
 def read_cwa_ncfile(
@@ -81,7 +86,7 @@ def read_cwa_ncfile(
     """
     dataset = xr.open_dataset(str(file_path))
 
-    def fn(dc: DataCompose):
+    def fn(dc: DataCompose) -> np.ndarray:
         """
         Extract variable data from a RWRF output NetCDF dataset based on the data composition.
 
@@ -94,13 +99,9 @@ def read_cwa_ncfile(
                 H and W are the horizontal dimensions of the data.
         """
         if dc.var_name == DataType.Qt:
-            # Qw = Qr + Qc + Qi + Qs + Qg
-            components = ["Qr", "Qc", "Qi", "Qs", "Qg"]
-            data = sum(
-                dataset[DataCompose(getattr(DataType, q), dc.level).combined_key].values for q in components
-            )  # (1, Z, H, W)
-            # data = dataset[dc.combined_key].value
-            data *= 1000  # kg/kg -> g/kg
+            # Read the total hydrometeor field directly from source; never
+            # derive it from Qr/Qc/Qi/Qs/Qg (diagnostics live in data plugins).
+            data = dataset[dc.combined_key].values
         elif dc.var_name == DataType.SST:
             data = dataset[dc.combined_key].values
             data[np.isnan(data)] = 298.60870361328125  # SST mean
@@ -185,31 +186,13 @@ def gen_path(
     config = _get_config()
     if data_source is None:
         data_source = config.data_source
-
-    match data_source:
-        case "NEO171_RWRF":
-            assert data_compose is not None, "DataCompose is required for NEO171_RWRF"
-            return (
-                config.data_path
-                / f"rwf_{target_time.strftime('%Y%m')}"
-                / f"{target_time.strftime('%Y%m%d%H%M')}0000"
-                / data_compose.basename
-            )
-        case "CWA_RWRF":
-            predict_dt = target_time + timedelta(hours=use_Kth_hour_pred) if use_Kth_hour_pred else target_time
-
-            return (
-                config.data_path
-                # / f"RWRF_{target_time.strftime('%Y-%m')}"
-                # / f"{target_time.strftime('%Y-%m-%d_%H')}"
-                / f"wrfout_d01_{predict_dt.strftime('%Y-%m-%d_%H')}_interp"
-            )
-        case "OP_ERA5":
-            return config.data_path / f"e5dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
-        case "OP_E2S":
-            return config.data_path / f"e2s_sfno_dlamp_{target_time.strftime('%Y%m%d_%H%M')}.nc"
-        case _:
-            raise ValueError(f"Invalid data source: {data_source}")
+    source = get_data_source(data_source)
+    return source.gen_path(
+        target_time,
+        config,
+        data_compose=data_compose,
+        use_Kth_hour_pred=use_Kth_hour_pred,
+    )
 
 
 def convert_hydra_dir_to_timestamp(hydra_dir: Path | str) -> str:
@@ -226,9 +209,8 @@ def convert_hydra_dir_to_timestamp(hydra_dir: Path | str) -> str:
         ValueError: If the hydra directory path cannot be parsed into a datetime object.
     """
     try:
-        dt = datetime.strptime(f"{hydra_dir.parent.name} {hydra_dir.name}", "%Y-%m-%d %H:%M:%S").replace(
-            tzinfo=UTC
-        )
+        path = Path(hydra_dir) if isinstance(hydra_dir, str) else cast(Path, hydra_dir)
+        dt = datetime.strptime(f"{path.parent.name} {path.name}", "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     except ValueError:
         if isinstance(hydra_dir, str):
             warnings.warn(

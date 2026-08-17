@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import UTC, datetime, timedelta
 
@@ -7,6 +8,8 @@ import yaml
 from scipy.interpolate import griddata
 
 from dlamp.data.registry.diagnostic_registry import load_diagnostics, sort_diagnostics_by_dependencies
+
+logger = logging.getLogger(__name__)
 
 
 class DataRegridder:
@@ -178,7 +181,7 @@ class DataRegridder:
                     continue
 
                 data = np.squeeze(ncds[var].values)
-                print(f"[REGRID] {var} => {data.shape}")
+                logger.info("Regridding %s => %s", var, data.shape)
 
                 if data.ndim == 3:
                     nl = data.shape[0]
@@ -241,7 +244,7 @@ class DataRegridder:
 
             for var in ncds:
                 data = np.squeeze(ncds[var].values)
-                print(f"[REGRID] {var} => {data.shape}")
+                logger.info("Regridding %s => %s", var, data.shape)
                 if data.ndim == 3:
                     nl = data.shape[0]
                     data_h = np.empty((nl, ny, nx))
@@ -266,7 +269,7 @@ class DataRegridder:
         return out_dict
 
     def process_single_time(self, curr_time):
-        print(f"[INFO] Processing single time: {curr_time}")
+        logger.info("Processing single time: %s", curr_time)
         [pl_nc, sl_nc, output_nc] = self.gen_io_filename(curr_time)
 
         out_dict = {}
@@ -278,14 +281,14 @@ class DataRegridder:
 
         # Ensure NetCDF files exist, otherwise skip this timestep
         if not os.path.exists(pl_nc) and not os.path.exists(sl_nc):
-            print(f"[WARN] Missing NetCDF files for {curr_time}")
+            logger.warning("Missing NetCDF files for %s", curr_time)
             return
 
         # out_dict = {}
         out_coords = {}
         _, ny, nx = np.shape(self.XLONG)
         test_X = np.reshape(self.XLONG, (ny, nx))
-        print(np.shape(test_X))
+        logger.debug("XLONG reshaped to: %s", np.shape(test_X))
         # out_dict["XLONG"] = (
         #    ["Time", "south_north", "west_east"],
         #    np.expand_dims(np.reshape(self.XLONG,(ny,nx)))
@@ -308,12 +311,12 @@ class DataRegridder:
 
         # Horizontally interpolate pressure level data
         if os.path.exists(pl_nc):
-            print("[REGRID]: ", pl_nc)
+            logger.info("Regridding pressure-level data: %s", pl_nc)
             self.interp_horizontal(out_dict, curr_time, pl_nc)
 
         # Horizontally interpolate surface level data
         if os.path.exists(sl_nc):
-            print("[REGRID]: ", sl_nc)
+            logger.info("Regridding surface data: %s", sl_nc)
             self.interp_horizontal(out_dict, curr_time, sl_nc)
 
         # Add static variables to the interpolation dictionary
@@ -340,10 +343,10 @@ class DataRegridder:
         outds = xr.Dataset(data_vars=out_dict, coords=out_coords, attrs=out_attrs)
         out2ds = xr.Dataset(data_vars=out2_dict, coords=out2_coords, attrs=out2_attrs)
         if self.write_regrid:
-            outds.to_netcdf(self.regrid_nc, format="NETCDF4")
-            print(f"[DONE] Saved interpolated NetCDF for {curr_time}")
+            outds.to_netcdf(output_nc, format="NETCDF4")
+            logger.info("Saved interpolated NetCDF for %s", curr_time)
         else:
-            print(f"[DONE] interpolated NetCDF for {curr_time} without saving the data")
+            logger.info("Interpolated NetCDF for %s without saving the data", curr_time)
 
         # --- Diagnostic variable calculation and output ---
 
@@ -363,7 +366,7 @@ class DataRegridder:
             diag_func = info["function"]
 
             if all(req in outds.data_vars or req in outds.coords for req in requires):
-                print(f"[DIAGNOSE] Calculating diagnostic: {var}")
+                logger.info("Calculating diagnostic: %s", var)
                 try:
                     # === MODIFIED CALL ===
                     # Pass the source dataset type and the current dataset to the diagnostic function
@@ -372,26 +375,28 @@ class DataRegridder:
 
                     # Add the calculated diagnostic variable to the dataset
                     out2ds[var] = diagnostic_dataarray
-                    print(
-                        f"[DIAGNOSE] Calculated {var}, shape: {out2ds[var].shape}, mean: {out2ds[var].values.mean():.4f}"
-                    )  # Access value after adding
+                    logger.info(
+                        "Calculated %s, shape: %s, mean: %.4f",
+                        var,
+                        out2ds[var].shape,
+                        out2ds[var].values.mean(),
+                    )
                     # print(f"[DIAGNOSE] Calculated {var}, shape: {out2ds[var].shape}") # Simpler print
 
-                except Exception as e:  # noqa: BLE001 - broad error boundary on diagnostic calc
-                    print(f"[ERROR] Failed to calculate diagnostic {var}: {e}")
-                    import traceback
-
-                    traceback.print_exc()
+                except Exception:
+                    logger.exception("Failed to calculate diagnostic %s", var)
             else:
                 # Find missing requirements
                 missing = [req for req in requires if req not in outds.data_vars and req not in outds.coords]
-                print(
-                    f"[WARN] Missing required inputs for diagnostic {var}: {missing}. Skipping calculation for this variable."
+                logger.warning(
+                    "Missing required inputs for diagnostic %s: %s. Skipping calculation for this variable.",
+                    var,
+                    missing,
                 )
 
         # Save once outside the loop
         out2ds.to_netcdf(output_nc, format="NETCDF4")
-        print(f"[DONE] Saved diagnostic NetCDF for {curr_time}")
+        logger.info("Saved diagnostic NetCDF for %s", curr_time)
 
     def main_process(self):
         for curr_time in self.build_timeline():

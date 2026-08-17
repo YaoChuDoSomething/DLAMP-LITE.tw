@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import UTC, datetime, timedelta
 
@@ -5,6 +6,8 @@ import cdsapi
 import xarray as xr
 import yaml
 from cdo import Cdo
+
+logger = logging.getLogger(__name__)
 
 
 class CDSDataDownloader:
@@ -76,7 +79,7 @@ class CDSDataDownloader:
             ds.to_netcdf(output_netcdf, format="netcdf4")
             ds.close()
         except Exception as e:  # noqa: BLE001 - broad error boundary on data conversion
-            print(f"[ERROR] GRIB failed converting: {input_grib}\n{e}")
+            logger.error("GRIB failed converting: %s\n%s", input_grib, e)
 
     def process_download(self, curr_time):
         self.pl = self.cfg["download"]["dataset_upper"]

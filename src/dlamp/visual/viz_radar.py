@@ -157,7 +157,7 @@ class VizRadar(TwBackground):
 
 if __name__ == "__main__":
     target_time = datetime(2022, 10, 16, 0, tzinfo=UTC)
-    data_radar = gen_data(target_time, DataCompose(DataType.Radar, Level.NoRule))
+    data_radar = gen_data(target_time, DataCompose(DataType.dBZ, Level.NoRule))
     data_lat = gen_data(target_time, DataCompose(DataType.Lat, Level.Surface))
     data_lon = gen_data(target_time, DataCompose(DataType.Lon, Level.Surface))
 

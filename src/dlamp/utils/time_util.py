@@ -32,7 +32,7 @@ class TimeUtil:
         if interval is None:
             interval = timedelta(minutes=1)
         time_list = []
-        if hour:
+        if hour is not None:
             dt = datetime(year, month, day, hour, tzinfo=UTC)
             while dt.hour == hour:
                 time_list.append(dt)
@@ -53,7 +53,8 @@ class TimeUtil:
         n_days: int,
     ) -> list[datetime]:
         """
-        Generate a list of datetime objects representing the three days before and after a given date.
+        Generate a list of datetime objects covering ``n_days`` centered on the
+        given date.
 
         Parameters:
             year (int): The year of the target date.
@@ -64,7 +65,8 @@ class TimeUtil:
                 "milliseconds", "minutes", "hours", "weeks". Defaults to {"minutes": 1}.
 
         Returns:
-            list[datetime]: A list of datetime objects representing the three days before and after the given date.
+            list[datetime]: A list of datetime objects covering ``n_days`` centered
+            on the given date.
         """
         assert n_days >= 1, f"n_days must be a positive integer but get {n_days}"
         half_range = n_days // 2

@@ -22,6 +22,13 @@ class PanguLightningModule(L.LightningModule):
             self.criterion = nn.L1Loss(reduction="mean")
             upper_var_weights_tensor = None
             surface_var_weights_tensor = None
+        else:
+            # Weighted MAE loss is not implemented yet; `common_step` raises
+            # NotImplementedError. Keep buffers defined to avoid NameError.
+            self.weighted_loss = True
+            self.criterion = nn.L1Loss(reduction="mean")
+            upper_var_weights_tensor = None
+            surface_var_weights_tensor = None
         self.register_buffer("upper_var_weights", upper_var_weights_tensor)
         self.register_buffer("surface_var_weights", surface_var_weights_tensor)
 

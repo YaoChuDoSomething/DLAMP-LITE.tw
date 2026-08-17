@@ -33,7 +33,9 @@ class Standardizer:
     def __init__(self, config: RuntimeConfig):
         self._config = config
         self._stat_dict = self._load_stats(config.standardization_path)
-        self._data_list = DataCompose.from_config(config.data_config_path)
+        with open(config.data_config_path, "r") as f:
+            data_config = yaml.safe_load(f)
+        self._data_list = DataCompose.from_config(data_config["train_data"])
 
     def _load_stats(self, path: Path) -> dict:
         if path.exists():
@@ -44,7 +46,10 @@ class Standardizer:
     def standardize(self, dc_name: str, array: np.ndarray) -> np.ndarray:
         """Standardize a single variable array.
 
-        Matches the behavior of the old ``standardization()`` function.
+        An absent ``dc_name`` is an :term:`Unstandardized Variable` and is
+        legal: the array is passed through unchanged (identity), never zeroed.
+        A variable whose stats are absent by accident is caught by schema
+        checks elsewhere, not by zeroing here.
         """
         if dc_name in self._stat_dict:
             stat = self._stat_dict[dc_name]
@@ -55,7 +60,7 @@ class Standardizer:
             else:
                 return (array - stat["mean"]) / stat["std"]
         else:
-            return np.zeros_like(array)
+            return array
 
     def destandardize(self, array: np.ndarray) -> np.ndarray:
         """Destandardize a full stacked array.
@@ -73,8 +78,12 @@ class Standardizer:
         return self._destandardize(array, is_surface)
 
     def _destandardize(self, array: np.ndarray, is_sfc: bool) -> np.ndarray:
-        """Handle destandardization for surface or upper-level variables."""
-        new_array = np.zeros_like(array)
+        """Handle destandardization for surface or upper-level variables.
+
+        Variables missing from the stats dict keep their original values
+        (identity), matching the standardization pass.
+        """
+        new_array = array.copy()
 
         if is_sfc:
             filtered_dc = [dc for dc in self._data_list if dc.level.is_surface()]

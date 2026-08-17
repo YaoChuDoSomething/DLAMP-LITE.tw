@@ -10,9 +10,10 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
+logger = logging.getLogger("dev")
+
 
 def main():
-    logger = logging.getLogger("dev")
     logger.info("start to unzip")
 
     config = get_runtime_config()
@@ -58,7 +59,7 @@ def move_files():
             # move file to new dir
             file.rename(new_dir / file.name)
 
-        print(f"{subdir} has been moved to {new_dir}")
+        logger.info("%s has been moved to %s", subdir, new_dir)
 
 
 if __name__ == "__main__":
