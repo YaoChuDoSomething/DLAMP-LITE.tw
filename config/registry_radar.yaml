@@ -1,0 +1,26 @@
+registry:
+  source_dataset: "RWRF"
+  varname:
+    REFL:
+      requires:
+        - tk_p
+        - pres_levels
+        - QVAPOR_p
+        - QRAIN_p
+        - QSNOW_p
+        - QGRAUP_p
+        - QCLOUD_p
+        - QICE_p
+      function: diag_REFL
+
+    MAX_REFL:
+      requires:
+        - tk_p
+        - pres_levels
+        - QVAPOR_p
+        - QRAIN_p
+        - QSNOW_p
+        - QGRAUP_p
+        - QCLOUD_p
+        - QICE_p
+      function: diag_MAX_REFL

@@ -21,7 +21,7 @@ model:
   hidden_dim: 32
 
 defaults:
-  - data: rwrf_20250627
+  - data: rwrf_20250627_radar
   - lightning: diffusion_rwrf_20250627
   - model: diffusion_rwrf_20250627
   - _self_
