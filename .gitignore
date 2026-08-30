@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# mypy / coverage caches
+.mypy_cache/
+.coverage
+
 # Hydra logs
 outputs/
 
@@ -46,3 +50,7 @@ debug_plots/**png
 # Figures
 *.png
 *.gif
+.worktrees/
+
+# Regression golden baselines (generated pre-move, stored under DLAMP_DATA_PATH)
+regression_golden/

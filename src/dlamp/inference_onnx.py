@@ -1,0 +1,75 @@
+import logging
+import time
+from datetime import UTC, datetime
+
+import hydra
+import onnxruntime as ort
+import psutil
+from omegaconf import DictConfig, OmegaConf
+
+from dlamp.const import REPO_ROOT
+from dlamp.managers import DataManager
+from dlamp.standardizer import get_standardizer
+from dlamp.utils import DataCompose
+
+logger = logging.getLogger(__name__)
+
+"""
+This is a sample code for quickly inference onnx model.
+"""
+
+
+@hydra.main(version_base=None, config_path=str(REPO_ROOT / "config"), config_name="predict")
+def main(cfg: DictConfig) -> None:
+    OmegaConf.set_struct(cfg, True)
+
+    # prepare data
+    eval_cases = [datetime(2022, 9, 11, tzinfo=UTC)]
+    data_list = DataCompose.from_config(cfg.data.train_data)
+    data_manager = DataManager(data_list, eval_cases, **cfg.data, **cfg.lightning)
+    data_manager.setup("predict")
+
+    # sample data
+    data_loader = data_manager.predict_dataloader()
+    inp_data, _oup_data = next(iter(data_loader))
+
+    # onnxruntime settings
+    assert "CUDAExecutionProvider" in ort.get_available_providers()
+    logger.info("ort device: %s", ort.get_device())
+
+    # An issue about onnxruntime for cuda12.x
+    # ref: https://github.com/microsoft/onnxruntime/issues/8313#issuecomment-1486097717
+    _default_session_options = ort.capi._pybind_state.get_default_session_options()
+
+    def get_default_session_options_new():
+        _default_session_options.inter_op_num_threads = 1
+        _default_session_options.intra_op_num_threads = 1
+        return _default_session_options
+
+    ort.capi._pybind_state.get_default_session_options = get_default_session_options_new
+
+    # inference
+    onnx_filename = cfg.inference.onnx_path
+    sess_options = ort.SessionOptions()
+    sess_options.intra_op_num_threads = psutil.cpu_count(logical=True)  # faster
+    ort_session = ort.InferenceSession(
+        onnx_filename,
+        sess_options,
+        providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+    )
+    ort_inputs = {
+        ort_session.get_inputs()[0].name: inp_data["upper_air"].cpu().numpy(),
+        ort_session.get_inputs()[1].name: inp_data["surface"].cpu().numpy(),
+    }
+    start = time.time()
+    pred_upper, pred_surface = ort_session.run(None, ort_inputs)
+
+    standardizer = get_standardizer()
+    pred_upper = standardizer.destandardize(pred_upper)
+    pred_surface = standardizer.destandardize(pred_surface)
+    logger.info("pred shapes: %s %s %s", type(pred_upper), pred_upper.shape, pred_surface.shape)
+    logger.info("execution time: %.5f sec", time.time() - start)
+
+
+if __name__ == "__main__":
+    main()

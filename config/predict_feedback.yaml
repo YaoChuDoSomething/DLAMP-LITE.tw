@@ -1,0 +1,50 @@
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H:%M:%S}
+  job:
+    chdir: False
+  output_subdir: .hydra
+  job_logging:
+    root:
+      level: DEBUG
+    handlers:
+      console:
+        level: INFO
+      file:
+        level: DEBUG
+
+# Two-way boundary-feedback inference — ground-truth boundary values are
+# re-injected at every model time-step to suppress domain-edge errors.
+#
+# bdy_swap_method MUST be non-null; PredictFeedbackRunner validates this
+# and raises ValueError if it is missing or null.
+#
+# Inherited from inference/pangu_rwrf_onnx.yaml:
+#   bdy_swap_method:
+#     name: exp_decay    ← blending kernel (options: exp_decay, linear, …)
+#     n_of_grid: 10      ← number of boundary grid cells to replace
+#
+# Override on the CLI with:
+#   python predict_feedback.py inference.bdy_swap_method.n_of_grid=16
+
+data:
+  use_Kth_hour_pred: null
+
+# feedback_iters is informational: the actual loop length is controlled
+# by showcase_length and output_itv in the inference config.
+inference:
+  feedback_iters: 3
+
+lightning:
+  sampling_rate: 1
+  batch_size: 1  # must be 1 for auto-regression
+  workers: 4
+
+defaults:
+  - data: rwrf_20250627
+  - lightning: pangu_rwrf_20250627
+  - model: pangu_rwrf_20250627
+  - inference: pangu_rwrf_onnx   # provides non-null bdy_swap_method by default
+  - plot: pangu_rwrf
+  - _self_
+  - override hydra/job_logging: default

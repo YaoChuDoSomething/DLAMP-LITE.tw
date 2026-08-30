@@ -1,8 +1,11 @@
 infer_type: "onnx"
-onnx_path: "./export/Pangu_model_20250729.onnx"
-bdy_swap_method: 
+onnx_path: "./export/Pangu_model_250627.onnx"
+bdy_swap_method:
   name: "exp_decay"
   n_of_grid: 10
 output_itv:
   hours: 1
 gpu_id: 0
+# Number of feedback iterations (used by predict_feedback.py only).
+# null = disabled (one-way downscaling); set to a positive int for feedback.
+feedback_iters: null

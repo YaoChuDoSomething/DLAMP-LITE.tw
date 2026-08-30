@@ -1,3 +1,5 @@
+# GEMINI.md
+
 **Goal:** Generate Python code that strictly follows Google Style docstrings and full PEP 8 compliance. All outputs must be ready to pass `flake8`, `pydocstyle` (Google convention), and `isort` (import ordering).
 
 ## Global Requirements
@@ -34,15 +36,14 @@ For **every** function, method, class, and module:
 ## Testing & Tooling
 
 * Provide at least one **doctest**\-style or `pytest` example for non-trivial functions.  
-    
+
 * Code must be compatible with Python **3.11+** (unless specified otherwise).  
-    
+
 * Output must pass:  
-    
+
   * `flake8` (E/W conventions),  
   * `pydocstyle` (Google docstring rules),  
   * `isort` (import order).
-
 
 * If randomness or time is used, make it deterministic (seed or injectable clock) in examples/tests.
 
@@ -55,4 +56,3 @@ For **every** function, method, class, and module:
 * No broad `except:` blocks; exceptions are specific and documented.
 
 #############
-

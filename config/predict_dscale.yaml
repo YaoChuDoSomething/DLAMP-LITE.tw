@@ -1,0 +1,37 @@
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H:%M:%S}
+  job:
+    chdir: False
+  output_subdir: .hydra
+  job_logging:
+    root:
+      level: DEBUG
+    handlers:
+      console:
+        level: INFO
+      file:
+        level: DEBUG
+
+# One-way downscaling inference — no boundary feedback.
+# bdy_swap_method overridden to null so that the model predicts freely
+# within the domain without re-injecting boundary observations.
+data:
+  use_Kth_hour_pred: null
+
+inference:
+  bdy_swap_method: null   # disable boundary re-injection (one-way mode)
+
+lightning:
+  sampling_rate: 1
+  batch_size: 1  # must be 1 for auto-regression
+  workers: 4
+
+defaults:
+  - data: rwrf_20250627
+  - lightning: pangu_rwrf_20250627
+  - model: pangu_rwrf_20250627
+  - inference: pangu_rwrf_onnx
+  - plot: pangu_rwrf
+  - _self_
+  - override hydra/job_logging: default

@@ -1,7 +1,12 @@
 infer_type: "ckpt"
-best_ckpt: "./checkpoints/Pangu_250310_214141-epoch=584-val_loss_epoch=0.3980.ckpt"
-bdy_swap_method: 
+best_ckpt: "./checkpoints/Pangu_250627_000000-epoch=000-val_loss_epoch=1.0000.ckpt"
+# Mock mode for export_onnx.py: synthesize a zero input instead of loading data.
+mock_input: false
+bdy_swap_method:
   name: "linear"
   n_of_grid: 44
 output_itv:
   hours: 4
+# Number of feedback iterations (used by predict_feedback.py only).
+# null = disabled; set to a positive int for two-way feedback.
+feedback_iters: null
